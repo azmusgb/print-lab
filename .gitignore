@@ -1,0 +1,3 @@
+# Raw evidence stays on this Mac; only normalised history is committed.
+history/*/chat/
+history/*/raw/
