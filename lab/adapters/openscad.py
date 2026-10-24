@@ -20,3 +20,19 @@ def openscad_binary() -> tuple[Path, str]:
             if m:
                 return Path(c), m.group(1)
     raise FileNotFoundError(f"OpenSCAD not found. Install it: {INSTALL}")
+
+
+def render(scad: Path, out_stl: Path, defines: dict, jobs_dir: Path):
+    """Render scad to out_stl with the Manifold backend; -D name=value for each define. Raises LabToolError."""
+    from lab.jobs import LabToolError, run_tool
+
+    binary, version = openscad_binary()
+    args = [str(binary), "--backend=manifold", "-o", str(out_stl)]
+    for k, v in defines.items():
+        val = ("true" if v else "false") if isinstance(v, bool) else (f'"{v}"' if isinstance(v, str) else v)
+        args += ["-D", f"{k}={val}"]
+    args.append(str(scad))
+    job = run_tool(args, inputs=[scad], outputs=[out_stl], jobs_dir=jobs_dir, tool="openscad", tool_version=version)
+    if not job.ok:
+        raise LabToolError(f"OpenSCAD couldn't render {scad.name}: {job.stderr.strip()[-400:]}", job)
+    return job
