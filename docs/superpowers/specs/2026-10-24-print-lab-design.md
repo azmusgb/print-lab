@@ -92,8 +92,9 @@ print-lab/
   lab/profiles/    appearance · fit · strength (defect lists, evidence checklists, coupon kinds, orientation weights)
   lab/rules/       one module per rule + its tests
   lab/experiments/ planner (one factor, smallest test, override request) · compare
+  lab/history/     inventory · revisions · scad_diff · mesh_diff · slicer_diff · lineage · evidence · summarize
   lab/api.py       client for Local AI /api/lab/*
-  lab/cli.py       lab inspect | orient | coupon | slice | gcode | plan | submit | compare
+  lab/cli.py       lab inspect | orient | coupon | slice | gcode | plan | submit | compare | history ingest | audit | timeline
   lab/mcp.py       analyze_part, recommend_orientation, generate_test, slice_test, inspect_gcode, compare_results
   tests/           pytest; fixtures from real tile versions
 ```
@@ -194,6 +195,61 @@ an override, which needs all of:
 6. **The owner approves**; the AI can only request. The reason is stored.
 7. The outcome is recorded; the page shows the override success rate against changes tested small first.
 
+## Past revisions: forensic history
+
+The tile's old files are evidence, not context to paste into a chat. Reading 218 files and "reasoning about them" is
+slow, costly and invites the same misreadings the lab exists to stop. `lab history ingest <folder>` first turns them
+into a measured revision history, **with no AI reasoning in that pass**; the AI then reasons over the compressed result
+and opens raw files only when it needs to.
+
+**What exists for the tile** (Downloads, 24 Oct): 106 STL, 42 SCAD, 35 3MF, 25 JSON presets, 2 G-code, a preset
+`.bbsflmt`, about 20 phone photos (named `IMG_*`, not by version), the AI's own audit (v29–v58), versions v2 and
+v15–v58 (no v45).
+
+1. **Inventory and fingerprint** every file: SHA-256, size, dates, type, version guess from the name. Identical files
+   under different names collapse into one artefact.
+2. **Group into revisions** with a confidence per grouping (name, content, timestamps).
+3. **SCAD facts:** parameters (normalised, so `wall = 1.4;` and `wall=1.400;` are the same), modules added, removed or
+   changed, geometry literals changed. Formatting and comments are ignored.
+4. **Mesh facts** (every STL, via the same geometry code as `lab inspect`): dimensions, volume, area, components,
+   watertightness, minimum wall estimate, bed contact, facet orientation (down/up area, switch heights),
+   cross-section events by Z (outline changes). Two very different SCADs that make the same mesh count as the same
+   geometry; a small parameter change that reshapes the mesh is caught.
+5. **3MF facts:** what was actually prepared for printing: printer, nozzle profile, layer height, line widths, walls,
+   seam, speeds, accelerations, cooling, minimum layer time, brim, supports, orientation, scale, plate placement,
+   filament. Checked against the file name, the presets and the SCAD (this is how the v56 "0.6 nozzle" file sliced
+   with 0.4 profiles is found automatically).
+6. **G-code facts** where a sliced file exists: per-Z layer time, wall speeds, fan, acceleration, seam position.
+7. **Lineage:** each revision's parent and, on each edge, exactly what changed (geometry, slicer, nozzle, filament).
+8. **Evidence grade per transition**, from how many independent factors changed and whether what printed is known:
+   A controlled (one factor) · B mostly controlled · C several factors · D cause can't be read from the outcome · F what
+   actually printed is unknown or contradicts the file name. Later reasoning weights A/B heavily and treats D/F as
+   weak.
+9. **Outcomes:** taken from the audit's tables and from photos matched to the revision printed just before them (by
+   time), each match shown for the owner to confirm or correct. An outcome nobody confirmed stays "unconfirmed".
+
+Then the AI produces, from those records only:
+
+- a **change matrix** (revision, geometry change, slicer change, nozzle, result, evidence grade) and the history
+  grouped into **eras** (single tiles, stabilisers, back-to-back pairs, closed backs with ribs), each expandable;
+- **co-occurrence** of defects with features across revisions (e.g. the mid-height band against facet switch height,
+  tabs, pads, joins, seams, slowdown height), so persistent correlates stand out;
+- **branches that never touched the suspected factor** (e.g. versions that changed tabs, pads and seams while the
+  face's facet orientation stayed the same);
+- **known truths** in three groups: strong evidence, supported hypotheses, still unknown. These seed the project's
+  hypotheses and cases with their confidence;
+- a **"tried before" index**: before any new experiment is planned, a similar past change is shown with its outcome
+  and evidence grade ("rear ribs, v57: joins too thin to print, grade C — don't repeat without a new hypothesis").
+
+The normalised history is stored once (`history/` JSON files in the engine's project folder, then imported into Local
+AI in Stage 1B), so later analysis never re-reads the raw files. The past revisions also become the **regression
+corpus** for rules: e.g. `feature-below-line-width` must flag v57 and not v56 or v58; `ghost-gap` must flag v31/v32 and
+not v33; `fused-gap` must flag v42–v46 and not v47 onward; `nozzle-mismatch` must flag v56's 0.6 file.
+
+Before EXP-001 is planned, `lab history audit` prints the tile's audit: revisions reconstructed (and how confidently),
+controlled versus stacked transitions, unusable comparisons, strong findings, open hypotheses with their confidence,
+and the recommended next experiment with its reason.
+
 ## Rules
 
 A rule is a Python module with test cases from real project files. A finding carries severity, location, why and the
@@ -273,7 +329,9 @@ Phone first.
 
 ## Testing
 
-- **Engine (pytest):** fixtures from real tile versions (v30, v53, v56, v57, v58). `overhang-flip-on-A` finds the
+- **Engine (pytest):** fixtures from real tile versions (v30, v31, v33, v42, v47, v53, v56, v57, v58); history ingestion is
+  tested on a copy of the real Downloads set (duplicate collapse, revision grouping, the v56 nozzle mismatch, grades).
+  Rule fixtures: `overhang-flip-on-A` finds the
   switch at Z ≈ 82 mm on v56; `feature-below-line-width` catches v57's joins; the G-code reader is tested on a real
   sliced v56; coupon generation produces closed, printable meshes; every rule has a flagged and a clean case.
 - **Local AI:** unit tests for `/api/lab/*`, the one-factor check, test-kind policy and the override requirements;
@@ -288,7 +346,7 @@ Each stage is usable on its own; the tile goes through the lab from stage 1.
 
 | # | Stage | Delivers |
 |---|---|---|
-| 1A | Useful engine (no Local AI yet) | `lab inspect / orient / coupon / slice / gcode` on the real tile; four checks (mesh validity, facet orientation, minimum feature width, bed fit); experiments as local JSON files; Job records for every tool run. **EXP-001:** does orientation affect the band? An orientation coupon plate at 0, 10, 15 and 20°, everything else controlled. **EXP-002:** does slicer slowdown affect the band? At EXP-001's best angle: normal slowdown vs slowdown off |
+| 1A | Useful engine (no Local AI yet) | `lab inspect / orient / coupon / slice / gcode` on the real tile; four checks (mesh validity, facet orientation, minimum feature width, bed fit); experiments as local JSON files; Job records for every tool run; `lab history ingest / audit / timeline` over the tile's past revisions, with the audit reviewed before EXP-001. **EXP-001:** does orientation affect the band? An orientation coupon plate at 0, 10, 15 and 20°, everything else controlled. **EXP-002:** does slicer slowdown affect the band? At EXP-001's best angle: normal slowdown vs slowdown off |
 | 1B | Records and enforcement | `/api/lab/*` and the Local AI tables; the server checks (one factor, test kind, overrides); the local JSON experiments imported; the remaining 5 seed rules |
 | 2 | Print lab page | phone verdicts, defect marking, the evidence wipe, why this test, ladder, notebook, override approvals |
 | 3 | Learning and cases | the confidence ladder, cases, case search, promote case → rule as PRs, rule scores, memory-core indexing |
@@ -316,4 +374,5 @@ Each stage is usable on its own; the tile goes through the lab from stage 1.
 | D13 | Knowledge growth | results become cases; only proven, computable lessons are promoted to rules (owner-approved) |
 | D14 | Profile weights | hand-set and fixed in v1; results recorded, never auto-tuned |
 | D15 | Failures | no partial artefacts published; every tool run's diagnostics kept |
+| D17 | Past revisions | ingested once into a measured history (fingerprints, SCAD/mesh/3MF/G-code facts, lineage, evidence grades, confirmed outcomes); the AI reasons over that, not raw files; the revisions become the rule regression corpus |
 | D16 | Print identity | experiment and print run ids in 3MF metadata, manifest, G-code comment and file name; matched in that order, then manual |
