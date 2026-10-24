@@ -150,7 +150,7 @@ def cmd_history(args) -> int:
     if args.action == "ingest":
         folder = Path(args.folder).resolve()
         arts = inventory.inventory(folder)
-        mine = [a for a in arts if a.lineage == args.project]
+        mine = inventory.dedupe([a for a in arts if a.lineage == args.project])
         revs = revisions.revisions(mine, args.project)
 
         # Only this project's files are written, with paths relative to the folder: a Downloads folder also holds
@@ -159,8 +159,7 @@ def cmd_history(args) -> int:
             return str(Path(p).relative_to(folder)) if p else p
 
         out_arts = [{**asdict(a), "path": rel(a.path),
-                     "duplicate_of": rel(a.duplicate_of) if a.duplicate_of and a.duplicate_of.startswith(str(folder))
-                     and inventory.describe(Path(a.duplicate_of)).lineage == args.project else None} for a in mine]
+                     "duplicate_of": rel(a.duplicate_of)} for a in mine]
         out_revs = [{**asdict(r), "artifacts": [rel(p) for p in r.artifacts]} for r in revs]
         (hdir / "inventory.json").write_text(json.dumps(out_arts, indent=2))
         (hdir / "revisions.json").write_text(json.dumps(out_revs, indent=2, default=str))

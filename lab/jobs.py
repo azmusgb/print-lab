@@ -62,3 +62,15 @@ def run_tool(args: list[str], *, inputs: list[Path], outputs: list[Path], jobs_d
     job.ok = job.exit_code == 0 and len(job.outputs_present) == len(outputs)
     (jobs_dir / f"{job.id}.json").write_text(json.dumps(asdict(job), indent=2))
     return job
+
+
+def failed_job(*, jobs_dir: Path, tool: str, message: str, tool_version: str | None = None,
+               inputs: list[Path] = ()) -> Job:
+    """A Job for a tool that couldn't run at all (missing, or the wrong version), so the failure is still on record."""
+    jobs_dir.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+    job = Job(id=f"job-{stamp}-{secrets.token_hex(2)}", tool=tool, tool_version=tool_version, command=[],
+              input_sha256={str(p): sha256(Path(p)) for p in inputs if Path(p).exists()}, exit_code=-1, stdout="",
+              stderr=message, started=_now(), ended=_now())
+    (jobs_dir / f"{job.id}.json").write_text(json.dumps(asdict(job), indent=2))
+    return job

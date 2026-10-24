@@ -59,7 +59,9 @@ def _measure(m) -> dict:
 
 
 def revisions(artifacts: list[Artifact], lineage: str) -> list[Revision]:
-    mine = [a for a in artifacts if a.lineage == lineage and a.version is not None and not a.duplicate_of]
+    from lab.history.inventory import dedupe
+    mine = [a for a in dedupe([a for a in artifacts if a.lineage == lineage]) if a.version is not None
+            and not a.duplicate_of]
     out = []
     for v in sorted({a.version for a in mine}):
         arts = [a for a in mine if a.version == v]

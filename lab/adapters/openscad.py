@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 
 INSTALL = "brew install --cask openscad@snapshot"
+MIN_YEAR = 2025
 _CANDIDATES = ["/opt/homebrew/bin/openscad", "/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD"]
 
 
@@ -24,9 +25,18 @@ def openscad_binary() -> tuple[Path, str]:
 
 def render(scad: Path, out_stl: Path, defines: dict, jobs_dir: Path):
     """Render scad to out_stl with the Manifold backend; -D name=value for each define. Raises LabToolError."""
-    from lab.jobs import LabToolError, run_tool
+    from lab.jobs import LabToolError, failed_job, run_tool
 
-    binary, version = openscad_binary()
+    try:
+        binary, version = openscad_binary()
+    except FileNotFoundError as e:
+        raise LabToolError(str(e), failed_job(jobs_dir=jobs_dir, tool="openscad", message=str(e), inputs=[scad])) from None
+    year = re.match(r"(\d{4})", version)
+    if not year or int(year.group(1)) < MIN_YEAR:
+        msg = (f"OpenSCAD {version} is too old: the lab needs a {MIN_YEAR} or later build with the Manifold backend. "
+               f"Install it: {INSTALL}")
+        raise LabToolError(msg, failed_job(jobs_dir=jobs_dir, tool="openscad", message=msg, tool_version=version,
+                                           inputs=[scad]))
     args = [str(binary), "--backend=manifold", "-o", str(out_stl)]
     for k, v in defines.items():
         val = ("true" if v else "false") if isinstance(v, bool) else (f'"{v}"' if isinstance(v, str) else v)

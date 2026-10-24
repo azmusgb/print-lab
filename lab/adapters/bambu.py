@@ -62,10 +62,19 @@ def list_objects(path_3mf: Path) -> list[ObjectInfo]:
 
 def slice_3mf(path_3mf: Path, out_dir: Path, plate: int, jobs_dir: Path) -> Path:
     """Slice one plate with Bambu Studio; returns the sliced .gcode.3mf. Raises LabToolError."""
-    from lab.jobs import LabToolError, run_tool
+    from lab.jobs import LabToolError, failed_job, run_tool
 
-    binary, version = bambu_binary()
     path_3mf, out_dir, jobs_dir = Path(path_3mf).resolve(), Path(out_dir).resolve(), Path(jobs_dir).resolve()
+    try:
+        binary, version = bambu_binary()
+    except FileNotFoundError as e:
+        raise LabToolError(str(e), failed_job(jobs_dir=jobs_dir, tool="bambu-studio", message=str(e),
+                                               inputs=[path_3mf])) from None
+    if version != EXPECTED_VERSION:
+        msg = (f"Bambu Studio {version} is installed, but the lab is checked against {EXPECTED_VERSION}; slices from "
+               "another version can behave differently. Install that version, or update the lab's expected version.")
+        raise LabToolError(msg, failed_job(jobs_dir=jobs_dir, tool="bambu-studio", message=msg, tool_version=version,
+                                           inputs=[path_3mf]))
     out_dir.mkdir(parents=True, exist_ok=True)
     name = path_3mf.name.removesuffix(".3mf") + ".gcode.3mf"
     out = out_dir / name

@@ -12,8 +12,8 @@ KINDS = {".scad": "scad", ".stl": "stl", ".3mf": "3mf", ".json": "json", ".gcode
 LINEAGES = {"hex-tile": {"hex_wall_tile", "hexagon_wall_tile", "hexagon_wall_tile_pair", "hex_pair", "hex_tile",
                          "hexagon", "generic_pla_hex_tile", "bambu_pla_matte_hex_tile"}}
 
-_VERSION = re.compile(r"(?:^|[_ \-])v(\d+)(?=[_ .\-@]|$)", re.I)
-_SIZE = re.compile(r"[_ \-](\d+)in(?=[_ .\-]|$)", re.I)
+_VERSION = re.compile(r"(?:^|[_ \-–])v(\d+)(?=[_ .\-–@]|$)", re.I)
+_SIZE = re.compile(r"[_ \-–](\d+)in(?=[_ .\-–]|$)", re.I)
 _NOZZLE = re.compile(r"(0\.[46])\s*nozzle", re.I)
 
 
@@ -36,13 +36,15 @@ def _stem(name: str) -> str:
     base = name.split(".")[0]
     m = _VERSION.search(base)
     stem = base[: m.start()] if m else base
-    return re.sub(r"[\s\-]+", "_", stem.strip()).lower().strip("_")
+    return re.sub(r"[\s\-–]+", "_", stem.strip()).lower().strip("_")
 
 
 def describe(path: Path) -> Artifact:
     name = path.name
     stem = _stem(name)
     lineage = next((k for k, stems in LINEAGES.items() if stem in stems), None)
+    if stem == "hexagon" and not re.search(r"_x2d", name, re.I):  # bare 'hexagon' is too generic on its own
+        lineage = None
     v, s, n = _VERSION.search(name), _SIZE.search(name), _NOZZLE.search(name)
     st = path.stat()
     return Artifact(path=str(path), sha256=sha256(path), size=st.st_size,
@@ -57,8 +59,15 @@ def inventory(folder: Path) -> list[Artifact]:
     first file that has it."""
     arts = sorted((describe(p) for p in Path(folder).iterdir() if p.is_file() and not p.name.startswith(".")),
                   key=lambda a: (a.mtime, a.path))
+    return dedupe(arts)
+
+
+def dedupe(arts: list[Artifact]) -> list[Artifact]:
+    """Mark each file whose content an earlier file in this list already has. Run it on the project's own files so
+    an unrelated older copy elsewhere in the folder never hides a project file."""
     first: dict[str, str] = {}
     for a in arts:
+        a.duplicate_of = None
         if a.sha256 in first:
             a.duplicate_of = first[a.sha256]
         else:

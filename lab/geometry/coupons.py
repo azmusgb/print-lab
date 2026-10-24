@@ -15,6 +15,10 @@ def height_strip(m: trimesh.Trimesh, z0: float, z1: float) -> trimesh.Trimesh:
     """The model between heights z0 and z1, full width, set down on the bed."""
     if not m.is_watertight:
         raise ValueError("The mesh isn't closed, so a coupon can't be cut from it. Fix the model first (mesh-validity).")
+    from lab.geometry.mesh import solid_pieces
+    if (n := solid_pieces(m)) > 2:
+        raise ValueError(f"The model is {n} separate pieces, so a coupon cut from it can't be trusted. Fix the model "
+                         "first (mesh-validity).")
     lo, hi = m.bounds
     pad = 1.0
     box = mf.Manifold.cube([hi[0] - lo[0] + 2 * pad, hi[1] - lo[1] + 2 * pad, z1 - z0]).translate(

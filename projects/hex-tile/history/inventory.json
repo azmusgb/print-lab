@@ -13,19 +13,6 @@
     "duplicate_of": null
   },
   {
-    "path": "hexagon.stl",
-    "sha256": "8878ca75f8a224cc8c23515f7b97e2f8c95e8d3c61950a622315b03da450bd03",
-    "size": 28084,
-    "mtime": "2026-10-14T13:30:59+00:00",
-    "kind": "stl",
-    "stem": "hexagon",
-    "lineage": "hex-tile",
-    "version": null,
-    "size_in": null,
-    "nozzle": null,
-    "duplicate_of": null
-  },
-  {
     "path": "hexagon_wall_tile_v16.scad",
     "sha256": "2733506fc30e0c2d96cae90d96c33f85d99d3219ef363a8274a7b731535f239d",
     "size": 8239,
@@ -646,19 +633,6 @@
     "lineage": "hex-tile",
     "version": 29,
     "size_in": 6,
-    "nozzle": null,
-    "duplicate_of": null
-  },
-  {
-    "path": "hexagon.3mf",
-    "sha256": "343407101df36e36ee29e49776f18e2e59c9e14551769b0bc334b486fe56e577",
-    "size": 76324,
-    "mtime": "2026-10-15T06:00:39+00:00",
-    "kind": "3mf",
-    "stem": "hexagon",
-    "lineage": "hex-tile",
-    "version": null,
-    "size_in": null,
     "nozzle": null,
     "duplicate_of": null
   },
