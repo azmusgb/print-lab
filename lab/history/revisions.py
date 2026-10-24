@@ -21,6 +21,7 @@ class Revision:
     settings: dict | None = None
     nozzle_profile: str | None = None
     nozzle_in_name: str | None = None
+    scad_code: str | None = None
     mesh: dict = field(default_factory=dict)
 
 
@@ -40,6 +41,16 @@ def scad_params(path: Path) -> dict:
     return {k: _value(v) for k, v in _PARAM.findall(Path(path).read_text(errors="replace"))}
 
 
+def scad_code(path: Path) -> str:
+    """The SCAD source without comments, blank lines and top-level parameter assignments: changes here are changes to
+    how the model is built, not to its numbers."""
+    import hashlib
+    text = re.sub(r"//[^\n]*|/\*.*?\*/", "", Path(path).read_text(errors="replace"), flags=re.S)
+    text = _PARAM.sub("", text)
+    body = "\n".join(l.strip() for l in text.splitlines() if l.strip())
+    return hashlib.sha256(body.encode()).hexdigest()[:16]
+
+
 def _measure(m) -> dict:
     facts = asdict(mesh_facts(m))
     facts["switches"] = [asdict(s) for s in facet_switches(front_facets(m))]
@@ -55,6 +66,7 @@ def revisions(artifacts: list[Artifact], lineage: str) -> list[Revision]:
         rev = Revision(version=v, artifacts=[a.path for a in arts])
         for a in (a for a in arts if a.kind == "scad"):
             rev.scad_params = scad_params(Path(a.path))
+            rev.scad_code = scad_code(Path(a.path))
         projects = [a for a in arts if a.kind == "3mf"]
         if projects:
             p = next((a for a in projects if a.nozzle == "0.4"), projects[0])

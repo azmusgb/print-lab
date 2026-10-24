@@ -1,8 +1,9 @@
 from lab.findings import Finding
+from lab.geometry.mesh import solid_pieces
 
 
 def check(m, ctx):
-    bodies = len(m.split(only_watertight=False))
+    bodies = solid_pieces(m)
     if m.is_watertight and bodies <= 2:
         return []
     problem = "isn't closed (it has holes)" if not m.is_watertight else f"is {bodies} separate pieces"

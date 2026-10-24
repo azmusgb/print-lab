@@ -59,3 +59,19 @@ def test_audit_lists_ripple_versions():
     line = next(l for l in text.splitlines() if l.startswith("- upper-edge ripple"))
     for v in ("v36", "v37", "v39", "v51", "v56"):
         assert v in line
+
+
+def test_scad_code_change_counts():
+    a, b = rev(44, {"skin": 1.2}), rev(46, {"skin": 1.2})
+    a.scad_code, b.scad_code = "aaa", "bbb"
+    t = transitions([a, b])[0]
+    assert t.factors == 1 and "scad code" in t.scad_changes
+
+
+def test_missing_scad_falls_back_to_mesh():
+    a = rev(41, settings={"layer_height": "0.2"})
+    b = rev(42, {"skin": 1.2}, settings={"layer_height": "0.2"})
+    a.mesh = {"6in": {"volume_cm3": 60.14}}
+    b.mesh = {"6in": {"volume_cm3": 60.22 * 1.1}}
+    t = transitions([a, b])[0]
+    assert "model (6in volume)" in t.scad_changes and t.factors == 1

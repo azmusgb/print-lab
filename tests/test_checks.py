@@ -57,3 +57,27 @@ def test_non_watertight_reported_not_crashing():
     b.apply_translation([0, 0, -b.bounds[0][2]])
     fs = run_checks(b, nozzle=0.4)
     assert "mesh-validity" in rules(fs, "blocking")
+
+
+def hollow_pair():
+    tiles = []
+    for dx in (0, 25):
+        outer = trimesh.creation.box((20, 10, 30)).apply_translation([dx, 0, 0])
+        inner = trimesh.creation.box((16, 6, 26)).apply_translation([dx, 0, 0])
+        inner.invert()  # a sealed void inside, like v57/v58's closed backs
+        tiles += [outer, inner]
+    pair = trimesh.util.concatenate(tiles)
+    pair.apply_translation([0, 0, -pair.bounds[0][2]])
+    return pair
+
+
+def test_hollow_pair_is_two_pieces():
+    pair = hollow_pair()
+    assert len(pair.split(only_watertight=False)) == 4  # what the old count saw: it called this 4 pieces
+    assert "mesh-validity" not in rules(run_checks(pair, nozzle=0.4))
+
+
+def test_v56_single_layer_sliver_not_blocking(hex_dir):
+    m = load_object(hex_dir / "hexagon_v56_X2D_0.6nozzle.3mf", "6in")
+    fs = run_checks(m, nozzle=0.4)
+    assert not any(f.rule == "feature-below-line-width" and f.severity == "blocking" for f in fs)

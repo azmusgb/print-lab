@@ -3,7 +3,9 @@ from lab.geometry.sections import thin_regions
 
 
 def check(m, ctx):
+    # A sub-line sliver on one or two layers is a facet edge crossing a layer plane, not a feature: ignore it.
     one = [z for z, _ in thin_regions(m, ctx.line_w, max_lines=1.0)]
+    one = one if len(one) >= 3 else []
     two = thin_regions(m, ctx.line_w, max_lines=2.0)
     if not one and not two:
         return []

@@ -42,6 +42,13 @@ def transitions(revs: list[Revision]) -> list[Transition]:
     out = []
     for a, b in zip(revs, revs[1:]):
         scad = _diff(a.scad_params, b.scad_params) if a.scad_params and b.scad_params else {}
+        if a.scad_code and b.scad_code and a.scad_code != b.scad_code:
+            scad["scad code"] = [a.scad_code, b.scad_code]
+        if not (a.scad_params and b.scad_params):  # no source on one side: compare the measured meshes instead
+            for size in sorted(set(a.mesh) & set(b.mesh)):
+                va, vb = a.mesh[size].get("volume_cm3"), b.mesh[size].get("volume_cm3")
+                if va and vb and abs(va - vb) / max(va, vb) > 0.0005:
+                    scad[f"model ({size} volume)"] = [va, vb]
         sett = _diff(a.settings or {}, b.settings or {}, _IGNORE_PARTS) if a.settings and b.settings else {}
         nozzle = (a.nozzle_profile or "") != (b.nozzle_profile or "")
         factors = len(scad) + len(sett) + int(nozzle)
