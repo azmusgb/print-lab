@@ -65,6 +65,7 @@ def slice_3mf(path_3mf: Path, out_dir: Path, plate: int, jobs_dir: Path) -> Path
     from lab.jobs import LabToolError, run_tool
 
     binary, version = bambu_binary()
+    path_3mf, out_dir, jobs_dir = Path(path_3mf).resolve(), Path(out_dir).resolve(), Path(jobs_dir).resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
     name = path_3mf.name.removesuffix(".3mf") + ".gcode.3mf"
     out = out_dir / name

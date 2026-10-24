@@ -95,3 +95,11 @@ def test_slice_written_print_3mf(tmp_path, hex_dir):
                             [("box", trimesh.creation.box((20, 20, 10)), (128.0, 128.0))], out, {})
     sliced = bambu.slice_3mf(out, tmp_path, 1, tmp_path / "jobs")
     assert "; CHANGE_LAYER" in bambu.extract_gcode(sliced, 1)
+
+
+@pytest.mark.slow
+def test_slice_relative_path(tmp_path, hex_dir, monkeypatch):
+    monkeypatch.chdir(hex_dir.parent.parent.parent)
+    rel = hex_dir.relative_to(hex_dir.parent.parent.parent) / "hexagon_v57_X2D_0.4nozzle.3mf"
+    sliced = bambu.slice_3mf(rel, tmp_path / "out", 1, tmp_path / "jobs")
+    assert sliced.exists()
