@@ -1,0 +1,33 @@
+{
+    "type": "process",
+    "from": "User",
+    "inherits": "0.20mm Standard @BBL X2D",
+    "is_custom_defined": "0",
+    "name": "Hex Tile v55 0.20mm @BBL X2D",
+    "print_settings_id": "Hex Tile v55 0.20mm @BBL X2D",
+    "version": "2.8.2.61",
+    "enable_support": "0",
+    "wall_loops": "3",
+    "seam_position": "back",
+    "reduce_crossing_wall": "1",
+    "brim_type": "outer_only",
+    "brim_width": "10",
+    "brim_object_gap": "0.1",
+    "outer_wall_speed": [
+        "80"
+    ],
+    "outer_wall_acceleration": [
+        "1500"
+    ],
+    "default_acceleration": [
+        "6000"
+    ],
+    "travel_acceleration": [
+        "8000"
+    ],
+    "inner_wall_speed": [
+        "250"
+    ],
+    "precise_outer_wall": "1",
+    "elefant_foot_compensation": "0.2"
+}

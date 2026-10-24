@@ -1,0 +1,75 @@
+{
+  "id": "E-001",
+  "project": "hex-tile",
+  "question": "Does v58 remove the mid-height line?",
+  "hypothesis": "The mid-height line on v53\u2013v56 comes from the upper-edge join starting at the widest point (66 mm); v58 has no join that starts partway up.",
+  "prediction": "The v56 strip shows a line at about 66 mm (6 mm above the strip's base); the v58 strip shows none.",
+  "why_this_test": "The line appears from v53, when the join began at mid-height, and stays while that join is kept; v51 (no such join) had none. A 40 mm strip across that height answers it in about an hour instead of a 3\u20134 hour pair.",
+  "test_kind": "height_strip",
+  "factor": {
+    "name": "model_version",
+    "values": [
+      "v56",
+      "v58"
+    ],
+    "unit": ""
+  },
+  "controlled": {
+    "settings": "v55 0.4 process and filament (from the v57 0.4 project)",
+    "nozzle": "0.4",
+    "layer_height": "0.2",
+    "plate": "textured PEI",
+    "strip": "Z 60\u2013100 mm of the 6\" pair"
+  },
+  "dependent_adjustments": {
+    "nozzle_variant": "Both strips are cut from the 0.6-variant files (the 0.4 v58 files weren't downloaded); both print on the 0.4 so only the model differs.",
+    "placement": "Two strips on one plate, 25 mm apart, so they share every layer's conditions."
+  },
+  "baseline": {
+    "filament_dried": null,
+    "vibration_calibration": null,
+    "nozzle_confirmed": null,
+    "plate": "textured PEI"
+  },
+  "status": "sliced",
+  "blocked_reason": "",
+  "print_runs": [
+    {
+      "id": "PR-001",
+      "file": "hex-tile_E001_PR001.3mf",
+      "artifact_sha256": "cef83035752fbb8c50851497c5778f80887e85f7d1b107bfb83023461d419c82",
+      "variants": [
+        "v56 strip Z60-100",
+        "v58 strip Z60-100"
+      ],
+      "sliced_estimate": "2 h 52 min",
+      "filament_g": 53.94,
+      "layers": 200,
+      "slicer_events_near_join": {
+        "outer_wall_speed_change": false,
+        "speed_change_z": [],
+        "fan_change": false,
+        "fan_change_z": [],
+        "layer_time_jump": false,
+        "layer_time_jump_z": []
+      }
+    }
+  ],
+  "findings": [
+    {
+      "rule": "baseline-incomplete",
+      "severity": "info",
+      "where": "filament_dried, vibration_calibration, nozzle_confirmed",
+      "why": "Without these baseline conditions the print's result is graded F.",
+      "fix": "Dry the filament, run the printer's vibration calibration, confirm the nozzle and plate, and record them.",
+      "data": {
+        "missing": [
+          "filament_dried",
+          "vibration_calibration",
+          "nozzle_confirmed"
+        ]
+      }
+    }
+  ],
+  "jobs": []
+}

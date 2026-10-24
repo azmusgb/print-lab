@@ -19,7 +19,8 @@ stays on Bambu cloud, so the lab hands over a ready 3MF to open in Bambu Studio 
 ## What the review found (why the design looks like this)
 
 - **The face has two kinds of facets.** In the upright print orientation, 8 of the 14 front facets point down (mild
-  overhang, to -7.8°) and 6 point up (to +8.6°), switching at about mid-height. Leaning the tile back 15° makes every
+  overhang, to -7.8°) and 6 point up (to +8.6°). Measured on the real v53 6" mesh, the front's area-weighted facing
+  switches from down to up at 89.75 mm on both faces (68 % of the 132 mm height, not mid-height). Leaning the tile back 15° makes every
   facet face up (+7.2° to +23.6°). **Correction after reading the chat history:** the v51 6" pair (photos IMG_0633–0641,
   20 Oct) had the same facets and, in diffuse light, no line across the face; the mid-height line appears from v53,
   when the upper-edge join began at mid-height, and stays through v54–v56, which kept that join. So the mid-height

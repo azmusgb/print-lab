@@ -1,0 +1,37 @@
+[project]
+name = "lab"
+version = "0.1.0"
+description = "Print lab: experiment engine for 3D printing (OpenSCAD, trimesh, manifold3d, Bambu Studio)"
+readme = "README.md"
+authors = [
+    { name = "azmusgb", email = "36898133+azmusgb@users.noreply.github.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "manifold3d>=3.5.4",
+    "networkx>=3.7",
+    "numpy>=2.5.4",
+    "rtree>=1.4.1",
+    "scipy>=1.18.1",
+    "shapely>=2.2.0",
+    "trimesh>=5.2.0",
+]
+
+[project.scripts]
+lab = "lab.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.13.5,<0.14.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = ""
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["slow: needs OpenSCAD or Bambu Studio"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
