@@ -30,7 +30,17 @@
         "50"
       ]
     ],
-    "unit": "mm/s"
+    "unit": "mm/s",
+    "requested_mm_s": [
+      250,
+      80
+    ],
+    "effective_mm_s": [
+      147,
+      80
+    ],
+    "effective_source": "measured from the sliced G-code: inner-wall moves run at 147 mm/s for 99% of their length in E-002 (requested 250) and 80 mm/s in E-003",
+    "limiting_cause": "the filament profile's maximum volumetric flow caps the 250 mm/s request"
   },
   "controlled": {
     "model": "v58 (0.6-variant geometry)",
