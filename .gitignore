@@ -7,3 +7,4 @@ result.json
 __pycache__/
 projects/*/prints/sliced/
 projects/*/jobs/
+.DS_Store

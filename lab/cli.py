@@ -16,6 +16,17 @@ def project_dir(name: str) -> Path:
     return Path(os.environ.get("LAB_HOME", ROOT)) / "projects" / name
 
 
+def _strict(o):
+    """JSON has no NaN: a measurement that doesn't exist (an open mesh's volume) is null."""
+    if isinstance(o, float) and o != o:
+        return None
+    if isinstance(o, dict):
+        return {k: _strict(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [_strict(v) for v in o]
+    return o
+
+
 def _load(args):
     from lab.geometry.mesh import load_mesh
     return load_mesh(Path(args.file), args.object)
@@ -25,7 +36,7 @@ def _nozzle(args) -> float:
     import re
     if args.nozzle:
         return float(args.nozzle)
-    m = re.search(r"(0\.[46])\s*nozzle", Path(args.file).name)
+    m = re.search(r"(0\.[46])\s*nozzle", Path(args.file).name, re.I)
     if m:
         return float(m.group(1))
     if Path(args.file).suffix == ".3mf":
@@ -55,8 +66,9 @@ def cmd_inspect(args) -> int:
     jumps = [j for j in outline_jumps(layer_outlines(m)) if j[0] > 5]
     fs = run_checks(m, nozzle=_nozzle(args), settings=settings, file_name=path.name)
     if args.json:
-        print(json.dumps({"facts": asdict(facts), "switches": [asdict(s) for s in sw], "outline_jumps": jumps,
-                          "findings": [asdict(f) for f in fs]}, indent=2))
+        print(json.dumps(_strict({"facts": asdict(facts), "switches": [asdict(s) for s in sw],
+                                  "outline_jumps": jumps, "findings": [asdict(f) for f in fs]}),
+                         indent=2, allow_nan=False))
     else:
         e = [f.elevation_deg for f in facets]
         print(f"{path.name}" + (f" [{args.object}]" if args.object else ""))
@@ -95,10 +107,13 @@ def cmd_coupon(args) -> int:
 
 
 def cmd_slice(args) -> int:
-    from lab.adapters.bambu import slice_3mf
+    from lab.adapters.bambu import slice_with_job
+    from lab.experiments import link_slice_job
     path = Path(args.file)
     pdir = project_dir(args.project)
-    out = slice_3mf(path, Path(args.out_dir) if args.out_dir else path.parent, args.plate, pdir / "jobs")
+    out, job = slice_with_job(path, Path(args.out_dir) if args.out_dir else path.parent, args.plate, pdir / "jobs")
+    if exp := link_slice_job(pdir, path, job.id):
+        print(f"Slice job {job.id} recorded on {exp}")
     info = zipfile.ZipFile(out).read("Metadata/slice_info.config").decode()
     import re
     pred = re.search(r'key="prediction" value="(\d+)"', info)
