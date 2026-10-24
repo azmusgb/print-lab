@@ -374,5 +374,5 @@ Each stage is usable on its own; the tile goes through the lab from stage 1.
 | D13 | Knowledge growth | results become cases; only proven, computable lessons are promoted to rules (owner-approved) |
 | D14 | Profile weights | hand-set and fixed in v1; results recorded, never auto-tuned |
 | D15 | Failures | no partial artefacts published; every tool run's diagnostics kept |
-| D17 | Past revisions | ingested once into a measured history (fingerprints, SCAD/mesh/3MF/G-code facts, lineage, evidence grades, confirmed outcomes); the AI reasons over that, not raw files; the revisions become the rule regression corpus |
 | D16 | Print identity | experiment and print run ids in 3MF metadata, manifest, G-code comment and file name; matched in that order, then manual |
+| D17 | Past revisions | ingested once into a measured history (fingerprints, SCAD/mesh/3MF/G-code facts, lineage, evidence grades, confirmed outcomes); the AI reasons over that, not raw files; the revisions become the rule regression corpus |
