@@ -68,8 +68,15 @@ def printed_build(exp: dict) -> dict | None:
 
 
 def judged_window(exp: dict) -> tuple[float, float] | None:
-    """The heights being judged, in the strip's own heights: the strip without its 6 mm margins, when known."""
+    """The heights being judged, in the strip's own heights: around a marked defect (±10 mm), else the strip
+    without its 6 mm margins, when known; None means the whole strip."""
     spec = exp.get("build_spec") or {}
+    marks = [m["defect_z_mm"] for m in ((exp.get("owner_verdict") or {}).get("marks") or [])
+             if m.get("defect_z_mm") is not None]
+    if marks and spec.get("z"):
+        z0, z1 = spec["z"]
+        lo, hi = max(min(marks) - 10, z0), min(max(marks) + 10, z1)
+        return (lo - z0, hi - z0)
     if spec.get("judged"):
         z0, z1 = spec["z"]
         j0, j1 = spec["judged"]
@@ -77,14 +84,9 @@ def judged_window(exp: dict) -> tuple[float, float] | None:
     return None
 
 
-def _median(build: dict, window) -> float | None:
-    from lab.loop.plate import median_layer_time
-    m = build["measured"]
-    return median_layer_time(m["layer_time_profile"], window) if m.get("layer_time_profile") else m.get(
-        "layer_time_median_s")
 
-
-def comparison_validity(exp: dict, others: dict[str, dict], tolerance_pct: float) -> dict:
+def comparison_validity(exp: dict, others: dict[str, dict], tolerance_pct: float,
+                        production: dict | None = None) -> dict:
     """valid / confounded / unknown, with a coded reason for each problem."""
     reasons = []
     v = exp.get("owner_verdict") or {}
@@ -115,13 +117,22 @@ def comparison_validity(exp: dict, others: dict[str, dict], tolerance_pct: float
             if not theirs:
                 reasons.append({"code": "reference_not_printed", "status": "unknown", "variant": ref})
                 continue
-            a = _median(mine, window)
-            b = _median(theirs, judged_window(other)) if theirs.get("measured") else None
-            if not a or not b:
+            from lab.loop.plate import plates_match
+            pa = (mine["measured"] or {}).get("layer_time_profile")
+            pb = (theirs.get("measured") or {}).get("layer_time_profile")
+            r = plates_match(pa, pb, window, tolerance_pct) if pa and pb else {"match": None}
+            if r["match"] is None:
                 reasons.append({"code": "reference_unmeasurable", "status": "unknown", "variant": ref})
-            elif abs(a - b) / min(a, b) * 100 > tolerance_pct:
+            elif not r["match"]:
                 reasons.append({"code": "layer_time_mismatch", "status": "confounded", "variant": ref,
-                                "this_s": a, "other_s": b})
+                                "this_s": r["a_s"], "other_s": r["b_s"], "worst_pct": r["worst_pct"],
+                                "at_z": r["at_z"]})
+    if production and production.get("objects") and mine and mine.get("plate"):
+        n = len(mine["plate"].get("objects") or [])
+        if n and n != production["objects"]:
+            reasons.append({"code": "production_mismatch", "status": "valid", "test_objects": n,
+                            "production_objects": production["objects"],
+                            "note": "the test plate's layer time may not match production's"})
     status = ("confounded" if any(r["status"] == "confounded" for r in reasons)
               else "unknown" if any(r["status"] == "unknown" for r in reasons) else "valid")
     return {"status": status, "reasons": [{k: x for k, x in r.items() if k != "status"} for r in reasons]}

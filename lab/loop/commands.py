@@ -42,8 +42,8 @@ def refresh_derived(paths: ProjectPaths, e: dict, exps: dict | None = None) -> d
     """Recompute the cached comparison validity and prediction outcome (never authoritative)."""
     exps = dict(exps or all_experiments(paths))
     exps[e["id"]] = e
-    tol = project_settings(paths)["plate_time_tolerance_pct"]
-    e["comparison_validity"] = comparison_validity(e, exps, tol)
+    s = project_settings(paths)
+    e["comparison_validity"] = comparison_validity(e, exps, s["plate_time_tolerance_pct"], s.get("production_plate"))
     e["prediction_outcome"] = prediction_outcome(e, e["comparison_validity"])
     return e
 

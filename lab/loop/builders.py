@@ -183,6 +183,9 @@ def build_experiment(paths: ProjectPaths, exp_id: str, *, replace: bool, slicer=
                 "the old build is kept.")
         bid = next_local_id(e, "builds", f"BLD-{exp_id[2:]}")
         parts = _meshes(paths, e)
+        printed = {r.get("build_id") for r in e.get("print_runs") or []}
+        if sum(1 for b in e["builds"] if b["ok"] and b["id"] in printed) % 2 == 1:
+            parts = parts[::-1]  # a repeat print mirrors the placements (A left, B right; then B left, A right)
         laid = plate_layout([(n, m) for n, m, _ in parts])
         art = paths.prints / f"{paths.name}_{exp_id}_{bid}.3mf"
         owns = [own for _, _, own in parts]
