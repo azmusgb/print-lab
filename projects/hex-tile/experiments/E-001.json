@@ -55,7 +55,8 @@
         "layer_time_jump_z": []
       },
       "superseded_by": "PR-002",
-      "note": "Taller than the question needs: Z 72\u2013100 belongs to the upper-edge ripple, a separate experiment."
+      "note": "Taller than the question needs: Z 72\u2013100 belongs to the upper-edge ripple, a separate experiment.",
+      "slice_job": "job-20261024T101859-6f69"
     },
     {
       "id": "PR-002",
@@ -96,7 +97,8 @@
           "worse": "v56"
         },
         "owner_words_2": "i do [see bands on v58] - though seem better than prior?"
-      }
+      },
+      "slice_job": "job-20261024T161207-2e01"
     },
     {
       "id": "PR-003",
@@ -117,7 +119,8 @@
         "layer_time_jump": false,
         "layer_time_jump_z": []
       },
-      "note": "Fallback with 10 mm above the line, if 6 mm proves too little to judge."
+      "note": "Fallback with 10 mm above the line, if 6 mm proves too little to judge.",
+      "slice_job": "job-20261024T161208-2535"
     }
   ],
   "findings": [

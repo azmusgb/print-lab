@@ -43,7 +43,8 @@
       "sliced_estimate": "0 h 33 min",
       "filament_g": 9.35,
       "layers": 60,
-      "started": "2026-10-24"
+      "started": "2026-10-24",
+      "slice_job": "job-20261024T203240-947d"
     }
   ],
   "findings": [],

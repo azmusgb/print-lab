@@ -93,3 +93,23 @@ def check_plan(exp: Experiment, before: dict, after: dict) -> list[Finding]:
                            fix="Dry the filament, run the printer's vibration calibration, confirm the nozzle and "
                                "plate, and record them.", data={"missing": missing}))
     return out
+
+
+def link_slice_job(project_dir: Path, path_3mf: Path, job_id: str) -> str | None:
+    """Record a slice job on the print run a lab print file belongs to (from its Metadata/print_lab.json). Returns
+    the experiment's id, or None for a file the lab didn't make."""
+    import zipfile
+    with zipfile.ZipFile(path_3mf) as z:
+        if "Metadata/print_lab.json" not in z.namelist():
+            return None
+        meta = json.loads(z.read("Metadata/print_lab.json"))
+    path = Path(project_dir) / "experiments" / f"{meta.get('experiment_id')}.json"
+    if not path.exists():
+        return None
+    exp = json.loads(path.read_text())
+    for run in exp.get("print_runs", []):
+        if run.get("id") == meta.get("print_run_id"):
+            run["slice_job"] = job_id
+            path.write_text(json.dumps(exp, indent=2) + "\n")
+            return exp["id"]
+    return None

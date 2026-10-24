@@ -12,7 +12,7 @@ def _from_line_width(w: str | None) -> str | None:
 
 def check(m, ctx):
     claims: dict[str, str] = {"you said": f"{ctx.nozzle:g}"}
-    if ctx.file_name and (hit := re.search(r"(0\.[46])\s*nozzle", ctx.file_name)):
+    if ctx.file_name and (hit := re.search(r"(0\.[46])\s*nozzle", ctx.file_name, re.I)):
         claims["file name"] = hit.group(1)
     if ctx.settings:
         if nd := ctx.settings.get("nozzle_diameter"):

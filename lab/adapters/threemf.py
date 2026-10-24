@@ -1,6 +1,7 @@
 """Reading meshes out of Bambu 3MF projects and writing the lab's print files."""
 import json
 import xml.etree.ElementTree as ET
+from xml.sax.saxutils import quoteattr
 import zipfile
 from pathlib import Path
 
@@ -11,6 +12,8 @@ from lab.adapters.bambu import list_objects
 from lab.jobs import sha256
 
 NS = {"m": "http://schemas.microsoft.com/3dmanufacturing/core/2015/02"}
+P_PATH = "{http://schemas.microsoft.com/3dmanufacturing/production/2015/06}path"
+MAIN = "3D/3dmodel.model"
 
 
 def _matrix(text: str | None) -> np.ndarray:
@@ -24,8 +27,24 @@ def _matrix(text: str | None) -> np.ndarray:
     return m
 
 
-def _object_mesh(objects: dict, oid: str, transform: np.ndarray) -> list[trimesh.Trimesh]:
-    obj = objects[oid]
+class _Models:
+    """The objects of every model part in a 3MF. Bambu Studio keeps each mesh in its own part
+    (3D/Objects/object_N.model), referenced from the main model's components with p:path."""
+
+    def __init__(self, z: zipfile.ZipFile):
+        self.z, self.parts = z, {}
+
+    def objects(self, part: str) -> dict:
+        if part not in self.parts:
+            root = ET.fromstring(self.z.read(part))
+            self.parts[part] = {o.get("id"): o for o in root.iter(f"{{{NS['m']}}}object")}
+        return self.parts[part]
+
+
+def _object_mesh(models: _Models, part: str, oid: str, transform: np.ndarray) -> list[trimesh.Trimesh]:
+    obj = models.objects(part).get(oid)
+    if obj is None:
+        raise ValueError(f"The 3MF refers to object {oid} in {part}, but it isn't there; the file is damaged.")
     mesh = obj.find("m:mesh", NS)
     if mesh is not None:
         verts = np.array([[float(v.get(a)) for a in "xyz"] for v in mesh.find("m:vertices", NS)])
@@ -36,7 +55,8 @@ def _object_mesh(objects: dict, oid: str, transform: np.ndarray) -> list[trimesh
     out = []
     comps = obj.find("m:components", NS)
     for c in (comps if comps is not None else []):
-        out += _object_mesh(objects, c.get("objectid"), transform @ _matrix(c.get("transform")))
+        sub = c.get(P_PATH, "").lstrip("/") or part
+        out += _object_mesh(models, sub, c.get("objectid"), transform @ _matrix(c.get("transform")))
     return out
 
 
@@ -50,12 +70,14 @@ def load_object(path_3mf: Path, name_contains: str) -> trimesh.Trimesh:
         raise ValueError(f"{len({o.name for o in hits})} objects match '{name_contains}' in {path_3mf.name}. "
                          f"Pick one of: {names}")
     with zipfile.ZipFile(path_3mf) as z:
-        root = ET.fromstring(z.read("3D/3dmodel.model"))
-    objects = {o.get("id"): o for o in root.iter(f"{{{NS['m']}}}object")}
-    item = next(i for i in root.iter(f"{{{NS['m']}}}item") if i.get("objectid") == hits[0].id)
-    placement = _matrix(item.get("transform"))
-    placement[:3, 3] = 0  # keep how it is turned on the plate, not where
-    m = trimesh.util.concatenate(_object_mesh(objects, hits[0].id, placement))
+        root = ET.fromstring(z.read(MAIN))
+        item = next((i for i in root.iter(f"{{{NS['m']}}}item") if i.get("objectid") == hits[0].id), None)
+        if item is None:
+            raise ValueError(f"'{hits[0].name}' is in {path_3mf.name} but not on the build plate. Put it on a plate in "
+                             "Bambu Studio and save again.")
+        placement = _matrix(item.get("transform"))
+        placement[:3, 3] = 0  # keep how it is turned on the plate, not where
+        m = trimesh.util.concatenate(_object_mesh(_Models(z), MAIN, hits[0].id, placement))
     lo, hi = m.bounds
     m.apply_translation([-(lo[0] + hi[0]) / 2, -(lo[1] + hi[1]) / 2, -lo[2]])
     return m
@@ -93,8 +115,9 @@ def write_print_3mf(base_3mf: Path, meshes: list[tuple[str, trimesh.Trimesh, tup
         objs.append(f'<object id="{oid}" type="model"><mesh><vertices>{vs}</vertices><triangles>{ts}</triangles>'
                     f'</mesh></object>')
         items.append(f'<item objectid="{oid}" transform="1 0 0 0 1 0 0 0 1 {x:.5f} {y:.5f} 0" printable="1"/>')
-        ms_objs.append(f'<object id="{oid}"><metadata key="name" value="{name}"/><metadata key="extruder" value="1"/>'
-                       f'<part id="{oid}" subtype="normal_part"><metadata key="name" value="{name}"/></part></object>')
+        q = quoteattr(name)
+        ms_objs.append(f'<object id="{oid}"><metadata key="name" value={q}/><metadata key="extruder" value="1"/>'
+                       f'<part id="{oid}" subtype="normal_part"><metadata key="name" value={q}/></part></object>')
         insts.append(f'<model_instance><metadata key="object_id" value="{oid}"/>'
                      f'<metadata key="instance_id" value="0"/></model_instance>')
     model = ('<?xml version="1.0" encoding="UTF-8"?>\n<model unit="millimeter" xml:lang="en-US" '
