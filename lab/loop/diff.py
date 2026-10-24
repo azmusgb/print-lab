@@ -74,6 +74,19 @@ def actual_differences(paths: ProjectPaths, exp: dict, build: dict, others: dict
     diffs = []
     for other in ids[1:]:
         diffs += _compare(ids[0], facts[ids[0]], other, facts[other])
+    for v in exp["variants"]:
+        if v.get("role") == "anchor" and v["id"] in facts:
+            oid = v["same_as"].rsplit("-", 1)[0]
+            from lab.loop.outcome import printed_build
+            orig = (others or {}).get(oid) or (load(paths.experiments / f"{oid}.json", "experiment")
+                                               if (paths.experiments / f"{oid}.json").exists() else {})
+            ob = printed_build(orig)
+            if ob and ob.get("artifact") and (paths.root / ob["artifact"]).exists():
+                of = variant_facts(paths.root / ob["artifact"])
+                if v["same_as"] in of:
+                    mine, theirs = dict(facts[v["id"]]), dict(of[v["same_as"]])
+                    mine["copies"] = theirs["copies"]  # the anchor is one piece of what was printed
+                    diffs += [{**d, "anchor": True} for d in _compare(v["same_as"], theirs, v["id"], mine)]
     for ref in exp.get("reference_variants") or []:
         rexp_id = ref.rsplit("-", 1)[0]
         rexp = (others or {}).get(rexp_id)
@@ -96,6 +109,9 @@ def undeclared(diffs: list[dict], exp: dict) -> tuple[list[dict], list[dict]]:
     adjust = set((exp.get("dependent_adjustments") or {}).keys())
     bad, bundle = [], []
     for d in diffs:
+        if d.get("anchor"):
+            bad.append(d)  # an anchor must be identical to what it repeats
+            continue
         if f.get("kind") == "setting" and d["where"] == "settings" and d["key"] == f["settings_key"]:
             continue
         if f.get("kind") == "plate" and d["where"] == "plate":

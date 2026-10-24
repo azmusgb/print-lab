@@ -80,7 +80,7 @@ def cmd_exp_plan(args) -> int:
                           expect=args.expect, judge_on=args.judge_on, test_kind=args.test_kind, source=args.source,
                           object=args.object, z=(z0, z1), base=args.base, question_text=args.text,
                           hypothesis=args.hypothesis, prediction=args.prediction, why=args.why or "",
-                          references=args.reference or [], adjust=adjust)
+                          references=args.reference or [], adjust=adjust, anchor=args.anchor)
     print(f"Planned {eid}; build it with `lab exp build {eid}`")
     return 0
 
@@ -210,6 +210,7 @@ def register(sub) -> None:
     pl.add_argument("--why")
     pl.add_argument("--reference", action="append", help="a variant from an earlier experiment to compare with")
     pl.add_argument("--adjust", action="append", help="KEY=VALUE, a declared dependent adjustment")
+    pl.add_argument("--anchor", help="reprint an earlier variant (e.g. E-005-A) on this plate as a control")
     pl.add_argument("--project", default="hex-tile")
     pl.set_defaults(fn=cmd_exp_plan)
     bd = es.add_parser("build", help="build and slice an experiment's plate")

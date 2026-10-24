@@ -86,11 +86,18 @@ def check_experiment(paths: ProjectPaths, exp_id: str) -> CheckResult:
     add("no_estimate", bool(est.get("minutes") is not None), "rebuild",
         "estimate present" if est else "the build has no sliced estimate; rebuild it")
     if e.get("build_spec"):
+        from lab.loop import builders
         fp = input_fingerprints(paths, e)
         changed = [k for k in fp if (build.get("inputs") or {}).get(k) != fp[k]]
-        add("stale_build", not changed, "rebuild",
-            f"changed since {build['id']}: {', '.join(changed)}; `lab exp build {exp_id} --replace`" if changed
-            else "inputs unchanged since the build")
+        code_only = changed and set(changed) <= {"builder_fingerprint", "builder_version"}
+        artifact = build.get("artifact") and (paths.root / build["artifact"]).exists()
+        if code_only and artifact and builders.same_output(paths, e, build):
+            add("stale_build", True, "rebuild", f"the builder code changed, but it writes an identical print file "
+                                               f"for {build['id']}")
+        else:
+            add("stale_build", not changed, "rebuild",
+                f"changed since {build['id']}: {', '.join(changed)}; `lab exp build {exp_id} --replace`" if changed
+                else "inputs unchanged since the build")
     bundle, real = [], None
     if not build.get("artifact") or not (paths.root / build["artifact"]).exists():
         add("undeclared_difference", False, "rebuild",

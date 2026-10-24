@@ -64,7 +64,8 @@ def load_object(path_3mf: Path, name_contains: str) -> trimesh.Trimesh:
     """The one object whose name contains name_contains, rotated as it sits on its plate, on the bed (min z = 0) and
     centred at x = y = 0. Several objects with the same name are copies, so the first is used."""
     infos = list_objects(path_3mf)
-    hits = [o for o in infos if name_contains in o.name]
+    exact = [o for o in infos if o.name == name_contains]
+    hits = exact or [o for o in infos if name_contains in o.name]
     if not hits or len({o.name for o in hits}) > 1:
         names = ", ".join(sorted({o.name for o in infos}))
         raise ValueError(f"{len({o.name for o in hits})} objects match '{name_contains}' in {path_3mf.name}. "
@@ -96,6 +97,18 @@ _RELS = """<?xml version="1.0" encoding="UTF-8"?>
  <Relationship Target="/3D/3dmodel.model" Id="rel-1" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/>
 </Relationships>
 """
+
+
+def content_sha256(path_3mf: Path) -> str:
+    """A fingerprint of what's inside a 3MF, ignoring the zip's own timestamps."""
+    import hashlib
+    h = hashlib.sha256()
+    with zipfile.ZipFile(path_3mf) as z:
+        for name in sorted(z.namelist()):
+            if name == "Metadata/print_lab.json":
+                continue  # names the build ID, which differs between two renders by design
+            h.update(name.encode() + b"\0" + z.read(name) + b"\0")
+    return h.hexdigest()
 
 
 def patch_settings(settings: dict, patch: dict) -> dict:

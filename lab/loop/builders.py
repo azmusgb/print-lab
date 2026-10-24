@@ -88,7 +88,7 @@ def _parse_expect(text: str, ids: dict[str, str], refs: list[str]) -> dict | Non
 def plan_experiment(paths: ProjectPaths, q_id: str, *, factor: str, values: list[str], expect: str, judge_on: str,
                     test_kind: str, source: str, object: str, z: tuple[float, float], base: str,
                     question_text: str, hypothesis: str, prediction: str, why: str, references: list[str],
-                    adjust: dict) -> str:
+                    adjust: dict, anchor: str | None = None) -> str:
     settings = project_settings(paths)
     if settings["autonomy_level"] == 0:
         raise ValueError(f"{paths.name} is at autonomy level 0 (observe only); the lab can't plan experiments.")
@@ -103,6 +103,8 @@ def plan_experiment(paths: ProjectPaths, q_id: str, *, factor: str, values: list
                              f"{', '.join(sorted('sources/' + p.name for p in paths.sources.glob('*.3mf')))}")
     q_path = paths.questions / f"{q_id}.json"
     load(q_path, "question")
+    anchor_spec = _anchor_spec(paths, anchor) if anchor else None
+    cross_plate = bool(references or anchor)
 
     def make(eid: str) -> dict:
         n = int(eid.split("-")[1])
@@ -120,9 +122,13 @@ def plan_experiment(paths: ProjectPaths, q_id: str, *, factor: str, values: list
             variants.append({"id": vid, "tab": sv["tab"], "factor_value": val, "copies": sv["copies"]})
             spec_variants.append(sv)
         z0, z1 = float(z[0]), float(z[1])
+        if cross_plate:
+            variants.append({"id": "WITNESS-01", "tab": None, "role": "control"})
+        if anchor:
+            variants.append({"id": f"{eid}-ANCHOR", "tab": None, "role": "anchor", "same_as": anchor})
         spec = {"kind": test_kind, "source": source, "object": object, "z": [z0, z1],
                 "judged": [z0 + 6, z1 - 6] if z1 - z0 >= 12 else None, "base": base, "variants": spec_variants,
-                "witness": False}
+                "witness": cross_plate, "anchor": anchor_spec}
         return {"schema": 1, "record_type": "experiment", "id": eid, "project": paths.name, "question": q_id,
                 "provenance": "prospective", "question_text": question_text, "hypothesis": hypothesis,
                 "prediction": prediction, "why_this_test": why, "test_kind": test_kind,
@@ -130,7 +136,7 @@ def plan_experiment(paths: ProjectPaths, q_id: str, *, factor: str, values: list
                 "factor_scope": f["scope"], "dependent_adjustments": dict(adjust), "controlled": {}, "baseline": {},
                 "findings": [], "judge_on": judge_on, "expect": _parse_expect(expect, ids, references),
                 "derived_from_artifact": [], "derived_from_result": [],
-                "controls": {"witness_required": False, "anchor": None}, "reference_variants": list(references),
+                "controls": {"witness_required": cross_plate, "anchor": anchor}, "reference_variants": list(references),
                 "build_spec": spec, "status": "planned", "variants": variants, "builds": [], "approval": None,
                 "print_runs": [], "owner_verdict": None, "superseded_verdicts": [], "anchors": [],
                 "ai_observations": [], "comparison_validity": None, "prediction_outcome": None, "analysis": []}
@@ -144,10 +150,42 @@ def plan_experiment(paths: ProjectPaths, q_id: str, *, factor: str, values: list
     return eid
 
 
+def _anchor_spec(paths: ProjectPaths, same_as: str) -> dict:
+    """What it takes to print an earlier variant again exactly: its source, cut, settings and spot on the plate."""
+    from lab.loop.outcome import printed_build
+    oid = same_as.rsplit("-", 1)[0]
+    p = paths.experiments / f"{oid}.json"
+    if not p.exists():
+        raise ValueError(f"The anchor {same_as} names {oid}, which isn't in {paths.name}.")
+    orig = load(p, "experiment")
+    spec, build = orig.get("build_spec"), printed_build(orig)
+    if not spec or not build:
+        raise ValueError(f"{same_as} can't be an anchor: {oid} " + ("was made before Stage 1A.1 (no build spec)"
+                                                                     if not spec else "was never printed") + ".")
+    sv = next((v for v in spec["variants"] if v["id"] == same_as), None)
+    if not sv:
+        raise ValueError(f"{same_as} isn't a variant of {oid}.")
+    names = (build.get("plate") or {}).get("objects") or []
+    places = (build.get("plate") or {}).get("placements") or []
+    placement = next((pl for n, pl in zip(names, places) if n == same_as or n.startswith(same_as + " (")), None)
+    src = sv.get("source") or spec["source"]
+    return {"same_as": same_as, "source": src, "object": spec["object"], "z": spec["z"], "base": spec["base"],
+            "settings_patch": {**(orig.get("dependent_adjustments") or {}), **sv.get("settings_patch", {})},
+            "placement": placement, "build_id": build["id"],
+            "inputs": {"model": sha256(paths.root / src), "settings": sha256(paths.root / spec["base"])}}
+
+
 def _meshes(paths: ProjectPaths, exp: dict) -> list[tuple[str, object, dict]]:
     from lab.adapters.threemf import load_object
     from lab.geometry.coupons import height_strip
     spec = exp["build_spec"]
+    a = spec.get("anchor")
+    if a:
+        now_in = {"model": sha256(paths.root / a["source"]), "settings": sha256(paths.root / a["base"])}
+        if now_in != a["inputs"]:
+            raise ValueError(f"The anchor {a['same_as']} can't be printed as it was: its "
+                             + ", ".join(k for k in now_in if now_in[k] != a["inputs"][k])
+                             + " changed since it was planned.")
     z0, z1 = spec["z"]
     cache: dict[str, object] = {}
     out = []
@@ -159,7 +197,69 @@ def _meshes(paths: ProjectPaths, exp: dict) -> list[tuple[str, object, dict]]:
         for k in range(v.get("copies", 1)):
             name = v["id"] if v.get("copies", 1) == 1 else f"{v['id']} ({k + 1} of {v['copies']})"
             out.append((name, cache[src].copy(), own))
+    a = spec.get("anchor")
+    if a:
+        anchor = height_strip(load_object(paths.root / a["source"], a["object"]), *a["z"])
+        out.insert(0, (f"{exp['id']}-ANCHOR", anchor, dict(a["settings_patch"])))
     return out
+
+
+def _lay_out(exp: dict, parts: list[tuple[str, object, dict]], base_settings: dict) -> list:
+    """The row of pieces; an anchor at its original spot; the witness at least 25 mm beyond the row."""
+    from lab.geometry.coupons import BRIM, PLATE, plate_layout
+    from lab.loop.witness import MIN_GAP_MM, WITNESS_VERSION, witness_wall
+    spec = exp["build_spec"]
+    laid = plate_layout([(n, m) for n, m, _ in parts])
+    a = spec.get("anchor")
+    if a and a.get("placement"):
+        (ax, ay), (cx, cy) = a["placement"], laid[0][2]
+        laid = [(n, m, (round(x + ax - cx, 3), round(y + ay - cy, 3))) for n, m, (x, y) in laid]
+        for n, m, (x, y) in laid:
+            if x - m.extents[0] / 2 < BRIM or x + m.extents[0] / 2 > PLATE - BRIM:
+                raise ValueError(f"With the anchor at its original spot, {n} falls off the plate; plan fewer pieces.")
+    if spec.get("witness"):
+        raw = base_settings.get("outer_wall_line_width") or "0.42"
+        lw = float(str(raw[0] if isinstance(raw, list) else raw).rstrip("%") or 0.42)
+        w = witness_wall(spec["z"][1] - spec["z"][0], lw if lw < 2 else 0.42)
+        edge = max(x + m.extents[0] / 2 for _, m, (x, _) in laid)
+        wx = edge + MIN_GAP_MM + w.extents[0] / 2
+        if wx + w.extents[0] / 2 > PLATE - BRIM:
+            raise ValueError(f"No room for the witness wall {WITNESS_VERSION} at least {MIN_GAP_MM:g} mm from the "
+                             "pieces; plan fewer pieces on the plate.")
+        laid.append((WITNESS_VERSION, w, (round(wx, 3), PLATE / 2)))
+    return laid
+
+
+def render_plate(paths: ProjectPaths, e: dict, bid: str, art: Path, mirror: bool) -> str:
+    """Write the experiment's print file (no slicing). Returns its SHA-256."""
+    from lab.adapters.bambu import read_settings
+    from lab.adapters.threemf import write_print_3mf
+    parts = _meshes(paths, e)
+    if mirror:
+        parts = parts[::-1]  # a repeat print mirrors the placements (A left, B right; then B left, A right)
+    base_settings = read_settings(paths.root / e["build_spec"]["base"]) or {}
+    laid = _lay_out(e, parts, base_settings)
+    if len(laid) > len(parts):
+        parts = parts + [(laid[-1][0], laid[-1][1], {})]
+    owns = [own for _, _, own in parts]
+    shared = all(o == owns[0] for o in owns)  # one setting for the whole plate goes into the project settings
+    return write_print_3mf(paths.root / e["build_spec"]["base"], laid, art,
+                           {"experiment_id": e["id"], "build_id": bid, "variants": [v["id"] for v in e["variants"]]},
+                           settings_patch=owns[0] if shared else None, object_settings=None if shared else owns)
+
+
+def same_output(paths: ProjectPaths, e: dict, build: dict) -> bool:
+    """Would today's builder write the same print file? (Both placements are tried: a repeat mirrors.)"""
+    import tempfile
+    from lab.adapters.threemf import content_sha256
+    have = content_sha256(paths.root / build["artifact"])
+    with tempfile.TemporaryDirectory() as d:
+        for mirror in (False, True):
+            out = Path(d) / f"{mirror}.3mf"
+            render_plate(paths, e, build["id"], out, mirror)
+            if content_sha256(out) == have:
+                return True
+    return False
 
 
 def build_experiment(paths: ProjectPaths, exp_id: str, *, replace: bool, slicer=slice_with_job) -> dict:
@@ -182,19 +282,10 @@ def build_experiment(paths: ProjectPaths, exp_id: str, *, replace: bool, slicer=
                 k for k in fp if (last.get("inputs") or {}).get(k) != fp[k]) + "). Use --replace to build it again; "
                 "the old build is kept.")
         bid = next_local_id(e, "builds", f"BLD-{exp_id[2:]}")
-        parts = _meshes(paths, e)
         printed = {r.get("build_id") for r in e.get("print_runs") or []}
-        if sum(1 for b in e["builds"] if b["ok"] and b["id"] in printed) % 2 == 1:
-            parts = parts[::-1]  # a repeat print mirrors the placements (A left, B right; then B left, A right)
-        laid = plate_layout([(n, m) for n, m, _ in parts])
+        mirror = sum(1 for b in e["builds"] if b["ok"] and b["id"] in printed) % 2 == 1
         art = paths.prints / f"{paths.name}_{exp_id}_{bid}.3mf"
-        owns = [own for _, _, own in parts]
-        shared = all(o == owns[0] for o in owns)  # one setting for the whole plate goes into the project settings
-        art_sha = write_print_3mf(paths.root / e["build_spec"]["base"], laid, art,
-                                  {"experiment_id": exp_id, "build_id": bid,
-                                   "variants": [v["id"] for v in e["variants"]]},
-                                  settings_patch=owns[0] if shared else None,
-                                  object_settings=None if shared else owns)
+        art_sha = render_plate(paths, e, bid, art, mirror)
         build = {"id": bid, "ok": False, "at": now(), "inputs": fp, "job": None, "artifact": str(art.relative_to(paths.root)),
                  "artifact_sha256": art_sha, "sliced": None, "estimate": None, "plate": plate_of(art),
                  "measured": None, "error": None}

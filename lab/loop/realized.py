@@ -73,6 +73,7 @@ def realization(paths, exp: dict, build: dict, others: dict) -> dict | None:
         requested[v["id"]] = float(val) if val is not None else None
     speeds = dict(object_feature_speeds(paths.root / build["sliced"], feature))
     own_ids = [v["id"] for v in exp["variants"] if v.get("role", "variant") == "variant"]
+    speeds = {k: v for k, v in speeds.items() if k in own_ids} if len(speeds) > 1 else speeds
     if len(speeds) == 1 and len(own_ids) == 1 and own_ids[0] not in speeds:  # a migrated plate's object name
         speeds = {own_ids[0]: next(iter(speeds.values()))}
     for ref in exp.get("reference_variants") or []:
