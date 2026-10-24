@@ -36,12 +36,12 @@
     "plate": "textured PEI",
     "filament": "Kexcelled K5 PLA M, Light Matte Terracotta (lot C6719062)",
     "strip": "Z 60\u201372 mm of the 6\" pair",
-    "run_after": "E-002, with its baseline (dried filament, vibration calibration)"
+    "run_after": "E-002 (same single-strip plate; compare E-003 against E-002)"
   },
   "dependent_adjustments": {},
   "baseline": {
-    "filament_dried": null,
-    "vibration_calibration": null,
+    "filament_dried": false,
+    "vibration_calibration": false,
     "nozzle_confirmed": null,
     "plate": "textured PEI"
   },

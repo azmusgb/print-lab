@@ -1,0 +1,57 @@
+{
+  "id": "E-004",
+  "project": "hex-tile",
+  "question": "Does sharing the plate (longer layer time) make v58's face rougher?",
+  "hypothesis": "E-001's v58 strip shared the plate with a second strip, so each layer took about 35 s; E-002's strip printed alone at about 18 s per layer and came out much smoother, with nothing else changed. With matte PLA at full fan, a longer wait lets each layer cool fully, so layer boundaries show.",
+  "prediction": "Two v58 strips on one plate both come out like E-001's (rougher than E-002's lone strip).",
+  "why_this_test": "E-002 changed nothing deliberately (no drying, no calibration), so the one difference from E-001 is the plate: one object or two. A full tile's cross-section matches the strip's, so this is also 'one pair per plate or two'.",
+  "test_kind": "height_strip",
+  "factor": {
+    "name": "objects_on_plate",
+    "values": [
+      1,
+      2
+    ],
+    "unit": "",
+    "layer_time_s": [
+      18.4,
+      34.8
+    ]
+  },
+  "controlled": {
+    "model": "v58 (0.6-variant geometry)",
+    "settings": "v55 0.4 process, unchanged",
+    "nozzle": "0.4",
+    "layer_height": "0.2",
+    "plate": "textured PEI",
+    "filament": "Kexcelled K5 PLA M, Light Matte Terracotta (lot C6719062), same spool, not dried",
+    "strip": "Z 60\u201372 mm of the 6\" pair",
+    "compare_with": "E-002 strip (1 object)"
+  },
+  "dependent_adjustments": {},
+  "baseline": {
+    "filament_dried": false,
+    "vibration_calibration": false,
+    "nozzle_confirmed": null,
+    "plate": "textured PEI"
+  },
+  "status": "planned",
+  "blocked_reason": "",
+  "print_runs": [
+    {
+      "id": "PR-006",
+      "file": "hex-tile_E004_PR006.3mf",
+      "artifact_sha256": "4eb40dec91dbfc31c4e2fe4bfa2dbfc7b1efbe5e9f2eaf7828d880b58812cf9e",
+      "variants": [
+        "v58 strip Z60-72 (1 of 2)",
+        "v58 strip Z60-72 (2 of 2)"
+      ],
+      "slice_job": "job-20261024T213903-5d82",
+      "sliced_estimate": "1 h 2 min",
+      "filament_g": 18.7,
+      "layers": 60
+    }
+  ],
+  "findings": [],
+  "jobs": []
+}

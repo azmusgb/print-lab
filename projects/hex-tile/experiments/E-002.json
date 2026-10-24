@@ -73,8 +73,13 @@
             "confirmed": false
           }
         ],
-        "baseline_recorded": null,
-        "open": "Which baseline steps were done before this print? Are any bands still visible on the faces?"
+        "baseline_recorded": {
+          "filament_dried": false,
+          "vibration_calibration": false,
+          "source": "owner: 'all i did was print the 3mf - thats it'"
+        },
+        "prediction_outcome": "not tested: the planned change (drying + calibration) wasn't made",
+        "what_actually_differed": "E-001's v58 strip shared the plate with the v56 strip (layer time median 34.8 s); E-002's strip printed alone (18.4 s). Outer wall stays at 80 mm/s for 98% of its length in both; fan 100% in both."
       }
     }
   ],
