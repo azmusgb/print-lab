@@ -131,3 +131,17 @@ def test_slice_job_link_skips_files_from_outside_the_lab(tmp_path):
     with zipfile.ZipFile(p, "w") as z:
         z.writestr("x", "")
     assert link_slice_job(tmp_path, p, "job-1") is None
+
+
+def test_slice_job_link_ignores_an_experiment_id_that_leaves_the_project(tmp_path):
+    # A 3MF from elsewhere could name any file; only E-<number> inside the project's experiments is ever written.
+    from lab.experiments import link_slice_job
+    outside = tmp_path / "outside.json"
+    outside.write_text(json.dumps({"id": "x", "print_runs": [{"id": "PR-001"}]}))
+    pdir = tmp_path / "proj"
+    (pdir / "experiments").mkdir(parents=True)
+    p = tmp_path / "evil.3mf"
+    with zipfile.ZipFile(p, "w") as z:
+        z.writestr("Metadata/print_lab.json", json.dumps({"experiment_id": "../../outside", "print_run_id": "PR-001"}))
+    assert link_slice_job(pdir, p, "job-1") is None
+    assert "slice_job" not in outside.read_text()

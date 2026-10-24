@@ -103,7 +103,10 @@ def link_slice_job(project_dir: Path, path_3mf: Path, job_id: str) -> str | None
         if "Metadata/print_lab.json" not in z.namelist():
             return None
         meta = json.loads(z.read("Metadata/print_lab.json"))
-    path = Path(project_dir) / "experiments" / f"{meta.get('experiment_id')}.json"
+    eid = str(meta.get("experiment_id", ""))
+    if not re.fullmatch(r"E-\d{3,}", eid):  # the file may come from anywhere; never let it name another path
+        return None
+    path = Path(project_dir) / "experiments" / f"{eid}.json"
     if not path.exists():
         return None
     exp = json.loads(path.read_text())
