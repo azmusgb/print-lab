@@ -5,3 +5,5 @@ history/*/raw/
 result.json
 .venv/
 __pycache__/
+projects/*/prints/sliced/
+projects/*/jobs/

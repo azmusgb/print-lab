@@ -1,0 +1,13 @@
+[
+  {
+    "experiment_id": "E-001",
+    "print_run_id": "PR-001",
+    "variants": [
+      "v56 strip Z60-100",
+      "v58 strip Z60-100"
+    ],
+    "settings_from": "hexagon_v57_X2D_0.4nozzle.3mf (v55 0.4 settings)",
+    "file": "hex-tile_E001_PR001.3mf",
+    "artifact_sha256": "cef83035752fbb8c50851497c5778f80887e85f7d1b107bfb83023461d419c82"
+  }
+]
