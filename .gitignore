@@ -8,3 +8,6 @@ __pycache__/
 projects/*/prints/sliced/
 projects/*/jobs/
 .DS_Store
+projects/*/.locks/
+projects/*/photos/
+.locks/
