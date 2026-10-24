@@ -19,9 +19,17 @@ spec's tables are the authority for values and behaviour.
 ## EXP-004 comes first
 
 **EXP-004 is the first real acceptance test of Stage 1A.1. Do not require every 1A.1 feature before the engine can
-migrate, record and judge EXP-004.** Phase 1 (Tasks 1–8) is the vertical path; it ends with EXP-004 migrated and judged
+migrate, record and judge EXP-004.** Phase 1 (Tasks 1–9) is the vertical path; it ends with EXP-004 migrated and judged
 through `lab exp verdict`, and the next experiment (E-005) planned, built, checked and started through the new
-commands. Phase 2 (Tasks 9–16) adds the remaining guards, builders and safeguards around that working path.
+commands. **Before E-005 physically starts, both `undeclared_difference` (Task 8) and a preliminary `plate_mismatch`
+guard (Task 9) must exist, and a fresh high-capability review of Phase 1 must have run** (see "Review checkpoints").
+Phase 2 (Tasks 10–16) adds the remaining guards, builders and safeguards around that working path.
+
+## Review checkpoints
+
+1. After Task 9's tests pass and before E-005 is started on the printer: a fresh review of Tasks 1–9 on the most
+   capable model; Critical and Important findings fixed (test first) before the print.
+2. After Task 16: the whole-branch review.
 
 EXP-004 finishes printing before this code exists. Until Task 5 lands, record the owner's words in the old E-004 file
 (`print_runs[0].result.owner_words`); migration (Task 3) carries them over as an un-entered note, and Task 5's
@@ -93,7 +101,8 @@ dataclass.
   - `atomic_write_json(path: Path, obj: dict) -> None`.
   - `read_json(path: Path) -> dict` (raises `RecordError` naming file and line for invalid JSON).
   - `record_lock(lock_dir: Path, record_id: str, command: str, timeout_s: float = 10.0)` context manager; on timeout raises `RecordError` "E-004 is being changed by `<command>` (PID <pid>, since <time>)".
-  - `allocate(lock_dir: Path, folder: Path, prefix: str, width: int = 3, suffix: str = ".json") -> Path` creates the new file with `open(..., "x")` under `id-allocation.lock` and returns it (content `{}` placeholder; caller writes atomically).
+  - `create_record(lock_dir: Path, folder: Path, prefix: str, make_record: Callable[[str], dict], width: int = 3) -> tuple[str, Path]`: under `id-allocation.lock`, choose the next unused ID, build the complete record with `make_record(new_id)`, validate it (Task 2 plugs in through an optional `validate` argument), write a temp file and atomically link it into place with `os.link` (fails if the name exists), then remove the temp. **A crash before the link leaves no record.** Project-level IDs only: `Q`, `E`, `P`, `SET`.
+  - `next_local_id(record: dict, key: str, prefix: str) -> str`: IDs embedded in an experiment (`BLD-004-NN`, `PR-004-NN`), chosen while holding that experiment's record lock. Migrated print runs keep their old IDs (PR-001..PR-006).
   - `parse_budget(text: str) -> dict` → `{"minutes": float | None, "g": float | None}`.
   - `ProjectPaths(root: Path)` with `.questions`, `.experiments`, `.prints`, `.sliced`, `.jobs`, `.photos`, `.sources`, `.locks`, `.setup_log`, `.setup_repairs`, `.project_json`; `project_settings(paths) -> dict` with defaults `{"autonomy_level": 2, "plate_time_tolerance_pct": 10, "plate_time_tolerance_source": "provisional", "budget": {...defaults}}`.
 
@@ -117,8 +126,15 @@ def test_lock_timeout_names_holder(tmp_path):
         with record_lock(tmp_path, "E-004", "lab exp observe E-004", timeout_s=0.5): pass
 
 def test_parallel_allocation_never_collides(tmp_path):
-    # 8 processes call allocate(..., prefix="E") at once
+    # 8 processes call create_record(..., prefix="E") at once
     assert sorted(names) == [f"E-{i:03d}.json" for i in range(1, 9)]
+
+def test_crash_before_link_leaves_no_record(tmp_path, monkeypatch):
+    monkeypatch.setattr(os, "link", lambda *a: (_ for _ in ()).throw(OSError("killed")))
+    with pytest.raises(OSError): create_record(tmp_path / ".locks", tmp_path, "E", lambda i: {"id": i})
+    assert not list(tmp_path.glob("E-*.json"))
+
+def test_local_ids(): assert next_local_id({"builds": [{"id": "BLD-004-01"}]}, "builds", "BLD-004") == "BLD-004-02"
 
 @pytest.mark.parametrize("text,want", [("180m,100g", {"minutes": 180, "g": 100}), ("3h", {"minutes": 180, "g": None}),
                                        ("2h30m", {"minutes": 150, "g": None}), ("100g", {"minutes": None, "g": 100})])
@@ -205,7 +221,7 @@ height-strip experiment E-009 in Q-009 with `expect = {"better": "E-009-B", "tha
 - Produces: `migrate_project(paths: ProjectPaths) -> list[str]` (report lines; idempotent: a second run reports "already migrated" and writes nothing); `lab.loop.plate.layer_time_profile(gcode: str) -> list[list[float]]` (`[[z, seconds], ...]`, from `read_layers`) and `median_layer_time(profile, z_range=None) -> float` — created here in `lab/loop/plate.py`, extended in Task 10.
 
 What migration writes (spec "Moving the existing records"; no invented facts):
-- copies `hexagon_v56_X2D_0.6nozzle.3mf`, `hexagon_v57_X2D_0.4nozzle.3mf`, `hexagon_v58_X2D_0.6nozzle.3mf` from `tests/fixtures/hex/` into `sources/` and fingerprints them;
+- copies `hexagon_v56_X2D_0.6nozzle.3mf`, `hexagon_v57_X2D_0.4nozzle.3mf`, `hexagon_v58_X2D_0.6nozzle.3mf` from `tests/fixtures/hex/` into `sources/` and records each in `sources/sources.json` as `{"path", "sha256", "source": "migration_fixture"}`; where an existing record already holds a hash of the same file (the history inventory), migration asserts it matches. From then on the project copy is the durable source;
 - `questions/Q-001.json` ("What causes the bands on v58's face?", default budget, experiments E-001..E-004, `stops: []`, one plan `P-001` from E-004's record: if two-object plate rougher → "one pair per plate vs minimum layer time");
 - each experiment: `provenance` (E-001..E-003 `migrated`, E-004 `prospective`), `builds` reconstructed from the existing print files and sliced files (with `measured.layer_time_profile`), `print_runs` with the recorded start and `setup` = what was recorded (E-004's send-dialog values) else `null`;
 - E-001: `owner_verdict` ranking `[["E-001-B"], ["E-001-A"]]` (v58 above v56), strength `null`, `about_target: null`, note = the owner's words;
@@ -364,8 +380,9 @@ if not); status shows spend for Q-001 and the next plan. Commit the record: `git
   - `lab/factors.json`: `{"<name>": {"kind": "setting"|"plate"|"model_version"|"model_parameter"|"filament_profile", "scope": "specific"|"bundle", "settings_key": "...?"}}` with: `inner_wall_speed`, `outer_wall_speed`, `nozzle_temperature`, `fan_min_speed`, `fan_max_speed`, `slow_down_layer_time`, `retraction_length`, `wall_loops` (all `setting`, specific); `objects_on_plate` (`plate`, specific); `model_version`, `filament_profile` (bundle); `model_parameter` (specific, needs a `.scad` source).
   - `plan_experiment(paths, q_id, *, factor, values, expect, judge_on, test_kind, source, object, z, base, hypothesis, prediction, why) -> str` (new E id; writes the experiment, then the question).
   - `build_spec` on the experiment: `{"kind": "height_strip", "source": "sources/<file>", "object": "...", "z": [z0, z1], "base": "sources/<file>", "variants": [{"id", "tab", "settings_patch": {...}, "copies": n}], "witness": false}`.
-  - `build_experiment(paths, exp_id, *, replace: bool, slicer=slice_with_job) -> dict` (the new build entry): fingerprints `{model, settings, builder_version, openscad, bambu_studio}`; writes artifact (`prints/<project>_<E>_<BLD>.3mf`), job, manifest line, then the experiment; reads `slice_estimate` and `layer_time_profile`; records `plate.objects`/`placements`; failed slice → build `ok: false`, status `build_failed`; unchanged fingerprints → "already built", no writes; changed without `--replace` → refuse.
-  - `BUILDER_VERSION = "1a1.1"` in `builders.py`.
+  - `build_experiment(paths, exp_id, *, replace: bool, slicer=slice_with_job) -> dict` (the new build entry): fingerprints `{model, settings, build_spec_sha256, builder_version, builder_fingerprint, openscad, bambu_studio}`, where `build_spec_sha256` hashes the canonical JSON (`sort_keys`, no spaces) of `build_spec` plus `factor` and `dependent_adjustments`, and `builder_fingerprint` hashes the source of `lab/loop/builders.py`, `witness.py`, `tabs.py`, `lab/adapters/threemf.py` and `lab/geometry/coupons.py` (those that exist); writes artifact (`prints/<project>_<E>_<BLD>.3mf`), job, manifest line, then the experiment; reads `slice_estimate` and `layer_time_profile`; records `plate.objects`/`placements`; failed slice → build `ok: false`, status `build_failed`; unchanged fingerprints → "already built", no writes; changed without `--replace` → refuse.
+  - `BUILDER_VERSION = "1a1.1"` in `builders.py` (readable; staleness doesn't depend on remembering to bump it).
+  - A comment at the top of `lab/experiments.py`: legacy Stage 1A record for `lab plan`; must not be imported by `lab.loop`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -375,6 +392,7 @@ def test_plan_refuses_two_factors_and_unknown_factor(proj): ...
 def test_plan_refused_at_level_0(proj): ...
 def test_build_records_estimate_profile_plate_and_fingerprints(proj, fake_slicer): ...
 def test_build_again_unchanged_writes_nothing(proj, fake_slicer): ...
+def test_build_spec_change_alone_makes_build_stale(proj, fake_slicer): ...   # same model and settings, a copies change
 def test_build_changed_needs_replace_and_keeps_old(proj, fake_slicer): ...
 def test_failed_slice_is_build_failed_with_job_kept(proj, failing_slicer): ...
 def test_settings_patch_lands_in_3mf(proj, fake_slicer):
@@ -403,7 +421,7 @@ output and returns a fake `Job`.
 - Test: `tests/test_setup_log.py`
 
 **Interfaces:**
-- Produces: `append_event(paths, kind: str, fields: dict) -> dict` (new `SET-NNNNN` via `allocate`-style counter under the ID lock); `repair_line(paths, line_no: int, replacement: dict, reason: str) -> dict`; `effective_events(paths) -> list[dict]` (repairs, then corrections, per the spec's reducer); `current_setup(paths, at: str | None = None) -> dict` (`{kind: latest effective event}` up to `at`).
+- Produces: `append_event(paths, kind: str, fields: dict) -> dict` (new `SET-NNNNN`: next number after the log's highest, chosen and appended under `id-allocation.lock`); `repair_line(paths, line_no: int, replacement: dict, reason: str) -> dict`; `effective_events(paths) -> list[dict]` (repairs, then corrections, per the spec's reducer); `current_setup(paths, at: str | None = None) -> dict` (`{kind: latest effective event}` up to `at`).
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -420,7 +438,17 @@ def test_original_bytes_never_change(paths): ...
 - [ ] **Step 4: Run — Expected: PASS**
 - [ ] **Step 5: Commit** `git commit -m "Setup log: events, corrections, repairs, current setup"`
 
-### Task 8: `lab exp check`, `lab exp approve`, `lab exp start` — E-005 through the new path
+### Task 8: Actual-difference check
+
+**Files:** Create `lab/loop/diff.py`; modify `lab/loop/guards.py`; test `tests/test_diff.py`.
+
+**Interfaces:** `actual_differences(paths, exp: dict, build: dict) -> list[dict]` — each `{"where": "settings"|"plate"|"geometry", "key", "a", "b"}` between variant pairs (settings from each variant's effective settings: base + patch; plate from objects/placements excluding the mirror swap; geometry from mesh fingerprints and, for `.scad` sources, differing `-D` parameters); `undeclared(diffs, exp, factors) -> list[dict]` (drops the factor's key and declared `dependent_adjustments`); bundle factors write `factor_scope: "bundle"` and `bundle_differences` on the build. Guard `undeclared_difference` → `blocked`; Task 9's `check_experiment` and `start` call it.
+
+- [ ] **Step 1: Failing tests:** `test_undeclared_setting_found`, `test_declared_dependent_adjustment_allowed`, `test_undeclared_plate_change_found`, `test_undeclared_geometry_change_found`, `test_bundle_factor_records_scope_and_list` (Task 9 adds the guard-level tests, including `test_blocked_again_at_start_after_hand_edit`).
+- [ ] **Step 2: Run — FAIL.**  **Step 3: Implement.**  **Step 4: Run — PASS; full suite PASS.**
+- [ ] **Step 5: Commit** `git commit -m "Actual-difference check (one factor, enforced on the build)"`
+
+### Task 9: `lab exp check`, `lab exp approve`, `lab exp start` — E-005 through the new path
 
 **Files:**
 - Create: `lab/loop/guards.py`
@@ -432,7 +460,7 @@ def test_original_bytes_never_change(paths): ...
 - Produces:
   - `@dataclass Guard: code: str; ok: bool; result: str  # "blocked" | "needs_approval" | "rebuild"; message: str`.
   - `check_experiment(paths, exp_id) -> CheckResult` with `.status` (`ready` | `needs_approval` | `blocked` | `rebuild`), `.guards: list[Guard]`, `.text` (the spec's check layout: build, question budget used and after, each guard ✓/✗, result, every reason).
-  - Phase 1 guards (spec table): `owner_stopped`, `auto_stopped`, `full_part_required`, `autonomy_level`, `refuted_dependency`, `per_test_time`, `per_test_material`, `question_time`, `question_material` (strict `>`: equal fits), `retry_limit`, `stale_build` (recomputed fingerprints vs the build's), `no_estimate`, and the Stage 1A blocking geometry checks on each variant mesh. `undeclared_difference` and `plate_mismatch` join in Tasks 9–10.
+  - Phase 1 guards (spec table): `owner_stopped`, `auto_stopped`, `full_part_required`, `autonomy_level`, `refuted_dependency`, `undeclared_difference` (Task 8, blocked), `per_test_time`, `per_test_material`, `question_time`, `question_material` (strict `>`: equal fits), `retry_limit`, `stale_build` (recomputed fingerprints vs the build's), `no_estimate`, the Stage 1A blocking geometry checks on each variant mesh, and a **preliminary `plate_mismatch`**: the judged-region median layer time (Task 4's calculation) against each plate the experiment is compared with, beyond the project tolerance → needs approval, and `comparison_validity` stays confounded. Task 10 replaces the calculation with the layer-by-layer comparison.
   - `approve(paths, exp_id, reason: str) -> dict` (binds `build_id`, `artifact_sha256`, `approved_reasons`); refuses unless `needs_approval`; refuses on an owner stop.
   - `start(paths, exp_id) -> dict` (new `PR-NNN` print run): re-runs `check_experiment`; proceeds if `ready`, or `needs_approval` whose failed guards ⊆ a matching approval's `approved_reasons` (same build ID and fingerprint); snapshots `current_setup`; warns on missing baseline kinds (`filament_dried`, `vibration_calibration`, `nozzle_changed`) and records them; already `printing` → message, no write.
   - Exit codes: `check` 0 ready, 2 otherwise.
@@ -441,6 +469,9 @@ def test_original_bytes_never_change(paths): ...
 
 ```python
 def test_each_guard(proj): ...                       # parametrized: one failing condition per guard code
+def test_undeclared_difference_blocks_check_and_start(proj): ...
+def test_blocked_again_at_start_after_hand_edit(proj): ...
+def test_preliminary_plate_mismatch_needs_approval_and_stays_confounded(proj): ...
 def test_every_failure_listed(proj): ...             # full part + over per-test time → both reasons
 def test_exact_budget_boundary_fits(proj): ...       # remaining 25 min, estimate 25 → ready
 def test_owner_stop_cannot_be_approved_away(proj): ...
@@ -455,7 +486,8 @@ def test_failed_run_returns_to_built_and_third_attempt_needs_approval(proj): ...
 - [ ] **Step 3: Implement**; wire `lab exp check`, `lab exp approve`, `lab exp start`.
 - [ ] **Step 4: Run — Expected: PASS**, then `uv run pytest -q` — Expected: all pass.
 - [ ] **Step 5: Commit** `git commit -m "Check, approve and start, with live re-check"`
-- [ ] **Step 6: E-005 acceptance**
+- [ ] **Step 6: Review checkpoint 1** (fresh review of Tasks 1–9 on the most capable model; fix Critical and Important findings test-first; full suite green).
+- [ ] **Step 7: E-005 acceptance**
 
 Plan the next test from Q-001's selected plan (after the E-004 verdict) with `lab exp plan`, then `lab exp build`,
 `lab exp check`, hand the sliced file to the owner, `lab exp start` when the owner sends it.
@@ -466,21 +498,11 @@ budget after it. Commit the records.
 
 ## Phase 2: the remaining guards, builders and safeguards
 
-### Task 9: Actual-difference check
-
-**Files:** Create `lab/loop/diff.py`; modify `lab/loop/guards.py`; test `tests/test_diff.py`.
-
-**Interfaces:** `actual_differences(paths, exp: dict, build: dict) -> list[dict]` — each `{"where": "settings"|"plate"|"geometry", "key", "a", "b"}` between variant pairs (settings from each variant's effective settings: base + patch; plate from objects/placements excluding the mirror swap; geometry from mesh fingerprints and, for `.scad` sources, differing `-D` parameters); `undeclared(diffs, exp, factors) -> list[dict]` (drops the factor's key and declared `dependent_adjustments`); bundle factors write `factor_scope: "bundle"` and `bundle_differences` on the build. Guard `undeclared_difference` → `blocked`, in `check` and `start`.
-
-- [ ] **Step 1: Failing tests:** `test_undeclared_setting_blocks`, `test_declared_dependent_adjustment_allowed`, `test_undeclared_plate_change_blocks`, `test_undeclared_geometry_change_blocks`, `test_bundle_factor_records_scope_and_list`, `test_blocked_again_at_start_after_hand_edit`.
-- [ ] **Step 2: Run — FAIL.**  **Step 3: Implement.**  **Step 4: Run — PASS; full suite PASS.**
-- [ ] **Step 5: Commit** `git commit -m "Actual-difference check (one factor, enforced on the build)"`
-
 ### Task 10: Plate matching over the judged heights
 
 **Files:** Modify `lab/loop/plate.py`, `lab/loop/outcome.py`, `lab/loop/guards.py`, `lab/loop/builders.py`; test `tests/test_plate.py`.
 
-**Interfaces:** `judged_window(exp: dict) -> tuple[float, float]` (the strip's judged region in strip heights, or `defect_z ± 10` mapped to strip heights); `plates_match(profile_a, profile_b, window, tolerance_pct) -> dict` (`{"match": bool, "worst_pct": float, "at_z": float}`, comparing per-layer times over the window by their medians in 1 mm bins); guard `plate_mismatch` (needs approval; skipped when the factor's kind is `plate`); `comparison_validity` uses `plates_match` instead of the Task 4 whole-region median; mirrored placements on repeat builds (`placements` swapped when the experiment already has a build with the same variants); production match flag when `project.json` names `production_plate` (objects per plate) and the judged-window medians differ by more than the tolerance (reported as a warning reason `production_mismatch`).
+**Interfaces:** `judged_window(exp: dict) -> tuple[float, float]` (the strip's judged region in strip heights, or `defect_z ± 10` mapped to strip heights); `plates_match(profile_a, profile_b, window, tolerance_pct) -> dict` (`{"match": bool, "worst_pct": float, "at_z": float}`, comparing per-layer times over the window by their medians in 1 mm bins); guard `plate_mismatch` (still needs approval; skipped when the factor's kind is `plate`); `comparison_validity` and the `plate_mismatch` guard use `plates_match` instead of the Phase 1 judged-region median; mirrored placements on repeat builds (`placements` swapped when the experiment already has a build with the same variants); production match flag when `project.json` names `production_plate` (objects per plate) and the judged-window medians differ by more than the tolerance (reported as a warning reason `production_mismatch`).
 
 - [ ] **Step 1: Failing tests:** `test_equal_medians_but_window_mismatch_caught`, `test_approval_leaves_mismatch_confounded`, `test_plate_factor_not_a_confound`, `test_repeat_build_mirrors_placements`, `test_production_mismatch_flagged`.
 - [ ] **Steps 2–4:** FAIL → implement → PASS; full suite PASS.
@@ -536,9 +558,9 @@ budget after it. Commit the records.
 
 **Files:** Modify `lab/loop/builders.py`, `lab/cli_loop.py` (`lab exp plan … --around Z --target-minutes M`); test `tests/test_strip_sizing.py`, slow `tests/test_strip_sizing_slow.py`.
 
-**Interfaces:** `size_strip(paths, source, object, around_z: float, target_minutes: float, base, min_margin_mm: float = 6.0, slicer=slice_with_job) -> tuple[float, float]` — slices candidate strips (margins 6, 8, 10, 12 mm) and returns the smallest whose estimate fits; grows the margin when the first or last 3 judged layers' times differ by more than 25 % from the judged-region median (cut-edge effect).
+**Interfaces:** `size_strip(paths, source, object, around_z: float, target_minutes: float, base, min_margin_mm: float = 6.0, slicer=slice_with_job) -> tuple[float, float]` — slices candidate strips (margins 6, 8, 10, 12 mm), in this order: (1) keep only **representative** candidates, where no cut-edge effect reaches the judged region (the first and last 3 judged layers' times within 25 % of the judged-region median); (2) among those, return the smallest whose estimate fits; (3) if the smallest representative strip doesn't fit, raise `ValueError` "No representative strip fits <M> min; the smallest is <N> min (margin <m> mm). Raise the budget or test a narrower question." — never fall back to a non-representative strip.
 
-- [ ] **Step 1: Failing tests:** `test_smallest_fitting_strip_chosen` (fake slicer with a time table), `test_margin_grows_on_cut_edge_effect`; slow: `test_real_sizing_around_66_fits_45_min`.
+- [ ] **Step 1: Failing tests:** `test_smallest_fitting_strip_chosen` (fake slicer with a time table), `test_margin_grows_on_cut_edge_effect`, `test_no_representative_strip_fits_is_an_error`; slow: `test_real_sizing_around_66_fits_45_min`.
 - [ ] **Steps 2–4:** FAIL → implement → PASS.
 - [ ] **Step 5: Commit** `git commit -m "Height strips sized to the time budget"`
 
