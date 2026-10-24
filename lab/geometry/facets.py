@@ -17,6 +17,7 @@ class Facet:
     centroid_z: float
     elevation_deg: float
     side: str
+    index: int = -1
 
 
 @dataclass
@@ -44,7 +45,7 @@ def front_facets(m: trimesh.Trimesh, max_tilt_deg: float = 25.0) -> list[Facet]:
             out.append(Facet(normal=tuple(map(float, n)), area_mm2=float(m.area_faces[i]), z_min=float(zs.min()),
                              z_max=float(zs.max()), centroid_z=float(zs.mean()),
                              elevation_deg=float(np.degrees(np.arcsin(np.clip(n[2], -1, 1)))),
-                             side=("+" if sign > 0 else "-") + name))
+                             side=("+" if sign > 0 else "-") + name, index=int(i)))
     return out
 
 
