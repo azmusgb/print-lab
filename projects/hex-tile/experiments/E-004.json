@@ -1,7 +1,11 @@
 {
+  "schema": 1,
+  "record_type": "experiment",
   "id": "E-004",
   "project": "hex-tile",
-  "question": "Does sharing the plate (longer layer time) make v58's face rougher?",
+  "question": "Q-001",
+  "provenance": "prospective",
+  "question_text": "Does sharing the plate (longer layer time) make v58's face rougher?",
   "hypothesis": "E-001's v58 strip shared the plate with a second strip, so each layer took about 35 s; E-002's strip printed alone at about 18 s per layer and came out much smoother, with nothing else changed. With matte PLA at full fan, a longer wait lets each layer cool fully, so layer boundaries show.",
   "prediction": "Two v58 strips on one plate both come out like E-001's (rougher than E-002's lone strip).",
   "why_this_test": "E-002 changed nothing deliberately (no drying, no calibration), so the one difference from E-001 is the plate: one object or two. A full tile's cross-section matches the strip's, so this is also 'one pair per plate or two'.",
@@ -35,34 +39,410 @@
     "nozzle_confirmed": "0.4/0.4 (send dialog: Bambu Lab X2D 0.4/0.4mm)",
     "plate": "textured PEI"
   },
+  "findings": [],
+  "judge_on": "bands",
+  "expect": {
+    "better": "E-002-A",
+    "than": "E-004-A",
+    "min_strength": "clearly"
+  },
+  "derived_from_artifact": [],
+  "derived_from_result": [],
+  "controls": {
+    "witness_required": false,
+    "anchor": null
+  },
+  "reference_variants": [
+    "E-002-A"
+  ],
+  "build_spec": null,
   "status": "printing",
-  "blocked_reason": "",
-  "print_runs": [
+  "variants": [
     {
-      "id": "PR-006",
-      "file": "hex-tile_E004_PR006.3mf",
+      "id": "E-004-A",
+      "tab": null,
+      "factor_value": 2,
+      "copies": 2
+    }
+  ],
+  "builds": [
+    {
+      "id": "BLD-004-01",
+      "ok": true,
+      "at": null,
+      "inputs": {
+        "model": {
+          "sources/hexagon_v56_X2D_0.6nozzle.3mf": "a399c465f99ecf297e9311eed35c07cf7dec0516e84c26f29d12e6c0f894b89f",
+          "sources/hexagon_v57_X2D_0.4nozzle.3mf": "1d4c063e2ed94f9358dd1e496cb5cfbe1bfac507f531d4ef13a94c98ec0822b9",
+          "sources/hexagon_v58_X2D_0.6nozzle.3mf": "24ec2fef4762ec2094cde108a9a24b0c38b515d60612934f7fadad8f84d6705e"
+        },
+        "settings": "1d4c063e2ed94f9358dd1e496cb5cfbe1bfac507f531d4ef13a94c98ec0822b9",
+        "builder_version": "script (before 1A.1)"
+      },
+      "job": "job-20261024T213903-5d82",
+      "artifact": "prints/hex-tile_E004_PR006.3mf",
       "artifact_sha256": "4eb40dec91dbfc31c4e2fe4bfa2dbfc7b1efbe5e9f2eaf7828d880b58812cf9e",
-      "variants": [
-        "v58 strip Z60-72 (1 of 2)",
-        "v58 strip Z60-72 (2 of 2)"
-      ],
-      "slice_job": "job-20261024T213903-5d82",
-      "sliced_estimate": "1 h 2 min",
-      "filament_g": 18.7,
-      "layers": 60,
-      "started": "2026-10-24",
-      "send_dialog": {
-        "printer": "X2D 0.4/0.4mm",
-        "plate": "PEI",
-        "filament": "PLA, AMS slot A1, main nozzle",
-        "timelapse": "off",
-        "auto_bed_leveling": "auto",
-        "flow_dynamics_calibration": "auto (reuses the last value when filament and nozzle are unchanged)",
-        "nozzle_offset_calibration": "off",
-        "estimate": "1h3m, 0.66 oz"
+      "sliced": "prints/sliced/hex-tile_E004_PR006.gcode.3mf",
+      "estimate": {
+        "minutes": 62.8,
+        "g": 18.7
+      },
+      "plate": {
+        "objects": [
+          "v58 strip Z60-72 (1 of 2)",
+          "v58 strip Z60-72 (2 of 2)"
+        ],
+        "placements": [
+          [
+            109.42,
+            128.0
+          ],
+          [
+            146.58,
+            128.0
+          ]
+        ]
+      },
+      "measured": {
+        "layer_time_median_s": 36.79,
+        "layer_time_profile": [
+          [
+            0.2,
+            321.84
+          ],
+          [
+            0.4,
+            36.05
+          ],
+          [
+            0.6,
+            36.1
+          ],
+          [
+            0.8,
+            36.15
+          ],
+          [
+            1.0,
+            36.21
+          ],
+          [
+            1.2,
+            36.26
+          ],
+          [
+            1.4,
+            36.32
+          ],
+          [
+            1.6,
+            36.33
+          ],
+          [
+            1.8,
+            36.39
+          ],
+          [
+            2.0,
+            36.45
+          ],
+          [
+            2.2,
+            36.5
+          ],
+          [
+            2.4,
+            36.55
+          ],
+          [
+            2.6,
+            36.6
+          ],
+          [
+            2.8,
+            36.66
+          ],
+          [
+            3.0,
+            36.71
+          ],
+          [
+            3.2,
+            36.77
+          ],
+          [
+            3.4,
+            36.82
+          ],
+          [
+            3.6,
+            36.88
+          ],
+          [
+            3.8,
+            36.93
+          ],
+          [
+            4.0,
+            36.98
+          ],
+          [
+            4.2,
+            37.03
+          ],
+          [
+            4.4,
+            37.09
+          ],
+          [
+            4.6,
+            37.14
+          ],
+          [
+            4.8,
+            37.2
+          ],
+          [
+            5.0,
+            37.25
+          ],
+          [
+            5.2,
+            37.31
+          ],
+          [
+            5.4,
+            37.37
+          ],
+          [
+            5.6,
+            37.42
+          ],
+          [
+            5.8,
+            37.46
+          ],
+          [
+            6.0,
+            37.5
+          ],
+          [
+            6.2,
+            37.6
+          ],
+          [
+            6.4,
+            37.63
+          ],
+          [
+            6.6,
+            37.54
+          ],
+          [
+            6.8,
+            37.5
+          ],
+          [
+            7.0,
+            37.45
+          ],
+          [
+            7.2,
+            37.39
+          ],
+          [
+            7.4,
+            37.35
+          ],
+          [
+            7.6,
+            37.3
+          ],
+          [
+            7.8,
+            37.25
+          ],
+          [
+            8.0,
+            37.19
+          ],
+          [
+            8.2,
+            37.14
+          ],
+          [
+            8.4,
+            37.08
+          ],
+          [
+            8.6,
+            37.03
+          ],
+          [
+            8.8,
+            36.98
+          ],
+          [
+            9.0,
+            36.81
+          ],
+          [
+            9.2,
+            36.74
+          ],
+          [
+            9.4,
+            36.69
+          ],
+          [
+            9.6,
+            36.64
+          ],
+          [
+            9.8,
+            36.58
+          ],
+          [
+            10.0,
+            36.52
+          ],
+          [
+            10.2,
+            36.47
+          ],
+          [
+            10.4,
+            36.42
+          ],
+          [
+            10.6,
+            36.37
+          ],
+          [
+            10.8,
+            36.31
+          ],
+          [
+            11.0,
+            36.26
+          ],
+          [
+            11.2,
+            36.2
+          ],
+          [
+            11.4,
+            36.15
+          ],
+          [
+            11.6,
+            36.1
+          ],
+          [
+            11.8,
+            36.04
+          ],
+          [
+            12.0,
+            35.56
+          ]
+        ]
       }
     }
   ],
-  "findings": [],
-  "jobs": []
+  "approval": null,
+  "print_runs": [
+    {
+      "id": "PR-006",
+      "build_id": "BLD-004-01",
+      "started_at": null,
+      "setup": {
+        "nozzle": "0.4/0.4mm",
+        "plate": "PEI",
+        "filament": "PLA, AMS slot A1, main nozzle",
+        "flow_dynamics_calibration": "auto (reuses the last value when filament and nozzle are unchanged)",
+        "auto_bed_leveling": "auto",
+        "filament_dried": false,
+        "vibration_calibration": false
+      },
+      "usage": null,
+      "failed": null,
+      "photos": []
+    }
+  ],
+  "owner_verdict": null,
+  "superseded_verdicts": [],
+  "anchors": [],
+  "ai_observations": [],
+  "comparison_validity": null,
+  "prediction_outcome": null,
+  "analysis": [],
+  "legacy": {
+    "id": "E-004",
+    "project": "hex-tile",
+    "question": "Does sharing the plate (longer layer time) make v58's face rougher?",
+    "hypothesis": "E-001's v58 strip shared the plate with a second strip, so each layer took about 35 s; E-002's strip printed alone at about 18 s per layer and came out much smoother, with nothing else changed. With matte PLA at full fan, a longer wait lets each layer cool fully, so layer boundaries show.",
+    "prediction": "Two v58 strips on one plate both come out like E-001's (rougher than E-002's lone strip).",
+    "why_this_test": "E-002 changed nothing deliberately (no drying, no calibration), so the one difference from E-001 is the plate: one object or two. A full tile's cross-section matches the strip's, so this is also 'one pair per plate or two'.",
+    "test_kind": "height_strip",
+    "factor": {
+      "name": "objects_on_plate",
+      "values": [
+        1,
+        2
+      ],
+      "unit": "",
+      "layer_time_s": [
+        18.4,
+        34.8
+      ]
+    },
+    "controlled": {
+      "model": "v58 (0.6-variant geometry)",
+      "settings": "v55 0.4 process, unchanged",
+      "nozzle": "0.4",
+      "layer_height": "0.2",
+      "plate": "textured PEI",
+      "filament": "Kexcelled K5 PLA M, Light Matte Terracotta (lot C6719062), same spool, not dried",
+      "strip": "Z 60\u201372 mm of the 6\" pair",
+      "compare_with": "E-002 strip (1 object)"
+    },
+    "dependent_adjustments": {},
+    "baseline": {
+      "filament_dried": false,
+      "vibration_calibration": false,
+      "nozzle_confirmed": "0.4/0.4 (send dialog: Bambu Lab X2D 0.4/0.4mm)",
+      "plate": "textured PEI"
+    },
+    "status": "printing",
+    "blocked_reason": "",
+    "print_runs": [
+      {
+        "id": "PR-006",
+        "file": "hex-tile_E004_PR006.3mf",
+        "artifact_sha256": "4eb40dec91dbfc31c4e2fe4bfa2dbfc7b1efbe5e9f2eaf7828d880b58812cf9e",
+        "variants": [
+          "v58 strip Z60-72 (1 of 2)",
+          "v58 strip Z60-72 (2 of 2)"
+        ],
+        "slice_job": "job-20261024T213903-5d82",
+        "sliced_estimate": "1 h 2 min",
+        "filament_g": 18.7,
+        "layers": 60,
+        "started": "2026-10-24",
+        "send_dialog": {
+          "printer": "X2D 0.4/0.4mm",
+          "plate": "PEI",
+          "filament": "PLA, AMS slot A1, main nozzle",
+          "timelapse": "off",
+          "auto_bed_leveling": "auto",
+          "flow_dynamics_calibration": "auto (reuses the last value when filament and nozzle are unchanged)",
+          "nozzle_offset_calibration": "off",
+          "estimate": "1h3m, 0.66 oz"
+        }
+      }
+    ],
+    "findings": [],
+    "jobs": []
+  }
 }

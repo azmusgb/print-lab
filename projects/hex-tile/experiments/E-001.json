@@ -1,7 +1,11 @@
 {
+  "schema": 1,
+  "record_type": "experiment",
   "id": "E-001",
   "project": "hex-tile",
-  "question": "Does v58 remove the mid-height line?",
+  "question": "Q-001",
+  "provenance": "migrated",
+  "question_text": "Does v58 remove the mid-height line?",
   "hypothesis": "The mid-height line on v53\u2013v56 comes from the upper-edge join starting at the widest point (66 mm); v58 has no join that starts partway up.",
   "prediction": "The v56 strip shows a line at about 66 mm (6 mm above the strip's base); the v58 strip shows none.",
   "why_this_test": "The line appears from v53, when the join began at mid-height, and stays while that join is kept; v51 (no such join) had none. A 40 mm strip across that height answers it in about an hour instead of a 3\u20134 hour pair.",
@@ -32,97 +36,6 @@
     "nozzle_confirmed": null,
     "plate": "textured PEI"
   },
-  "status": "answered",
-  "blocked_reason": "",
-  "print_runs": [
-    {
-      "id": "PR-001",
-      "file": "hex-tile_E001_PR001.3mf",
-      "artifact_sha256": "cef83035752fbb8c50851497c5778f80887e85f7d1b107bfb83023461d419c82",
-      "variants": [
-        "v56 strip Z60-100",
-        "v58 strip Z60-100"
-      ],
-      "sliced_estimate": "2 h 52 min",
-      "filament_g": 53.94,
-      "layers": 200,
-      "slicer_events_near_join": {
-        "outer_wall_speed_change": false,
-        "speed_change_z": [],
-        "fan_change": false,
-        "fan_change_z": [],
-        "layer_time_jump": false,
-        "layer_time_jump_z": []
-      },
-      "superseded_by": "PR-002",
-      "note": "Taller than the question needs: Z 72\u2013100 belongs to the upper-edge ripple, a separate experiment.",
-      "slice_job": "job-20261024T101859-6f69"
-    },
-    {
-      "id": "PR-002",
-      "file": "hex-tile_E001_PR002.3mf",
-      "artifact_sha256": "0c0780c695a0be89d3ff44880e8adcb4f237d9fa6be531d7fd18f07ac5a310e7",
-      "variants": [
-        "v56 strip Z60-72",
-        "v58 strip Z60-72"
-      ],
-      "sliced_estimate": "1 h 2 min",
-      "filament_g": 18.87,
-      "layers": 60,
-      "slicer_events_near_join": {
-        "outer_wall_speed_change": false,
-        "speed_change_z": [],
-        "fan_change": false,
-        "fan_change_z": [],
-        "layer_time_jump": false,
-        "layer_time_jump_z": []
-      },
-      "result": {
-        "printed_at": "2026-10-24",
-        "photos": [
-          "IMG_0749\u20130761 (owner's phone)",
-          "printer camera, on the bed"
-        ],
-        "defects_from": "owner",
-        "confirmed": true,
-        "reading": {
-          "v56": "Soft horizontal bands across the face, the strongest near mid-strip; the inner back wall shows a seam line where the two tiles join (z 66). The face line is not clearly stronger than v58's.",
-          "v58": "The same soft banding on the face. The tiles stay separate; four breakaway ties between the backs leave strings and small raised marks on the back faces (not the show face)."
-        },
-        "answer": "v58 is better than v56 (owner). Soft bands remain on v58's face, milder than before; that question moves to E-002.",
-        "baseline_recorded": false,
-        "owner_words": "the ribbed back looks better than the v56 for sure",
-        "owner_verdict": {
-          "better": "v58",
-          "worse": "v56"
-        },
-        "owner_words_2": "i do [see bands on v58] - though seem better than prior?"
-      },
-      "slice_job": "job-20261024T161207-2e01"
-    },
-    {
-      "id": "PR-003",
-      "file": "hex-tile_E001_PR003.3mf",
-      "artifact_sha256": "ec0f062821d9410549fb27f8d48163373d7ad20f28d4d7b061dae41dc5c7a4d2",
-      "variants": [
-        "v56 strip Z60-76",
-        "v58 strip Z60-76"
-      ],
-      "sliced_estimate": "1 h 19 min",
-      "filament_g": 24.39,
-      "layers": 80,
-      "slicer_events_near_join": {
-        "outer_wall_speed_change": false,
-        "speed_change_z": [],
-        "fan_change": false,
-        "fan_change_z": [],
-        "layer_time_jump": false,
-        "layer_time_jump_z": []
-      },
-      "note": "Fallback with 10 mm above the line, if 6 mm proves too little to judge.",
-      "slice_job": "job-20261024T161208-2535"
-    }
-  ],
   "findings": [
     {
       "rule": "baseline-incomplete",
@@ -139,5 +52,1719 @@
       }
     }
   ],
-  "jobs": []
+  "judge_on": "the mid-height line",
+  "expect": null,
+  "derived_from_artifact": [],
+  "derived_from_result": [],
+  "controls": {
+    "witness_required": false,
+    "anchor": null
+  },
+  "reference_variants": [],
+  "build_spec": null,
+  "status": "answered",
+  "variants": [
+    {
+      "id": "E-001-A",
+      "tab": null,
+      "factor_value": "v56"
+    },
+    {
+      "id": "E-001-B",
+      "tab": null,
+      "factor_value": "v58"
+    }
+  ],
+  "builds": [
+    {
+      "id": "BLD-001-01",
+      "ok": true,
+      "at": null,
+      "inputs": {
+        "model": {
+          "sources/hexagon_v56_X2D_0.6nozzle.3mf": "a399c465f99ecf297e9311eed35c07cf7dec0516e84c26f29d12e6c0f894b89f",
+          "sources/hexagon_v57_X2D_0.4nozzle.3mf": "1d4c063e2ed94f9358dd1e496cb5cfbe1bfac507f531d4ef13a94c98ec0822b9",
+          "sources/hexagon_v58_X2D_0.6nozzle.3mf": "24ec2fef4762ec2094cde108a9a24b0c38b515d60612934f7fadad8f84d6705e"
+        },
+        "settings": "1d4c063e2ed94f9358dd1e496cb5cfbe1bfac507f531d4ef13a94c98ec0822b9",
+        "builder_version": "script (before 1A.1)"
+      },
+      "job": "job-20261024T101859-6f69",
+      "artifact": "prints/hex-tile_E001_PR001.3mf",
+      "artifact_sha256": "cef83035752fbb8c50851497c5778f80887e85f7d1b107bfb83023461d419c82",
+      "sliced": "prints/sliced/hex-tile_E001_PR001.gcode.3mf",
+      "estimate": {
+        "minutes": 172.7,
+        "g": 53.94
+      },
+      "plate": {
+        "objects": [
+          "E-001_PR-001_v56_strip_z60-100",
+          "E-001_PR-001_v58_strip_z60-100"
+        ],
+        "placements": [
+          [
+            104.42,
+            128.0
+          ],
+          [
+            152.18,
+            128.0
+          ]
+        ]
+      },
+      "measured": {
+        "layer_time_median_s": 32.88,
+        "layer_time_profile": [
+          [
+            0.2,
+            382.65
+          ],
+          [
+            0.4,
+            34.18
+          ],
+          [
+            0.6,
+            34.21
+          ],
+          [
+            0.8,
+            34.27
+          ],
+          [
+            1.0,
+            34.33
+          ],
+          [
+            1.2,
+            34.38
+          ],
+          [
+            1.4,
+            34.44
+          ],
+          [
+            1.6,
+            34.48
+          ],
+          [
+            1.8,
+            34.54
+          ],
+          [
+            2.0,
+            34.59
+          ],
+          [
+            2.2,
+            34.66
+          ],
+          [
+            2.4,
+            34.71
+          ],
+          [
+            2.6,
+            34.77
+          ],
+          [
+            2.8,
+            34.81
+          ],
+          [
+            3.0,
+            34.87
+          ],
+          [
+            3.2,
+            34.92
+          ],
+          [
+            3.4,
+            34.97
+          ],
+          [
+            3.6,
+            35.03
+          ],
+          [
+            3.8,
+            35.13
+          ],
+          [
+            4.0,
+            35.13
+          ],
+          [
+            4.2,
+            35.2
+          ],
+          [
+            4.4,
+            35.26
+          ],
+          [
+            4.6,
+            35.32
+          ],
+          [
+            4.8,
+            35.32
+          ],
+          [
+            5.0,
+            35.42
+          ],
+          [
+            5.2,
+            35.48
+          ],
+          [
+            5.4,
+            35.54
+          ],
+          [
+            5.6,
+            35.86
+          ],
+          [
+            5.8,
+            35.67
+          ],
+          [
+            6.0,
+            35.73
+          ],
+          [
+            6.2,
+            35.73
+          ],
+          [
+            6.4,
+            35.08
+          ],
+          [
+            6.6,
+            35.02
+          ],
+          [
+            6.8,
+            34.97
+          ],
+          [
+            7.0,
+            34.92
+          ],
+          [
+            7.2,
+            34.86
+          ],
+          [
+            7.4,
+            34.81
+          ],
+          [
+            7.6,
+            34.76
+          ],
+          [
+            7.8,
+            34.71
+          ],
+          [
+            8.0,
+            34.65
+          ],
+          [
+            8.2,
+            34.6
+          ],
+          [
+            8.4,
+            34.54
+          ],
+          [
+            8.6,
+            34.49
+          ],
+          [
+            8.8,
+            34.48
+          ],
+          [
+            9.0,
+            34.42
+          ],
+          [
+            9.2,
+            34.37
+          ],
+          [
+            9.4,
+            34.31
+          ],
+          [
+            9.6,
+            34.26
+          ],
+          [
+            9.8,
+            34.2
+          ],
+          [
+            10.0,
+            34.14
+          ],
+          [
+            10.2,
+            34.09
+          ],
+          [
+            10.4,
+            34.03
+          ],
+          [
+            10.6,
+            33.97
+          ],
+          [
+            10.8,
+            33.91
+          ],
+          [
+            11.0,
+            33.86
+          ],
+          [
+            11.2,
+            33.8
+          ],
+          [
+            11.4,
+            33.74
+          ],
+          [
+            11.6,
+            33.69
+          ],
+          [
+            11.8,
+            33.64
+          ],
+          [
+            12.0,
+            34.07
+          ],
+          [
+            12.2,
+            34.18
+          ],
+          [
+            12.4,
+            34.15
+          ],
+          [
+            12.6,
+            34.18
+          ],
+          [
+            12.8,
+            34.15
+          ],
+          [
+            13.0,
+            34.12
+          ],
+          [
+            13.2,
+            34.09
+          ],
+          [
+            13.4,
+            34.07
+          ],
+          [
+            13.6,
+            34.04
+          ],
+          [
+            13.8,
+            34.01
+          ],
+          [
+            14.0,
+            33.98
+          ],
+          [
+            14.2,
+            33.94
+          ],
+          [
+            14.4,
+            33.91
+          ],
+          [
+            14.6,
+            33.88
+          ],
+          [
+            14.8,
+            33.85
+          ],
+          [
+            15.0,
+            33.81
+          ],
+          [
+            15.2,
+            33.78
+          ],
+          [
+            15.4,
+            33.75
+          ],
+          [
+            15.6,
+            33.71
+          ],
+          [
+            15.8,
+            33.68
+          ],
+          [
+            16.0,
+            33.63
+          ],
+          [
+            16.2,
+            33.6
+          ],
+          [
+            16.4,
+            33.56
+          ],
+          [
+            16.6,
+            33.53
+          ],
+          [
+            16.8,
+            33.5
+          ],
+          [
+            17.0,
+            33.45
+          ],
+          [
+            17.2,
+            33.41
+          ],
+          [
+            17.4,
+            33.37
+          ],
+          [
+            17.6,
+            33.34
+          ],
+          [
+            17.8,
+            33.31
+          ],
+          [
+            18.0,
+            33.28
+          ],
+          [
+            18.2,
+            33.24
+          ],
+          [
+            18.4,
+            33.21
+          ],
+          [
+            18.6,
+            33.18
+          ],
+          [
+            18.8,
+            33.14
+          ],
+          [
+            19.0,
+            33.05
+          ],
+          [
+            19.2,
+            33.04
+          ],
+          [
+            19.4,
+            33.01
+          ],
+          [
+            19.6,
+            32.96
+          ],
+          [
+            19.8,
+            32.93
+          ],
+          [
+            20.0,
+            32.9
+          ],
+          [
+            20.2,
+            32.87
+          ],
+          [
+            20.4,
+            32.83
+          ],
+          [
+            20.6,
+            32.8
+          ],
+          [
+            20.8,
+            32.75
+          ],
+          [
+            21.0,
+            32.72
+          ],
+          [
+            21.2,
+            32.68
+          ],
+          [
+            21.4,
+            32.63
+          ],
+          [
+            21.6,
+            32.58
+          ],
+          [
+            21.8,
+            32.53
+          ],
+          [
+            22.0,
+            32.47
+          ],
+          [
+            22.2,
+            32.4
+          ],
+          [
+            22.4,
+            32.37
+          ],
+          [
+            22.6,
+            32.34
+          ],
+          [
+            22.8,
+            32.27
+          ],
+          [
+            23.0,
+            32.21
+          ],
+          [
+            23.2,
+            32.15
+          ],
+          [
+            23.4,
+            32.09
+          ],
+          [
+            23.6,
+            32.05
+          ],
+          [
+            23.8,
+            32.0
+          ],
+          [
+            24.0,
+            31.94
+          ],
+          [
+            24.2,
+            31.89
+          ],
+          [
+            24.4,
+            31.83
+          ],
+          [
+            24.6,
+            31.77
+          ],
+          [
+            24.8,
+            31.71
+          ],
+          [
+            25.0,
+            31.65
+          ],
+          [
+            25.2,
+            31.59
+          ],
+          [
+            25.4,
+            31.51
+          ],
+          [
+            25.6,
+            31.45
+          ],
+          [
+            25.8,
+            31.36
+          ],
+          [
+            26.0,
+            31.31
+          ],
+          [
+            26.2,
+            31.2
+          ],
+          [
+            26.4,
+            31.14
+          ],
+          [
+            26.6,
+            31.08
+          ],
+          [
+            26.8,
+            31.02
+          ],
+          [
+            27.0,
+            30.96
+          ],
+          [
+            27.2,
+            30.9
+          ],
+          [
+            27.4,
+            30.89
+          ],
+          [
+            27.6,
+            30.83
+          ],
+          [
+            27.8,
+            30.77
+          ],
+          [
+            28.0,
+            30.71
+          ],
+          [
+            28.2,
+            30.65
+          ],
+          [
+            28.4,
+            30.59
+          ],
+          [
+            28.6,
+            30.53
+          ],
+          [
+            28.8,
+            30.47
+          ],
+          [
+            29.0,
+            30.17
+          ],
+          [
+            29.2,
+            29.98
+          ],
+          [
+            29.4,
+            29.91
+          ],
+          [
+            29.6,
+            29.83
+          ],
+          [
+            29.8,
+            30.0
+          ],
+          [
+            30.0,
+            29.82
+          ],
+          [
+            30.2,
+            29.7
+          ],
+          [
+            30.4,
+            29.67
+          ],
+          [
+            30.6,
+            29.64
+          ],
+          [
+            30.8,
+            29.61
+          ],
+          [
+            31.0,
+            29.58
+          ],
+          [
+            31.2,
+            29.55
+          ],
+          [
+            31.4,
+            29.51
+          ],
+          [
+            31.6,
+            29.48
+          ],
+          [
+            31.8,
+            29.45
+          ],
+          [
+            32.0,
+            29.42
+          ],
+          [
+            32.2,
+            29.39
+          ],
+          [
+            32.4,
+            29.36
+          ],
+          [
+            32.6,
+            29.33
+          ],
+          [
+            32.8,
+            29.29
+          ],
+          [
+            33.0,
+            29.26
+          ],
+          [
+            33.2,
+            29.23
+          ],
+          [
+            33.4,
+            29.2
+          ],
+          [
+            33.6,
+            29.17
+          ],
+          [
+            33.8,
+            29.14
+          ],
+          [
+            34.0,
+            29.1
+          ],
+          [
+            34.2,
+            29.07
+          ],
+          [
+            34.4,
+            29.04
+          ],
+          [
+            34.6,
+            29.01
+          ],
+          [
+            34.8,
+            28.98
+          ],
+          [
+            35.0,
+            28.95
+          ],
+          [
+            35.2,
+            28.92
+          ],
+          [
+            35.4,
+            28.88
+          ],
+          [
+            35.6,
+            28.85
+          ],
+          [
+            35.8,
+            28.82
+          ],
+          [
+            36.0,
+            28.79
+          ],
+          [
+            36.2,
+            28.76
+          ],
+          [
+            36.4,
+            28.73
+          ],
+          [
+            36.6,
+            28.69
+          ],
+          [
+            36.8,
+            28.66
+          ],
+          [
+            37.0,
+            28.63
+          ],
+          [
+            37.2,
+            28.6
+          ],
+          [
+            37.4,
+            28.57
+          ],
+          [
+            37.6,
+            28.54
+          ],
+          [
+            37.8,
+            28.51
+          ],
+          [
+            38.0,
+            28.48
+          ],
+          [
+            38.2,
+            28.44
+          ],
+          [
+            38.4,
+            28.48
+          ],
+          [
+            38.6,
+            28.45
+          ],
+          [
+            38.8,
+            28.42
+          ],
+          [
+            39.0,
+            28.39
+          ],
+          [
+            39.2,
+            28.35
+          ],
+          [
+            39.4,
+            28.32
+          ],
+          [
+            39.6,
+            28.29
+          ],
+          [
+            39.8,
+            28.26
+          ],
+          [
+            40.0,
+            27.88
+          ]
+        ]
+      }
+    },
+    {
+      "id": "BLD-001-02",
+      "ok": true,
+      "at": null,
+      "inputs": {
+        "model": {
+          "sources/hexagon_v56_X2D_0.6nozzle.3mf": "a399c465f99ecf297e9311eed35c07cf7dec0516e84c26f29d12e6c0f894b89f",
+          "sources/hexagon_v57_X2D_0.4nozzle.3mf": "1d4c063e2ed94f9358dd1e496cb5cfbe1bfac507f531d4ef13a94c98ec0822b9",
+          "sources/hexagon_v58_X2D_0.6nozzle.3mf": "24ec2fef4762ec2094cde108a9a24b0c38b515d60612934f7fadad8f84d6705e"
+        },
+        "settings": "1d4c063e2ed94f9358dd1e496cb5cfbe1bfac507f531d4ef13a94c98ec0822b9",
+        "builder_version": "script (before 1A.1)"
+      },
+      "job": "job-20261024T161207-2e01",
+      "artifact": "prints/hex-tile_E001_PR002.3mf",
+      "artifact_sha256": "0c0780c695a0be89d3ff44880e8adcb4f237d9fa6be531d7fd18f07ac5a310e7",
+      "sliced": "prints/sliced/hex-tile_E001_PR002.gcode.3mf",
+      "estimate": {
+        "minutes": 62.5,
+        "g": 18.87
+      },
+      "plate": {
+        "objects": [
+          "v56 strip Z60-72",
+          "v58 strip Z60-72"
+        ],
+        "placements": [
+          [
+            109.42,
+            128.0
+          ],
+          [
+            147.18,
+            128.0
+          ]
+        ]
+      },
+      "measured": {
+        "layer_time_median_s": 34.74,
+        "layer_time_profile": [
+          [
+            0.2,
+            382.63
+          ],
+          [
+            0.4,
+            34.16
+          ],
+          [
+            0.6,
+            34.19
+          ],
+          [
+            0.8,
+            34.25
+          ],
+          [
+            1.0,
+            34.31
+          ],
+          [
+            1.2,
+            34.36
+          ],
+          [
+            1.4,
+            34.42
+          ],
+          [
+            1.6,
+            34.46
+          ],
+          [
+            1.8,
+            34.52
+          ],
+          [
+            2.0,
+            34.57
+          ],
+          [
+            2.2,
+            34.64
+          ],
+          [
+            2.4,
+            34.69
+          ],
+          [
+            2.6,
+            34.75
+          ],
+          [
+            2.8,
+            34.79
+          ],
+          [
+            3.0,
+            34.85
+          ],
+          [
+            3.2,
+            34.9
+          ],
+          [
+            3.4,
+            34.95
+          ],
+          [
+            3.6,
+            35.01
+          ],
+          [
+            3.8,
+            35.11
+          ],
+          [
+            4.0,
+            35.1
+          ],
+          [
+            4.2,
+            35.18
+          ],
+          [
+            4.4,
+            35.24
+          ],
+          [
+            4.6,
+            35.3
+          ],
+          [
+            4.8,
+            35.3
+          ],
+          [
+            5.0,
+            35.4
+          ],
+          [
+            5.2,
+            35.46
+          ],
+          [
+            5.4,
+            35.52
+          ],
+          [
+            5.6,
+            35.84
+          ],
+          [
+            5.8,
+            35.86
+          ],
+          [
+            6.0,
+            35.92
+          ],
+          [
+            6.2,
+            35.92
+          ],
+          [
+            6.4,
+            35.28
+          ],
+          [
+            6.6,
+            35.22
+          ],
+          [
+            6.8,
+            35.17
+          ],
+          [
+            7.0,
+            35.12
+          ],
+          [
+            7.2,
+            35.06
+          ],
+          [
+            7.4,
+            35.01
+          ],
+          [
+            7.6,
+            34.96
+          ],
+          [
+            7.8,
+            34.9
+          ],
+          [
+            8.0,
+            34.85
+          ],
+          [
+            8.2,
+            34.79
+          ],
+          [
+            8.4,
+            34.73
+          ],
+          [
+            8.6,
+            34.68
+          ],
+          [
+            8.8,
+            34.67
+          ],
+          [
+            9.0,
+            34.62
+          ],
+          [
+            9.2,
+            34.56
+          ],
+          [
+            9.4,
+            34.51
+          ],
+          [
+            9.6,
+            34.45
+          ],
+          [
+            9.8,
+            34.39
+          ],
+          [
+            10.0,
+            34.33
+          ],
+          [
+            10.2,
+            34.28
+          ],
+          [
+            10.4,
+            34.22
+          ],
+          [
+            10.6,
+            34.16
+          ],
+          [
+            10.8,
+            34.11
+          ],
+          [
+            11.0,
+            34.05
+          ],
+          [
+            11.2,
+            34.0
+          ],
+          [
+            11.4,
+            33.94
+          ],
+          [
+            11.6,
+            33.88
+          ],
+          [
+            11.8,
+            33.84
+          ],
+          [
+            12.0,
+            34.63
+          ]
+        ]
+      }
+    },
+    {
+      "id": "BLD-001-03",
+      "ok": true,
+      "at": null,
+      "inputs": {
+        "model": {
+          "sources/hexagon_v56_X2D_0.6nozzle.3mf": "a399c465f99ecf297e9311eed35c07cf7dec0516e84c26f29d12e6c0f894b89f",
+          "sources/hexagon_v57_X2D_0.4nozzle.3mf": "1d4c063e2ed94f9358dd1e496cb5cfbe1bfac507f531d4ef13a94c98ec0822b9",
+          "sources/hexagon_v58_X2D_0.6nozzle.3mf": "24ec2fef4762ec2094cde108a9a24b0c38b515d60612934f7fadad8f84d6705e"
+        },
+        "settings": "1d4c063e2ed94f9358dd1e496cb5cfbe1bfac507f531d4ef13a94c98ec0822b9",
+        "builder_version": "script (before 1A.1)"
+      },
+      "job": "job-20261024T161208-2535",
+      "artifact": "prints/hex-tile_E001_PR003.3mf",
+      "artifact_sha256": "ec0f062821d9410549fb27f8d48163373d7ad20f28d4d7b061dae41dc5c7a4d2",
+      "sliced": "prints/sliced/hex-tile_E001_PR003.gcode.3mf",
+      "estimate": {
+        "minutes": 79.8,
+        "g": 24.39
+      },
+      "plate": {
+        "objects": [
+          "v56 strip Z60-76",
+          "v58 strip Z60-76"
+        ],
+        "placements": [
+          [
+            109.42,
+            128.0
+          ],
+          [
+            147.18,
+            128.0
+          ]
+        ]
+      },
+      "measured": {
+        "layer_time_median_s": 34.47,
+        "layer_time_profile": [
+          [
+            0.2,
+            382.49
+          ],
+          [
+            0.4,
+            34.18
+          ],
+          [
+            0.6,
+            34.21
+          ],
+          [
+            0.8,
+            34.26
+          ],
+          [
+            1.0,
+            34.32
+          ],
+          [
+            1.2,
+            34.37
+          ],
+          [
+            1.4,
+            34.43
+          ],
+          [
+            1.6,
+            34.47
+          ],
+          [
+            1.8,
+            34.53
+          ],
+          [
+            2.0,
+            34.58
+          ],
+          [
+            2.2,
+            34.58
+          ],
+          [
+            2.4,
+            34.48
+          ],
+          [
+            2.6,
+            34.55
+          ],
+          [
+            2.8,
+            34.58
+          ],
+          [
+            3.0,
+            34.64
+          ],
+          [
+            3.2,
+            34.69
+          ],
+          [
+            3.4,
+            34.74
+          ],
+          [
+            3.6,
+            34.8
+          ],
+          [
+            3.8,
+            34.9
+          ],
+          [
+            4.0,
+            34.9
+          ],
+          [
+            4.2,
+            34.97
+          ],
+          [
+            4.4,
+            35.03
+          ],
+          [
+            4.6,
+            35.09
+          ],
+          [
+            4.8,
+            35.09
+          ],
+          [
+            5.0,
+            35.19
+          ],
+          [
+            5.2,
+            35.25
+          ],
+          [
+            5.4,
+            35.3
+          ],
+          [
+            5.6,
+            35.63
+          ],
+          [
+            5.8,
+            35.65
+          ],
+          [
+            6.0,
+            35.71
+          ],
+          [
+            6.2,
+            35.71
+          ],
+          [
+            6.4,
+            35.07
+          ],
+          [
+            6.6,
+            35.0
+          ],
+          [
+            6.8,
+            34.95
+          ],
+          [
+            7.0,
+            34.9
+          ],
+          [
+            7.2,
+            35.06
+          ],
+          [
+            7.4,
+            35.01
+          ],
+          [
+            7.6,
+            34.96
+          ],
+          [
+            7.8,
+            34.9
+          ],
+          [
+            8.0,
+            34.85
+          ],
+          [
+            8.2,
+            34.79
+          ],
+          [
+            8.4,
+            34.73
+          ],
+          [
+            8.6,
+            34.68
+          ],
+          [
+            8.8,
+            34.67
+          ],
+          [
+            9.0,
+            34.62
+          ],
+          [
+            9.2,
+            34.56
+          ],
+          [
+            9.4,
+            34.51
+          ],
+          [
+            9.6,
+            34.45
+          ],
+          [
+            9.8,
+            34.39
+          ],
+          [
+            10.0,
+            34.33
+          ],
+          [
+            10.2,
+            34.28
+          ],
+          [
+            10.4,
+            34.22
+          ],
+          [
+            10.6,
+            34.16
+          ],
+          [
+            10.8,
+            34.11
+          ],
+          [
+            11.0,
+            34.05
+          ],
+          [
+            11.2,
+            34.0
+          ],
+          [
+            11.4,
+            33.94
+          ],
+          [
+            11.6,
+            33.88
+          ],
+          [
+            11.8,
+            33.84
+          ],
+          [
+            12.0,
+            34.26
+          ],
+          [
+            12.2,
+            34.3
+          ],
+          [
+            12.4,
+            34.27
+          ],
+          [
+            12.6,
+            34.3
+          ],
+          [
+            12.8,
+            34.27
+          ],
+          [
+            13.0,
+            34.24
+          ],
+          [
+            13.2,
+            34.21
+          ],
+          [
+            13.4,
+            34.19
+          ],
+          [
+            13.6,
+            34.16
+          ],
+          [
+            13.8,
+            34.13
+          ],
+          [
+            14.0,
+            34.1
+          ],
+          [
+            14.2,
+            34.06
+          ],
+          [
+            14.4,
+            34.03
+          ],
+          [
+            14.6,
+            34.0
+          ],
+          [
+            14.8,
+            33.96
+          ],
+          [
+            15.0,
+            33.93
+          ],
+          [
+            15.2,
+            33.9
+          ],
+          [
+            15.4,
+            33.86
+          ],
+          [
+            15.6,
+            33.83
+          ],
+          [
+            15.8,
+            33.8
+          ],
+          [
+            16.0,
+            34.22
+          ]
+        ]
+      }
+    }
+  ],
+  "approval": null,
+  "print_runs": [
+    {
+      "id": "PR-002",
+      "build_id": "BLD-001-02",
+      "started_at": null,
+      "setup": null,
+      "usage": null,
+      "failed": null,
+      "photos": []
+    }
+  ],
+  "owner_verdict": {
+    "kind": "ranking",
+    "print_runs": [
+      "PR-002"
+    ],
+    "order": [
+      [
+        "E-001-B"
+      ],
+      [
+        "E-001-A"
+      ]
+    ],
+    "strength": null,
+    "about_target": null,
+    "lighting": null,
+    "marks": [],
+    "witness": null,
+    "witness_override": null,
+    "note": "the ribbed back looks better than the v56 for sure",
+    "by": "owner",
+    "at": null
+  },
+  "superseded_verdicts": [],
+  "anchors": [],
+  "ai_observations": [
+    {
+      "type": "photo_reading",
+      "variant": "E-001-A",
+      "assessment": "Soft horizontal bands across the face, the strongest near mid-strip; the inner back wall shows a seam line where the two tiles join (z 66). The face line is not clearly stronger than v58's.",
+      "confidence": null,
+      "confirmed": false,
+      "at": "2026-10-24"
+    },
+    {
+      "type": "photo_reading",
+      "variant": "E-001-B",
+      "assessment": "The same soft banding on the face. The tiles stay separate; four breakaway ties between the backs leave strings and small raised marks on the back faces (not the show face).",
+      "confidence": null,
+      "confirmed": false,
+      "at": "2026-10-24"
+    }
+  ],
+  "comparison_validity": null,
+  "prediction_outcome": null,
+  "analysis": [],
+  "legacy": {
+    "id": "E-001",
+    "project": "hex-tile",
+    "question": "Does v58 remove the mid-height line?",
+    "hypothesis": "The mid-height line on v53\u2013v56 comes from the upper-edge join starting at the widest point (66 mm); v58 has no join that starts partway up.",
+    "prediction": "The v56 strip shows a line at about 66 mm (6 mm above the strip's base); the v58 strip shows none.",
+    "why_this_test": "The line appears from v53, when the join began at mid-height, and stays while that join is kept; v51 (no such join) had none. A 40 mm strip across that height answers it in about an hour instead of a 3\u20134 hour pair.",
+    "test_kind": "height_strip",
+    "factor": {
+      "name": "model_version",
+      "values": [
+        "v56",
+        "v58"
+      ],
+      "unit": ""
+    },
+    "controlled": {
+      "settings": "v55 0.4 process and filament (from the v57 0.4 project)",
+      "nozzle": "0.4",
+      "layer_height": "0.2",
+      "plate": "textured PEI",
+      "strip": "Z 60\u201372 mm of the 6\" pair (PR-002); the line is expected 6 mm above the strip's base",
+      "filament": "Kexcelled K5 PLA M, Light Matte Terracotta (lot C6719062)"
+    },
+    "dependent_adjustments": {
+      "nozzle_variant": "Both strips are cut from the 0.6-variant files (the 0.4 v58 files weren't downloaded); both print on the 0.4 so only the model differs.",
+      "placement": "Two strips on one plate, 25 mm apart, so they share every layer's conditions."
+    },
+    "baseline": {
+      "filament_dried": null,
+      "vibration_calibration": null,
+      "nozzle_confirmed": null,
+      "plate": "textured PEI"
+    },
+    "status": "answered",
+    "blocked_reason": "",
+    "print_runs": [
+      {
+        "id": "PR-001",
+        "file": "hex-tile_E001_PR001.3mf",
+        "artifact_sha256": "cef83035752fbb8c50851497c5778f80887e85f7d1b107bfb83023461d419c82",
+        "variants": [
+          "v56 strip Z60-100",
+          "v58 strip Z60-100"
+        ],
+        "sliced_estimate": "2 h 52 min",
+        "filament_g": 53.94,
+        "layers": 200,
+        "slicer_events_near_join": {
+          "outer_wall_speed_change": false,
+          "speed_change_z": [],
+          "fan_change": false,
+          "fan_change_z": [],
+          "layer_time_jump": false,
+          "layer_time_jump_z": []
+        },
+        "superseded_by": "PR-002",
+        "note": "Taller than the question needs: Z 72\u2013100 belongs to the upper-edge ripple, a separate experiment.",
+        "slice_job": "job-20261024T101859-6f69"
+      },
+      {
+        "id": "PR-002",
+        "file": "hex-tile_E001_PR002.3mf",
+        "artifact_sha256": "0c0780c695a0be89d3ff44880e8adcb4f237d9fa6be531d7fd18f07ac5a310e7",
+        "variants": [
+          "v56 strip Z60-72",
+          "v58 strip Z60-72"
+        ],
+        "sliced_estimate": "1 h 2 min",
+        "filament_g": 18.87,
+        "layers": 60,
+        "slicer_events_near_join": {
+          "outer_wall_speed_change": false,
+          "speed_change_z": [],
+          "fan_change": false,
+          "fan_change_z": [],
+          "layer_time_jump": false,
+          "layer_time_jump_z": []
+        },
+        "result": {
+          "printed_at": "2026-10-24",
+          "photos": [
+            "IMG_0749\u20130761 (owner's phone)",
+            "printer camera, on the bed"
+          ],
+          "defects_from": "owner",
+          "confirmed": true,
+          "reading": {
+            "v56": "Soft horizontal bands across the face, the strongest near mid-strip; the inner back wall shows a seam line where the two tiles join (z 66). The face line is not clearly stronger than v58's.",
+            "v58": "The same soft banding on the face. The tiles stay separate; four breakaway ties between the backs leave strings and small raised marks on the back faces (not the show face)."
+          },
+          "answer": "v58 is better than v56 (owner). Soft bands remain on v58's face, milder than before; that question moves to E-002.",
+          "baseline_recorded": false,
+          "owner_words": "the ribbed back looks better than the v56 for sure",
+          "owner_verdict": {
+            "better": "v58",
+            "worse": "v56"
+          },
+          "owner_words_2": "i do [see bands on v58] - though seem better than prior?"
+        },
+        "slice_job": "job-20261024T161207-2e01"
+      },
+      {
+        "id": "PR-003",
+        "file": "hex-tile_E001_PR003.3mf",
+        "artifact_sha256": "ec0f062821d9410549fb27f8d48163373d7ad20f28d4d7b061dae41dc5c7a4d2",
+        "variants": [
+          "v56 strip Z60-76",
+          "v58 strip Z60-76"
+        ],
+        "sliced_estimate": "1 h 19 min",
+        "filament_g": 24.39,
+        "layers": 80,
+        "slicer_events_near_join": {
+          "outer_wall_speed_change": false,
+          "speed_change_z": [],
+          "fan_change": false,
+          "fan_change_z": [],
+          "layer_time_jump": false,
+          "layer_time_jump_z": []
+        },
+        "note": "Fallback with 10 mm above the line, if 6 mm proves too little to judge.",
+        "slice_job": "job-20261024T161208-2535"
+      }
+    ],
+    "findings": [
+      {
+        "rule": "baseline-incomplete",
+        "severity": "info",
+        "where": "filament_dried, vibration_calibration, nozzle_confirmed",
+        "why": "Without these baseline conditions the print's result is graded F.",
+        "fix": "Dry the filament, run the printer's vibration calibration, confirm the nozzle and plate, and record them.",
+        "data": {
+          "missing": [
+            "filament_dried",
+            "vibration_calibration",
+            "nozzle_confirmed"
+          ]
+        }
+      }
+    ],
+    "jobs": []
+  }
 }

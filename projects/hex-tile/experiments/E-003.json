@@ -1,7 +1,11 @@
 {
+  "schema": 1,
+  "record_type": "experiment",
   "id": "E-003",
   "project": "hex-tile",
-  "question": "Do the bands come from the jump between fast inner walls and the slow outer wall?",
+  "question": "Q-001",
+  "provenance": "prospective",
+  "question_text": "Do the bands come from the jump between fast inner walls and the slow outer wall?",
   "hypothesis": "At 210 \u00b0C the inner walls (250 mm/s) ask for more melt than the nozzle gives, then the 80 mm/s outer wall gets the surplus; on matte PLA the uneven flow shows as sheen bands. The spool labels pair 210 \u00b0C with 100 mm/s or less.",
   "prediction": "With inner walls at the outer wall's speed, the face's bands are clearly fainter than on E-002's strip.",
   "why_this_test": "One setting, one v58 strip; compared against E-002 (same spool, baseline done).",
@@ -45,23 +49,385 @@
     "nozzle_confirmed": null,
     "plate": "textured PEI"
   },
-  "status": "planned",
-  "blocked_reason": "",
-  "print_runs": [
+  "findings": [],
+  "judge_on": "bands",
+  "expect": {
+    "better": "E-003-A",
+    "than": "E-002-A",
+    "min_strength": "clearly"
+  },
+  "derived_from_artifact": [],
+  "derived_from_result": [],
+  "controls": {
+    "witness_required": false,
+    "anchor": null
+  },
+  "reference_variants": [
+    "E-002-A"
+  ],
+  "build_spec": null,
+  "status": "built",
+  "variants": [
     {
-      "id": "PR-005",
-      "file": "hex-tile_E003_PR005.3mf",
-      "artifact_sha256": "374fb0537982adf53b9778cf7e19a204f12684530696eaceec31a721d9e091f3",
-      "variants": [
-        "v58 strip Z60-72, inner walls = outer wall speed"
-      ],
-      "sliced_estimate": "0 h 34 min",
-      "filament_g": 9.35,
-      "layers": 60,
-      "checked": "inner-wall moves in the G-code run at 80 mm/s",
-      "slice_job": "job-20261024T204256-0f25"
+      "id": "E-003-A",
+      "tab": null,
+      "factor_value": "inner walls at the outer wall's speed"
     }
   ],
-  "findings": [],
-  "jobs": []
+  "builds": [
+    {
+      "id": "BLD-003-01",
+      "ok": true,
+      "at": null,
+      "inputs": {
+        "model": {
+          "sources/hexagon_v56_X2D_0.6nozzle.3mf": "a399c465f99ecf297e9311eed35c07cf7dec0516e84c26f29d12e6c0f894b89f",
+          "sources/hexagon_v57_X2D_0.4nozzle.3mf": "1d4c063e2ed94f9358dd1e496cb5cfbe1bfac507f531d4ef13a94c98ec0822b9",
+          "sources/hexagon_v58_X2D_0.6nozzle.3mf": "24ec2fef4762ec2094cde108a9a24b0c38b515d60612934f7fadad8f84d6705e"
+        },
+        "settings": "1d4c063e2ed94f9358dd1e496cb5cfbe1bfac507f531d4ef13a94c98ec0822b9",
+        "builder_version": "script (before 1A.1)"
+      },
+      "job": "job-20261024T204256-0f25",
+      "artifact": "prints/hex-tile_E003_PR005.3mf",
+      "artifact_sha256": "374fb0537982adf53b9778cf7e19a204f12684530696eaceec31a721d9e091f3",
+      "sliced": "prints/sliced/hex-tile_E003_PR005.gcode.3mf",
+      "estimate": {
+        "minutes": 34.0,
+        "g": 9.35
+      },
+      "plate": {
+        "objects": [
+          "v58 strip Z60-72, inner walls = outer wall speed"
+        ],
+        "placements": [
+          [
+            128.0,
+            128.0
+          ]
+        ]
+      },
+      "measured": {
+        "layer_time_median_s": 18.95,
+        "layer_time_profile": [
+          [
+            0.2,
+            160.91
+          ],
+          [
+            0.4,
+            18.61
+          ],
+          [
+            0.6,
+            18.63
+          ],
+          [
+            0.8,
+            18.66
+          ],
+          [
+            1.0,
+            18.69
+          ],
+          [
+            1.2,
+            18.71
+          ],
+          [
+            1.4,
+            18.74
+          ],
+          [
+            1.6,
+            18.74
+          ],
+          [
+            1.8,
+            18.77
+          ],
+          [
+            2.0,
+            18.79
+          ],
+          [
+            2.2,
+            18.82
+          ],
+          [
+            2.4,
+            18.85
+          ],
+          [
+            2.6,
+            18.87
+          ],
+          [
+            2.8,
+            18.9
+          ],
+          [
+            3.0,
+            18.93
+          ],
+          [
+            3.2,
+            18.96
+          ],
+          [
+            3.4,
+            18.98
+          ],
+          [
+            3.6,
+            19.01
+          ],
+          [
+            3.8,
+            19.03
+          ],
+          [
+            4.0,
+            19.06
+          ],
+          [
+            4.2,
+            19.08
+          ],
+          [
+            4.4,
+            19.11
+          ],
+          [
+            4.6,
+            19.14
+          ],
+          [
+            4.8,
+            19.17
+          ],
+          [
+            5.0,
+            19.19
+          ],
+          [
+            5.2,
+            19.22
+          ],
+          [
+            5.4,
+            19.25
+          ],
+          [
+            5.6,
+            19.28
+          ],
+          [
+            5.8,
+            19.31
+          ],
+          [
+            6.0,
+            19.32
+          ],
+          [
+            6.2,
+            19.27
+          ],
+          [
+            6.4,
+            19.29
+          ],
+          [
+            6.6,
+            19.24
+          ],
+          [
+            6.8,
+            19.22
+          ],
+          [
+            7.0,
+            19.2
+          ],
+          [
+            7.2,
+            19.17
+          ],
+          [
+            7.4,
+            19.15
+          ],
+          [
+            7.6,
+            19.13
+          ],
+          [
+            7.8,
+            19.1
+          ],
+          [
+            8.0,
+            19.07
+          ],
+          [
+            8.2,
+            19.05
+          ],
+          [
+            8.4,
+            19.02
+          ],
+          [
+            8.6,
+            18.99
+          ],
+          [
+            8.8,
+            18.97
+          ],
+          [
+            9.0,
+            18.94
+          ],
+          [
+            9.2,
+            18.91
+          ],
+          [
+            9.4,
+            18.89
+          ],
+          [
+            9.6,
+            18.86
+          ],
+          [
+            9.8,
+            18.83
+          ],
+          [
+            10.0,
+            18.8
+          ],
+          [
+            10.2,
+            18.78
+          ],
+          [
+            10.4,
+            18.75
+          ],
+          [
+            10.6,
+            18.73
+          ],
+          [
+            10.8,
+            18.7
+          ],
+          [
+            11.0,
+            18.67
+          ],
+          [
+            11.2,
+            18.64
+          ],
+          [
+            11.4,
+            18.62
+          ],
+          [
+            11.6,
+            18.59
+          ],
+          [
+            11.8,
+            18.56
+          ],
+          [
+            12.0,
+            17.72
+          ]
+        ]
+      }
+    }
+  ],
+  "approval": null,
+  "print_runs": [],
+  "owner_verdict": null,
+  "superseded_verdicts": [],
+  "anchors": [],
+  "ai_observations": [],
+  "comparison_validity": null,
+  "prediction_outcome": null,
+  "analysis": [],
+  "legacy": {
+    "id": "E-003",
+    "project": "hex-tile",
+    "question": "Do the bands come from the jump between fast inner walls and the slow outer wall?",
+    "hypothesis": "At 210 \u00b0C the inner walls (250 mm/s) ask for more melt than the nozzle gives, then the 80 mm/s outer wall gets the surplus; on matte PLA the uneven flow shows as sheen bands. The spool labels pair 210 \u00b0C with 100 mm/s or less.",
+    "prediction": "With inner walls at the outer wall's speed, the face's bands are clearly fainter than on E-002's strip.",
+    "why_this_test": "One setting, one v58 strip; compared against E-002 (same spool, baseline done).",
+    "test_kind": "height_strip",
+    "factor": {
+      "name": "inner_wall_speed",
+      "values": [
+        [
+          "250",
+          "250",
+          "250",
+          "200",
+          "200",
+          "200"
+        ],
+        [
+          "80",
+          "80",
+          "80",
+          "50",
+          "50",
+          "50"
+        ]
+      ],
+      "unit": "mm/s"
+    },
+    "controlled": {
+      "model": "v58 (0.6-variant geometry)",
+      "settings": "v55 0.4 process, everything else unchanged",
+      "nozzle": "0.4",
+      "layer_height": "0.2",
+      "plate": "textured PEI",
+      "filament": "Kexcelled K5 PLA M, Light Matte Terracotta (lot C6719062)",
+      "strip": "Z 60\u201372 mm of the 6\" pair",
+      "run_after": "E-002 (same single-strip plate; compare E-003 against E-002)"
+    },
+    "dependent_adjustments": {},
+    "baseline": {
+      "filament_dried": false,
+      "vibration_calibration": false,
+      "nozzle_confirmed": null,
+      "plate": "textured PEI"
+    },
+    "status": "planned",
+    "blocked_reason": "",
+    "print_runs": [
+      {
+        "id": "PR-005",
+        "file": "hex-tile_E003_PR005.3mf",
+        "artifact_sha256": "374fb0537982adf53b9778cf7e19a204f12684530696eaceec31a721d9e091f3",
+        "variants": [
+          "v58 strip Z60-72, inner walls = outer wall speed"
+        ],
+        "sliced_estimate": "0 h 34 min",
+        "filament_g": 9.35,
+        "layers": 60,
+        "checked": "inner-wall moves in the G-code run at 80 mm/s",
+        "slice_job": "job-20261024T204256-0f25"
+      }
+    ],
+    "findings": [],
+    "jobs": []
+  }
 }

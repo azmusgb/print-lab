@@ -26,7 +26,7 @@ def F(types, required=False, choices=None, each=None, fields=None):
 
 VARIANT = {"id": F(S, True), "tab": F((S, NUL)), "factor_value": F(A), "role": F(S, choices=ROLES),
            "same_as": F((S, NUL)), "copies": F(int), "label": F(S)}
-BUILD = {"id": F(S, True), "ok": F(B, True), "at": F(S), "inputs": F(D), "job": F((S, NUL)), "artifact": F((S, NUL)),
+BUILD = {"id": F(S, True), "ok": F(B, True), "at": F((S, NUL)), "inputs": F(D), "job": F((S, NUL)), "artifact": F((S, NUL)),
          "artifact_sha256": F((S, NUL)), "sliced": F((S, NUL)), "estimate": F((D, NUL)), "plate": F((D, NUL)),
          "measured": F((D, NUL)), "error": F((S, NUL)), "factor_scope": F(S, choices=("specific", "bundle")),
          "bundle_differences": F(L), "notes": F(L), "legacy": F(A)}
