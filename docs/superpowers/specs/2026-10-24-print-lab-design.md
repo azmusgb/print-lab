@@ -19,18 +19,21 @@ stays on Bambu cloud, so the lab hands over a ready 3MF to open in Bambu Studio 
 ## What the review found (why the design looks like this)
 
 - **The face has two kinds of facets.** In the upright print orientation, 8 of the 14 front facets point down (mild
-  overhang, to -7.8°) and 6 point up (to +8.6°). They switch at about mid-height, which is where the band in the
-  latest photo (IMG_0714) sits and where "mid-height lines" appeared in v53–v56 whatever the joins did. Overhang walls
-  and step-in walls look different. Leaning the tile back 15° makes every facet face up (+7.2° to +23.6°). No version
-  changed this; every version changed tabs, pads, seams or ribs.
+  overhang, to -7.8°) and 6 point up (to +8.6°), switching at about mid-height. Leaning the tile back 15° makes every
+  facet face up (+7.2° to +23.6°). **Correction after reading the chat history:** the v51 6" pair (photos IMG_0633–0641,
+  20 Oct) had the same facets and, in diffuse light, no line across the face; the mid-height line appears from v53,
+  when the upper-edge join began at mid-height, and stays through v54–v56, which kept that join. So the mid-height
+  line most likely came from the join start (removed in v57/v58), and the facet switch is now a weaker candidate,
+  for subtler texture differences between upper and lower facets only. The open defect is the **ripple near the
+  upper edges** (wobble), which v51 also shows (IMG_0638).
 - **The slicer may also change speed there.** v56 slows any layer that would take under 8 s (outer wall otherwise
   80 mm/s); as the hex narrows above its widest point, layers shorten. Never tested.
 - **Nozzle and profile disagreed.** `hexagon_v56_X2D_0.6nozzle.3mf` was sliced with 0.4 nozzle profiles (0.42 mm
   lines).
 - **The tent idea.** Two tiles leaned 15° against each other, backs inward, joined by fins between the backs and a
-  short ridge bar, is a braced triangle (stiffer than the 1 mm back-to-back pair that wobbles), keeps every facet
-  face-up, puts every contact scar on hidden backs, keeps layers long (no slowdown), and fits about 3 tents of 6"
-  tiles on one plate.
+  short ridge bar, is a braced triangle: much stiffer at the top than the 1 mm back-to-back pair that wobbles, which is
+  the open defect. It also keeps every facet face-up, puts contact scars on hidden backs, keeps layers long (no
+  slowdown), and fits about 3 tents of 6" tiles on one plate.
 
 These are hypotheses until coupons test them. The lab exists to test them properly.
 
