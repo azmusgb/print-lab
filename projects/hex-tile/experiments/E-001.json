@@ -19,7 +19,8 @@
     "nozzle": "0.4",
     "layer_height": "0.2",
     "plate": "textured PEI",
-    "strip": "Z 60\u201372 mm of the 6\" pair (PR-002); the line is expected 6 mm above the strip's base"
+    "strip": "Z 60\u201372 mm of the 6\" pair (PR-002); the line is expected 6 mm above the strip's base",
+    "filament": "matte PLA"
   },
   "dependent_adjustments": {
     "nozzle_variant": "Both strips are cut from the 0.6-variant files (the 0.4 v58 files weren't downloaded); both print on the 0.4 so only the model differs.",
@@ -87,13 +88,14 @@
           "v56": "Soft horizontal bands across the face, the strongest near mid-strip; the inner back wall shows a seam line where the two tiles join (z 66). The face line is not clearly stronger than v58's.",
           "v58": "The same soft banding on the face. The tiles stay separate; four breakaway ties between the backs leave strings and small raised marks on the back faces (not the show face)."
         },
-        "answer": "v58 is better (owner). Whether the mid-height line itself is gone is still open: the AI reading saw similar soft banding on both faces.",
+        "answer": "v58 is better than v56 (owner). Soft bands remain on v58's face, milder than before; that question moves to E-002.",
         "baseline_recorded": false,
         "owner_words": "the ribbed back looks better than the v56 for sure",
         "owner_verdict": {
           "better": "v58",
           "worse": "v56"
-        }
+        },
+        "owner_words_2": "i do [see bands on v58] - though seem better than prior?"
       }
     },
     {

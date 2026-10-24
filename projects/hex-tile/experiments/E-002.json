@@ -1,0 +1,50 @@
+{
+  "id": "E-002",
+  "project": "hex-tile",
+  "question": "Do the soft bands on v58's face come from the printer setup rather than the model?",
+  "hypothesis": "The bands are extrusion variation from damp filament or uncompensated vibration; matte PLA shows small flow and speed changes as sheen bands.",
+  "prediction": "With dried filament and a fresh vibration calibration, the v58 strip's face is even; if the bands stay at the same heights, the cause is elsewhere (slicer or model).",
+  "why_this_test": "E-001 showed similar bands on both models, so the model change is not the main cause. Baseline conditions were never recorded on any print, so they come first. One v58 strip, 1 hour.",
+  "test_kind": "height_strip",
+  "factor": {
+    "name": "baseline",
+    "values": [
+      "as-is (E-001 PR-002)",
+      "dried + vibration calibration"
+    ],
+    "unit": ""
+  },
+  "controlled": {
+    "model": "v58 (0.6-variant geometry)",
+    "settings": "v55 0.4 process and filament (from the v57 0.4 project)",
+    "nozzle": "0.4",
+    "layer_height": "0.2",
+    "plate": "textured PEI",
+    "filament": "matte PLA, same spool as E-001",
+    "strip": "Z 60\u201372 mm of the 6\" pair"
+  },
+  "dependent_adjustments": {},
+  "baseline": {
+    "filament_dried": null,
+    "vibration_calibration": null,
+    "nozzle_confirmed": null,
+    "plate": "textured PEI"
+  },
+  "status": "planned",
+  "blocked_reason": "",
+  "print_runs": [
+    {
+      "id": "PR-004",
+      "file": "hex-tile_E002_PR004.3mf",
+      "artifact_sha256": "51f1229cf19e53012c6c4fbae880750cbc393ec0d70f906a9a6fde247a1d7b7a",
+      "variants": [
+        "v58 strip Z60-72"
+      ],
+      "sliced_estimate": "0 h 33 min",
+      "filament_g": 9.35,
+      "layers": 60
+    }
+  ],
+  "findings": [],
+  "jobs": []
+}
