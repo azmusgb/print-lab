@@ -69,7 +69,7 @@
     ],
     "witness": false
   },
-  "status": "needs_approval",
+  "status": "approved",
   "variants": [
     {
       "id": "E-005-A",
@@ -392,7 +392,17 @@
       }
     }
   ],
-  "approval": null,
+  "approval": {
+    "build_id": "BLD-005-01",
+    "artifact_sha256": "7764e52e31ece6d6f6324226ff46a87a1339df617391a3234409b68565ac4007",
+    "approved_reasons": [
+      "per_test_time",
+      "question_time"
+    ],
+    "by": "owner",
+    "at": "2026-10-24T22:43:48+00:00",
+    "reason": "Same-plate controlled comparison of realized inner-wall speed 147 vs 80 mm/s. This replaces the confounded cross-plate EXP-003 comparison and is necessary to test the active speed hypothesis despite exceeding the diagnostic-test and question budgets."
+  },
   "print_runs": [],
   "owner_verdict": null,
   "superseded_verdicts": [],

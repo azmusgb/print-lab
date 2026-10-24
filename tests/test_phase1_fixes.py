@@ -129,3 +129,21 @@ def test_single_object_plate_speeds_are_read():
     p = Path(__file__).parent / "fixtures" / "hex" / "studio_saved_v58_strip.gcode.3mf"  # E-002's lone strip
     (speed, cover), = object_feature_speeds(p, "Inner wall").values()
     assert speed == 147.0 and cover > 0.95
+
+
+def test_factor_execution_scopes_recorded_with_evidence():
+    from lab.loop.outcome import _factors
+    f = _factors()
+    assert f["inner_wall_speed"]["execution_scope"] == "per_object_verified"
+    assert f["outer_wall_speed"]["execution_scope"] == "per_object_verified"
+    assert f["nozzle_temperature"]["execution_scope"] == "per_plate_only"
+    assert f["fan_max_speed"]["execution_scope"] == "per_plate_only"
+    assert f["slow_down_layer_time"]["execution_scope"] == "unknown"
+    for k in ("inner_wall_speed", "nozzle_temperature"):
+        assert f[k]["scope_evidence"]["bambu_studio"] == "02.08.02.61"
+    assert all("per_object" not in v for v in f.values())
+
+
+def test_unknown_scope_is_treated_as_plate_wide(proj):
+    with pytest.raises(ValueError, match="plate-wide"):
+        plan_experiment(proj, "Q-009", **{**PLAN, "factor": "slow_down_layer_time", "values": ["4", "8"]})

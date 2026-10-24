@@ -93,7 +93,7 @@ def plan_experiment(paths: ProjectPaths, q_id: str, *, factor: str, values: list
     if settings["autonomy_level"] == 0:
         raise ValueError(f"{paths.name} is at autonomy level 0 (observe only); the lab can't plan experiments.")
     f = factor_info(factor)
-    if not f.get("per_object") and len(set(values)) > 1:
+    if f.get("execution_scope") != "per_object_verified" and len(set(values)) > 1:
         raise ValueError(f"{factor} is plate-wide: Bambu Studio applies one value to the whole plate (per-object "
                          "overrides of it are ignored), so two values can't share a plate. Plan one value per "
                          "experiment and compare against the other plate with --reference.")
