@@ -9,5 +9,27 @@
     "settings_from": "hexagon_v57_X2D_0.4nozzle.3mf (v55 0.4 settings)",
     "file": "hex-tile_E001_PR001.3mf",
     "artifact_sha256": "cef83035752fbb8c50851497c5778f80887e85f7d1b107bfb83023461d419c82"
+  },
+  {
+    "experiment_id": "E-001",
+    "print_run_id": "PR-002",
+    "variants": [
+      "v56 strip Z60-72",
+      "v58 strip Z60-72"
+    ],
+    "settings_from": "hexagon_v57_X2D_0.4nozzle.3mf (v55 0.4 settings)",
+    "file": "hex-tile_E001_PR002.3mf",
+    "artifact_sha256": "0c0780c695a0be89d3ff44880e8adcb4f237d9fa6be531d7fd18f07ac5a310e7"
+  },
+  {
+    "experiment_id": "E-001",
+    "print_run_id": "PR-003",
+    "variants": [
+      "v56 strip Z60-76",
+      "v58 strip Z60-76"
+    ],
+    "settings_from": "hexagon_v57_X2D_0.4nozzle.3mf (v55 0.4 settings)",
+    "file": "hex-tile_E001_PR003.3mf",
+    "artifact_sha256": "ec0f062821d9410549fb27f8d48163373d7ad20f28d4d7b061dae41dc5c7a4d2"
   }
 ]

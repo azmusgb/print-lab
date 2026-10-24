@@ -19,7 +19,7 @@
     "nozzle": "0.4",
     "layer_height": "0.2",
     "plate": "textured PEI",
-    "strip": "Z 60\u2013100 mm of the 6\" pair"
+    "strip": "Z 60\u201372 mm of the 6\" pair (PR-002); the line is expected 6 mm above the strip's base"
   },
   "dependent_adjustments": {
     "nozzle_variant": "Both strips are cut from the 0.6-variant files (the 0.4 v58 files weren't downloaded); both print on the 0.4 so only the model differs.",
@@ -52,7 +52,50 @@
         "fan_change_z": [],
         "layer_time_jump": false,
         "layer_time_jump_z": []
+      },
+      "superseded_by": "PR-002",
+      "note": "Taller than the question needs: Z 72\u2013100 belongs to the upper-edge ripple, a separate experiment."
+    },
+    {
+      "id": "PR-002",
+      "file": "hex-tile_E001_PR002.3mf",
+      "artifact_sha256": "0c0780c695a0be89d3ff44880e8adcb4f237d9fa6be531d7fd18f07ac5a310e7",
+      "variants": [
+        "v56 strip Z60-72",
+        "v58 strip Z60-72"
+      ],
+      "sliced_estimate": "1 h 2 min",
+      "filament_g": 18.87,
+      "layers": 60,
+      "slicer_events_near_join": {
+        "outer_wall_speed_change": false,
+        "speed_change_z": [],
+        "fan_change": false,
+        "fan_change_z": [],
+        "layer_time_jump": false,
+        "layer_time_jump_z": []
       }
+    },
+    {
+      "id": "PR-003",
+      "file": "hex-tile_E001_PR003.3mf",
+      "artifact_sha256": "ec0f062821d9410549fb27f8d48163373d7ad20f28d4d7b061dae41dc5c7a4d2",
+      "variants": [
+        "v56 strip Z60-76",
+        "v58 strip Z60-76"
+      ],
+      "sliced_estimate": "1 h 19 min",
+      "filament_g": 24.39,
+      "layers": 80,
+      "slicer_events_near_join": {
+        "outer_wall_speed_change": false,
+        "speed_change_z": [],
+        "fan_change": false,
+        "fan_change_z": [],
+        "layer_time_jump": false,
+        "layer_time_jump_z": []
+      },
+      "note": "Fallback with 10 mm above the line, if 6 mm proves too little to judge."
     }
   ],
   "findings": [
