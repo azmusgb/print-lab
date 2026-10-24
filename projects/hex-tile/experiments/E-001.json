@@ -31,7 +31,7 @@
     "nozzle_confirmed": null,
     "plate": "textured PEI"
   },
-  "status": "printed",
+  "status": "answered",
   "blocked_reason": "",
   "print_runs": [
     {
@@ -81,14 +81,19 @@
           "IMG_0749\u20130761 (owner's phone)",
           "printer camera, on the bed"
         ],
-        "defects_from": "ai-reading",
-        "confirmed": false,
+        "defects_from": "owner",
+        "confirmed": true,
         "reading": {
           "v56": "Soft horizontal bands across the face, the strongest near mid-strip; the inner back wall shows a seam line where the two tiles join (z 66). The face line is not clearly stronger than v58's.",
           "v58": "The same soft banding on the face. The tiles stay separate; four breakaway ties between the backs leave strings and small raised marks on the back faces (not the show face)."
         },
-        "answer": "Not shown: both strips band about equally, so the join is not the main cause of the line. Banding on both points to the printer or filament (baseline not yet recorded).",
-        "baseline_recorded": false
+        "answer": "v58 is better (owner). Whether the mid-height line itself is gone is still open: the AI reading saw similar soft banding on both faces.",
+        "baseline_recorded": false,
+        "owner_words": "the ribbed back looks better than the v56 for sure",
+        "owner_verdict": {
+          "better": "v58",
+          "worse": "v56"
+        }
       }
     },
     {
