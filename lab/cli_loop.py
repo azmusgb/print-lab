@@ -80,7 +80,8 @@ def cmd_exp_plan(args) -> int:
                           expect=args.expect, judge_on=args.judge_on, test_kind=args.test_kind, source=args.source,
                           object=args.object, z=(z0, z1), base=args.base, question_text=args.text,
                           hypothesis=args.hypothesis, prediction=args.prediction, why=args.why or "",
-                          references=args.reference or [], adjust=adjust, anchor=args.anchor)
+                          references=args.reference or [], adjust=adjust, anchor=args.anchor, stepped=args.stepped,
+                          tabs=False if args.no_tabs else None)
     print(f"Planned {eid}; build it with `lab exp build {eid}`")
     return 0
 
@@ -164,6 +165,21 @@ def cmd_exp_observe(args) -> int:
     return 0
 
 
+def cmd_capability(args) -> int:
+    from lab.loop import capabilities
+    if args.action == "run":
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as d:
+            r = capabilities.run_capability(args.name, Path(d))
+        print(f"{r['name']}: {'PASSED' if r['passed'] else 'FAILED'} on Bambu Studio {r['bambu_studio']}\n"
+              f"  {json.dumps(r['evidence'])}")
+        return 0 if r["passed"] else 2
+    for name, r in sorted(capabilities.results().items()):
+        print(f"{name:<45} {'passed' if r['passed'] else 'FAILED'}  {r['at']}")
+    return 0
+
+
 def register(sub) -> None:
     s = sub.add_parser("migrate", help="move the hand-written E-001..E-004 into Stage 1A.1 records (once)")
     s.add_argument("--project", default="hex-tile")
@@ -177,6 +193,11 @@ def register(sub) -> None:
     q.add_argument("--reason")
     q.add_argument("--project", default="hex-tile")
     q.set_defaults(fn=cmd_question)
+
+    cp = sub.add_parser("capability", help="prove a slicer mechanism with a real slice: run NAME, list")
+    cp.add_argument("action", choices=["run", "list"])
+    cp.add_argument("name", nargs="?")
+    cp.set_defaults(fn=cmd_capability)
 
     st = sub.add_parser("setup", help="the printer's setup log: log, repair, show")
     st.add_argument("action", choices=["log", "repair", "show"])
@@ -211,6 +232,8 @@ def register(sub) -> None:
     pl.add_argument("--reference", action="append", help="a variant from an earlier experiment to compare with")
     pl.add_argument("--adjust", action="append", help="KEY=VALUE, a declared dependent adjustment")
     pl.add_argument("--anchor", help="reprint an earlier variant (e.g. E-005-A) on this plate as a control")
+    pl.add_argument("--stepped", action="store_true", help="step the values up one strip, with a reversed twin")
+    pl.add_argument("--no-tabs", action="store_true", help="no version-ID tabs")
     pl.add_argument("--project", default="hex-tile")
     pl.set_defaults(fn=cmd_exp_plan)
     bd = es.add_parser("build", help="build and slice an experiment's plate")

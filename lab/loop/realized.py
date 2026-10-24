@@ -66,6 +66,8 @@ def realization(paths, exp: dict, build: dict, others: dict) -> dict | None:
     feature = f.get("gcode_feature")
     if f.get("kind") != "setting" or not feature or not build.get("sliced"):
         return None
+    if (exp.get("build_spec") or {}).get("stepped"):
+        return None  # bands within one object: proven by CAP-BAMBU-HEIGHT-RANGE-<factor>; 1A.2 reads them per band
     key = f["settings_key"]
     requested = {}
     for v in (exp.get("build_spec") or {}).get("variants", []):

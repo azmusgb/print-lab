@@ -99,6 +99,39 @@ _RELS = """<?xml version="1.0" encoding="UTF-8"?>
 """
 
 
+def _ranges_xml(ranges: list[list[tuple[float, float, dict]]], settings: dict) -> str:
+    """Bambu Studio's per-object height-range settings (Metadata/layer_config_ranges.xml); object ids are 1-based
+    in plate order. Proven per factor by the CAP-BAMBU-HEIGHT-RANGE-<factor> capability test."""
+    lh = settings.get("layer_height", "0.2")
+    lh = lh[0] if isinstance(lh, list) else lh
+    out = ['<?xml version="1.0" encoding="utf-8"?>', "<objects>"]
+    for i, obj in enumerate(ranges, 1):
+        if not obj:
+            continue
+        out.append(f' <object id="{i}">')
+        for z0, z1, opts in obj:
+            out.append(f'  <range min_z="{z0:g}" max_z="{z1:g}">')
+            out.append('   <option opt_key="extruder">0</option>')
+            out.append(f'   <option opt_key="layer_height">{lh}</option>')
+            out += [f"   <option opt_key={quoteattr(k)}>{v}</option>" for k, v in opts.items()]
+            out.append("  </range>")
+        out.append(" </object>")
+    out.append("</objects>")
+    return "\n".join(out) + "\n"
+
+
+def read_height_ranges(path_3mf: Path) -> dict[int, list[tuple[float, float, dict]]]:
+    """{object index (1-based): [(min_z, max_z, {key: value})]} from a print file, empty when it has none."""
+    with zipfile.ZipFile(path_3mf) as z:
+        if "Metadata/layer_config_ranges.xml" not in z.namelist():
+            return {}
+        root = ET.fromstring(z.read("Metadata/layer_config_ranges.xml"))
+    return {int(o.get("id")): [(float(r.get("min_z")), float(r.get("max_z")),
+                                {op.get("opt_key"): op.text for op in r.findall("option")
+                                 if op.get("opt_key") not in ("extruder", "layer_height")})
+                               for r in o.findall("range")] for o in root.findall("object")}
+
+
 def content_sha256(path_3mf: Path) -> str:
     """A fingerprint of what's inside a 3MF, ignoring the zip's own timestamps."""
     import hashlib
@@ -126,7 +159,8 @@ def patch_settings(settings: dict, patch: dict) -> dict:
 
 def write_print_3mf(base_3mf: Path, meshes: list[tuple[str, trimesh.Trimesh, tuple[float, float]]], out: Path,
                     meta: dict, settings_patch: dict | None = None,
-                    object_settings: list[dict] | None = None) -> str:
+                    object_settings: list[dict] | None = None,
+                    height_ranges: list[list[tuple[float, float, dict]]] | None = None) -> str:
     """A print file on plate 1: the base project's settings (with settings_patch applied), the given named meshes at
     (x, y) on the bed, each with its own per-object setting overrides (object_settings[i]), and
     Metadata/print_lab.json = meta. Returns the file's SHA-256."""
@@ -168,4 +202,6 @@ def write_print_3mf(base_3mf: Path, meshes: list[tuple[str, trimesh.Trimesh, tup
         z.writestr("Metadata/project_settings.config", settings)
         z.writestr("Metadata/model_settings.config", model_settings)
         z.writestr("Metadata/print_lab.json", json.dumps(meta, indent=2))
+        if height_ranges and any(height_ranges):
+            z.writestr("Metadata/layer_config_ranges.xml", _ranges_xml(height_ranges, json.loads(settings)))
     return sha256(out)

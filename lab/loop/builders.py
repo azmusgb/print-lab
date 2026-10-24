@@ -88,7 +88,7 @@ def _parse_expect(text: str, ids: dict[str, str], refs: list[str]) -> dict | Non
 def plan_experiment(paths: ProjectPaths, q_id: str, *, factor: str, values: list[str], expect: str, judge_on: str,
                     test_kind: str, source: str, object: str, z: tuple[float, float], base: str,
                     question_text: str, hypothesis: str, prediction: str, why: str, references: list[str],
-                    adjust: dict, anchor: str | None = None) -> str:
+                    adjust: dict, anchor: str | None = None, stepped: bool = False, tabs: bool | None = None) -> str:
     settings = project_settings(paths)
     if settings["autonomy_level"] == 0:
         raise ValueError(f"{paths.name} is at autonomy level 0 (observe only); the lab can't plan experiments.")
@@ -105,6 +105,17 @@ def plan_experiment(paths: ProjectPaths, q_id: str, *, factor: str, values: list
     load(q_path, "question")
     anchor_spec = _anchor_spec(paths, anchor) if anchor else None
     cross_plate = bool(references or anchor)
+    from lab.loop import capabilities
+    notes = []
+    if stepped and (f["kind"] != "setting" or f.get("execution_scope") != "per_object_verified"):
+        raise ValueError(f"{factor} can't be stepped up a strip: only per-object, verified settings can (inner and "
+                         "outer wall speed).")
+    cap = capabilities.height_range_capability(factor)
+    if stepped and not capabilities.capability_passed(cap):
+        notes.append(f"stepped settings fell back to separate strips: {cap} hasn't passed for this Bambu Studio")
+        stepped = False
+    if tabs is None:
+        tabs = capabilities.capability_passed(capabilities.TAB_ISOLATION)
 
     def make(eid: str) -> dict:
         n = int(eid.split("-")[1])
@@ -128,7 +139,11 @@ def plan_experiment(paths: ProjectPaths, q_id: str, *, factor: str, values: list
             variants.append({"id": f"{eid}-ANCHOR", "tab": None, "role": "anchor", "same_as": anchor})
         spec = {"kind": test_kind, "source": source, "object": object, "z": [z0, z1],
                 "judged": [z0 + 6, z1 - 6] if z1 - z0 >= 12 else None, "base": base, "variants": spec_variants,
-                "witness": cross_plate, "anchor": anchor_spec}
+                "witness": cross_plate, "anchor": anchor_spec, "tabs": bool(tabs), "notes": notes}
+        if stepped:
+            h, k = (z1 - z0) / len(values), f["settings_key"]
+            spec["stepped"] = {"key": k, "bands": [[round(i * h, 3), round((i + 1) * h, 3), val]
+                                                   for i, val in enumerate(values)], "twin_reversed": True}
         return {"schema": 1, "record_type": "experiment", "id": eid, "project": paths.name, "question": q_id,
                 "provenance": "prospective", "question_text": question_text, "hypothesis": hypothesis,
                 "prediction": prediction, "why_this_test": why, "test_kind": test_kind,
@@ -189,14 +204,33 @@ def _meshes(paths: ProjectPaths, exp: dict) -> list[tuple[str, object, dict]]:
     z0, z1 = spec["z"]
     cache: dict[str, object] = {}
     out = []
-    for v in spec["variants"]:
+    if spec.get("tabs"):
+        from lab.loop import capabilities
+        if not capabilities.capability_passed(capabilities.TAB_ISOLATION):
+            raise ValueError("Tabs were planned, but CAP-TAB-ISOLATION hasn't passed for this Bambu Studio; run "
+                             "`lab capability run CAP-TAB-ISOLATION` or plan without tabs.")
+    n = exp["id"].split("-")[1].lstrip("0")
+
+    def tabbed(mesh, text):
+        if not spec.get("tabs"):
+            return mesh
+        from lab.loop.tabs import attach_tab
+        return attach_tab(mesh, text, paths.jobs)
+    if spec.get("stepped"):
+        strip = height_strip(load_object(paths.root / spec["source"], spec["object"]), z0, z1)
+        own = dict(exp.get("dependent_adjustments") or {})
+        out = [("STEP-1", tabbed(strip.copy(), f"{n}S1"), own), ("STEP-2", tabbed(strip.copy(), f"{n}S2"), own)]
+        spec_variants = []
+    else:
+        spec_variants = spec["variants"]
+    for v in spec_variants:
         src = v.get("source") or spec["source"]
         if src not in cache:
             cache[src] = height_strip(load_object(paths.root / src, spec["object"]), z0, z1)
         own = {**(exp.get("dependent_adjustments") or {}), **v.get("settings_patch", {})}
         for k in range(v.get("copies", 1)):
             name = v["id"] if v.get("copies", 1) == 1 else f"{v['id']} ({k + 1} of {v['copies']})"
-            out.append((name, cache[src].copy(), own))
+            out.append((name, tabbed(cache[src].copy(), v.get("tab") or name), own))
     a = spec.get("anchor")
     if a:
         anchor = height_strip(load_object(paths.root / a["source"], a["object"]), *a["z"])
@@ -243,9 +277,16 @@ def render_plate(paths: ProjectPaths, e: dict, bid: str, art: Path, mirror: bool
         parts = parts + [(laid[-1][0], laid[-1][1], {})]
     owns = [own for _, _, own in parts]
     shared = all(o == owns[0] for o in owns)  # one setting for the whole plate goes into the project settings
+    st = e["build_spec"].get("stepped")
+    ranges = None
+    if st:
+        bands = [(b0, b1, {st["key"]: val}) for b0, b1, val in st["bands"]]
+        rev = [(b0, b1, {st["key"]: val}) for (b0, b1, _), (_, _, val) in zip(st["bands"], reversed(st["bands"]))]
+        ranges = [bands if n == "STEP-1" else rev if n == "STEP-2" else [] for n, _, _ in laid]
     return write_print_3mf(paths.root / e["build_spec"]["base"], laid, art,
                            {"experiment_id": e["id"], "build_id": bid, "variants": [v["id"] for v in e["variants"]]},
-                           settings_patch=owns[0] if shared else None, object_settings=None if shared else owns)
+                           settings_patch=owns[0] if shared else None, object_settings=None if shared else owns,
+                           height_ranges=ranges)
 
 
 def same_output(paths: ProjectPaths, e: dict, build: dict) -> bool:

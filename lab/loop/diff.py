@@ -48,7 +48,10 @@ def variant_facts(art: Path) -> dict[str, dict]:
         for k, v in own.items():
             eff[k] = [str(v)] * len(eff[k]) if k in eff and len(eff[k]) > 1 else [str(v)]
         m = load_object(art, name)
-        mesh = hashlib.sha256(np.round(np.asarray(sorted(map(tuple, np.round(m.vertices, 3)))), 3).tobytes()).hexdigest()
+        verts = m.vertices
+        if m.bounds[1][2] > 2.0:  # ignore the ID tab (first 1.6 mm): its text differs by design
+            verts = verts[verts[:, 2] > 1.7]
+        mesh = hashlib.sha256(np.round(np.asarray(sorted(map(tuple, np.round(verts, 3)))), 3).tobytes()).hexdigest()
         facts[vid] = {"settings": eff, "copies": 1, "mesh": mesh}
     return facts
 
@@ -72,6 +75,15 @@ def actual_differences(paths: ProjectPaths, exp: dict, build: dict, others: dict
     facts = variant_facts(paths.root / build["artifact"])
     ids = [v["id"] for v in exp["variants"] if v.get("role", "variant") == "variant" and v["id"] in facts]
     diffs = []
+    st = (exp.get("build_spec") or {}).get("stepped")
+    if st and "STEP-1" in facts and "STEP-2" in facts:
+        from lab.adapters.threemf import read_height_ranges
+        ids = ["STEP-1", "STEP-2"]
+        for idx, rs in read_height_ranges(paths.root / build["artifact"]).items():
+            for _, _, opts in rs:
+                for k in opts:
+                    if k != st["key"]:
+                        diffs.append({"where": "height_ranges", "key": k, "a": "STEP-1", "b": "STEP-2"})
     for other in ids[1:]:
         diffs += _compare(ids[0], facts[ids[0]], other, facts[other])
     for v in exp["variants"]:
