@@ -157,8 +157,8 @@ commands can never take the same ID.
 | `lab question new --project P "text" [--budget 180m,100g]` | `questions/Q-NNN.json` | an open question with the same text |
 | `lab question show Q` / `status Q` | nothing | `status`: budget used and after the next test, experiments and their states, evidence counts, stop state, next step |
 | `lab question rebuild Q` | cached `prediction_outcome` and `comparison_validity` | validates everything first; **any problem means a full report and no writes**; also reports orphaned artifacts and unattached experiments |
-| `lab question stop Q --reason` | `owner_stop` | — |
-| `lab question resume Q [--add 60m,30g] --reason` | `resumes`, clears `owner_stop` | the streak counts only from the latest resume |
+| `lab question stop Q --reason` | a new open entry in `stops` | the question is already owner-stopped |
+| `lab question resume Q [--add 60m,30g] --reason` | the open entry in `stops`: `resumed_at` and `resume: {added: {minutes, g}, reason}` | no open stop (an automatic stop is lifted by `--add` alone, recorded as a stop entry with `reason: auto`); the streak counts only from the latest resume |
 | `lab exp plan Q --factor … --values … --expect … [--judge-on …]` | `E-NNN.json` (planned), then the question | autonomy level 0; more than one factor; a factor outside the allowlist (`lab/factors.json`: model version, objects on plate, and named slicer settings such as inner and outer wall speed, nozzle temperature, fan speeds, minimum layer time, retraction length, wall loops, filament profile; a new factor is added there by a reviewed change) |
 | `lab exp build E [--replace]` | artifact, job, manifest, then a new `builds` entry; status `built` or `build_failed` | **Idempotent:** unchanged inputs say "already built" and write nothing; changed inputs need `--replace`, which adds a new build and keeps the old |
 | `lab exp check E` | status `ready` or `needs_approval`, with every reason | read-mostly; safe to rerun; output as in the budget section; includes the actual-difference check |
@@ -286,12 +286,17 @@ refusals:
 Q-001 "What causes the bands on v58's face?" is created around E-001 to E-004. Known facts are kept; anything not
 recorded at the time is `null`; no confidence, lighting, marks or setup are invented.
 
-- **All four** get `provenance: migrated`, except E-004, which was planned before printing (`prospective`, with its
-  plan reconstructed from the record written at the time).
-- **E-001:** owner verdict v58 better than v56 (strength `null`; owner: "looks better … for sure"); prediction "the
-  join causes the line" refuted on the AI's reading only, so `unresolved` until the owner confirms.
-- **E-002:** the planned change (drying, calibration) wasn't made. Its plate-layout reading (one object, 18.4 s
-  per layer) is `post_hoc`: it motivated E-004 and isn't itself a test of the plate. Against E-001's v58 strip (two objects, 34.8 s): owner "much better", comparison
+- **E-001 to E-003** get `provenance: migrated`: the prints really happened before 1A.1. **E-004** was planned
+  before printing, so it is `prospective`, with its plan taken from the record written at the time. A causal reading
+  added afterwards is stored as an `analysis` entry with its own provenance, `{"claim", "provenance": "post_hoc"}`,
+  never by changing the experiment's provenance.
+- **E-001:** owner verdict v58 better than v56 (strength `null`; owner: "looks better … for sure"). The owner may
+  later confirm the observation, which makes it an owner-confirmed historical observation; **its prediction outcome
+  stays `unresolved`** because the experiment is migrated. Only a prospective experiment can settle the join
+  question.
+- **E-002:** `migrated`; the planned change (drying, calibration) wasn't made. Its plate-layout reading (one object,
+  18.4 s per layer, against E-001's 34.8 s) is an `analysis` entry with `provenance: post_hoc`: it motivated E-004 and
+  isn't itself a test of the plate. Against E-001's v58 strip (two objects, 34.8 s): owner "much better", comparison
   **confounded** (`layer_time_mismatch`).
 - **E-003, E-004:** planned; E-004 tests the plate layout directly.
 
