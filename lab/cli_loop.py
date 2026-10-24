@@ -74,14 +74,23 @@ def cmd_exp_usage(args) -> int:
 
 def cmd_exp_plan(args) -> int:
     from lab.loop.builders import plan_experiment
-    z0, z1 = (float(x) for x in args.z.split(":"))
+    judged = None
+    if args.around is not None:
+        from lab.loop.builders import JUDGED_HALF_MM, size_strip
+        z0, z1 = size_strip(_paths(args), args.source, args.object, args.around, args.target_minutes, args.base)
+        judged = (args.around - JUDGED_HALF_MM, args.around + JUDGED_HALF_MM)
+        print(f"Strip Z {z0:g}–{z1:g} mm fits {args.target_minutes:g} min around {args.around:g} mm")
+    elif args.z:
+        z0, z1 = (float(x) for x in args.z.split(":"))
+    else:
+        raise ValueError("Give --z FROM:TO, or --around Z (with --target-minutes) to size the strip.")
     adjust = dict(a.split("=", 1) for a in args.adjust or [])
     eid = plan_experiment(_paths(args), args.question, factor=args.factor, values=args.values.split(","),
                           expect=args.expect, judge_on=args.judge_on, test_kind=args.test_kind, source=args.source,
                           object=args.object, z=(z0, z1), base=args.base, question_text=args.text,
                           hypothesis=args.hypothesis, prediction=args.prediction, why=args.why or "",
                           references=args.reference or [], adjust=adjust, anchor=args.anchor, stepped=args.stepped,
-                          tabs=False if args.no_tabs else None)
+                          tabs=False if args.no_tabs else None, judged=judged)
     print(f"Planned {eid}; build it with `lab exp build {eid}`")
     return 0
 
@@ -239,7 +248,9 @@ def register(sub) -> None:
     pl.add_argument("--test-kind", default="height_strip")
     pl.add_argument("--source", required=True, help="sources/<file>.3mf")
     pl.add_argument("--object", required=True)
-    pl.add_argument("--z", required=True, help="from:to in mm")
+    pl.add_argument("--z", help="from:to in mm")
+    pl.add_argument("--around", type=float, help="size the strip around this model height")
+    pl.add_argument("--target-minutes", type=float, default=45)
     pl.add_argument("--base", required=True, help="sources/<file>.3mf whose settings to use")
     pl.add_argument("--hypothesis", required=True)
     pl.add_argument("--prediction", required=True)

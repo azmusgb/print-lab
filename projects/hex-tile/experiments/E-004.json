@@ -367,13 +367,77 @@
       },
       "usage": null,
       "failed": null,
-      "photos": []
+      "photos": [
+        {
+          "path": "photos/PR-006-1.jpg",
+          "sha256": "5dcd796940e841e40b6bf5e2ed02eff75a11e564d40071ede24cb0a912fc34f5",
+          "captured_at": "2026-10-24T23:05:38+00:00",
+          "source": "IMG_0770.HEIC"
+        },
+        {
+          "path": "photos/PR-006-2.jpg",
+          "sha256": "07f961e3c09d969a73545246783664009c1fa05342facdd1493e81c2761123c3",
+          "captured_at": "2026-10-24T23:05:42+00:00",
+          "source": "IMG_0771.HEIC"
+        },
+        {
+          "path": "photos/PR-006-3.jpg",
+          "sha256": "21d24e070b2446deb528f9f8246ffa1c8a062005339ac29383f4d93cc9618b30",
+          "captured_at": "2026-10-24T23:05:46+00:00",
+          "source": "IMG_0772.HEIC"
+        },
+        {
+          "path": "photos/PR-006-4.jpg",
+          "sha256": "499fc09b1ba83293ae46fcad5c933788ab3ef8de422a72a15aadb5a91f667151",
+          "captured_at": "2026-10-24T23:05:49+00:00",
+          "source": "IMG_0773.HEIC"
+        },
+        {
+          "path": "photos/PR-006-5.jpg",
+          "sha256": "50d91bdae93140897c890fb7fe0e6c20584a1d838bc06eb566577ffd9efc1c16",
+          "captured_at": "2026-10-24T23:05:51+00:00",
+          "source": "IMG_0774.HEIC"
+        },
+        {
+          "path": "photos/PR-006-6.jpg",
+          "sha256": "d795b33acf65b50c9e1d4b3ebbfe0a566b2eb412eb6fd0c07d47423f301769dd",
+          "captured_at": "2026-10-24T23:05:58+00:00",
+          "source": "IMG_0775.HEIC"
+        },
+        {
+          "path": "photos/PR-006-7.jpg",
+          "sha256": "d11e8d566b4ecc9a1c1f1f0f24412a3fa2be7b6e23728052b4c57850378d82dd",
+          "captured_at": "2026-10-24T23:06:04+00:00",
+          "source": "IMG_0776.HEIC"
+        },
+        {
+          "path": "photos/PR-006-8.jpg",
+          "sha256": "0666a60d8ec3f0917465f6900b5e32f0c838837a0b1504ff8a7f2b2fefccb19c",
+          "captured_at": "2026-10-24T23:06:10+00:00",
+          "source": "IMG_0777.HEIC"
+        },
+        {
+          "path": "photos/PR-006-9.jpg",
+          "sha256": "7aaff0dfd995a2533db8fcd5917657b90c81ee3c712dc98ca4275b4e894fb40d",
+          "captured_at": "2026-10-24T23:06:14+00:00",
+          "source": "IMG_0778.HEIC"
+        }
+      ]
     }
   ],
   "owner_verdict": null,
   "superseded_verdicts": [],
   "anchors": [],
-  "ai_observations": [],
+  "ai_observations": [
+    {
+      "type": "face_reading",
+      "variant": null,
+      "assessment": "Both two-object strips' faces look smooth in these photos (IMG_0770-0778), with no obvious band at mid-strip; strings on the back ties only. The E-002 strip isn't in any frame, so no side-by-side reading is possible.",
+      "confidence": 0.4,
+      "confirmed": false,
+      "at": "2026-10-24T23:12:25+00:00"
+    }
+  ],
   "comparison_validity": {
     "status": "valid",
     "reasons": [

@@ -88,7 +88,8 @@ def _parse_expect(text: str, ids: dict[str, str], refs: list[str]) -> dict | Non
 def plan_experiment(paths: ProjectPaths, q_id: str, *, factor: str, values: list[str], expect: str, judge_on: str,
                     test_kind: str, source: str, object: str, z: tuple[float, float], base: str,
                     question_text: str, hypothesis: str, prediction: str, why: str, references: list[str],
-                    adjust: dict, anchor: str | None = None, stepped: bool = False, tabs: bool | None = None) -> str:
+                    adjust: dict, anchor: str | None = None, stepped: bool = False, tabs: bool | None = None,
+                    judged: tuple[float, float] | None = None) -> str:
     settings = project_settings(paths)
     if settings["autonomy_level"] == 0:
         raise ValueError(f"{paths.name} is at autonomy level 0 (observe only); the lab can't plan experiments.")
@@ -138,7 +139,8 @@ def plan_experiment(paths: ProjectPaths, q_id: str, *, factor: str, values: list
         if anchor:
             variants.append({"id": f"{eid}-ANCHOR", "tab": None, "role": "anchor", "same_as": anchor})
         spec = {"kind": test_kind, "source": source, "object": object, "z": [z0, z1],
-                "judged": [z0 + 6, z1 - 6] if z1 - z0 >= 12 else None, "base": base, "variants": spec_variants,
+                "judged": list(judged) if judged else [z0 + 6, z1 - 6] if z1 - z0 >= 12 else None, "base": base,
+                "variants": spec_variants,
                 "witness": cross_plate, "anchor": anchor_spec, "tabs": bool(tabs), "notes": notes}
         if stepped:
             h, k = (z1 - z0) / len(values), f["settings_key"]
@@ -352,3 +354,54 @@ def build_experiment(paths: ProjectPaths, exp_id: str, *, replace: bool, slicer=
         e["approval"] = None  # an approval belongs to one build
         atomic_write_json(e_path, validate(e, "experiment", e_path))  # the experiment last
         return build
+
+
+JUDGED_HALF_MM = 2.0
+MARGINS_MM = (6.0, 8.0, 10.0, 12.0)
+EDGE_TOLERANCE = 0.25
+
+
+def _real_measure(paths: ProjectPaths, source: str, object: str, base: str):
+    import tempfile
+    from lab.adapters.threemf import load_object, write_print_3mf
+    from lab.geometry.coupons import height_strip, plate_layout
+    mesh = load_object(paths.root / source, object)
+
+    def measure(z0: float, z1: float):
+        with tempfile.TemporaryDirectory() as d:
+            art = Path(d) / "size.3mf"
+            write_print_3mf(paths.root / base, plate_layout([("size", height_strip(mesh, z0, z1))]), art,
+                            {"sizing": [z0, z1]})
+            sliced, _ = slice_with_job(art, Path(d) / "sliced", 1, Path(d) / "jobs")
+            minutes, _ = slice_estimate(sliced)
+            return minutes, layer_time_profile(extract_gcode(sliced, 1))
+    return measure
+
+
+def size_strip(paths: ProjectPaths, source: str, object: str, around_z: float, target_minutes: float, base: str,
+               min_margin_mm: float = 6.0, measure=None) -> tuple[float, float]:
+    """The smallest representative strip around a height that fits the time. Representative first: the judged band
+    (around_z ± 2 mm) must show no cut-edge effect (its first and last 3 layers within 25 % of its median layer
+    time). Never falls back to a strip that isn't representative."""
+    import statistics
+    measure = measure or _real_measure(paths, source, object, base)
+    smallest = None
+    for m in [x for x in MARGINS_MM if x >= min_margin_mm]:
+        z0, z1 = around_z - JUDGED_HALF_MM - m, around_z + JUDGED_HALF_MM + m
+        minutes, prof = measure(z0, z1)
+        band = [t for z, t in prof if m <= z <= m + 2 * JUDGED_HALF_MM]
+        if len(band) < 7:
+            continue
+        med = statistics.median(band)
+        edges = band[:3] + band[-3:]
+        if any(abs(t - med) > EDGE_TOLERANCE * med for t in edges):
+            continue  # the cut still reaches the judged band: a bigger margin
+        if smallest is None:
+            smallest = (minutes, m)
+        if minutes <= target_minutes:
+            return (round(z0, 2), round(z1, 2))
+    if smallest:
+        raise ValueError(f"No representative strip fits {target_minutes:g} min; the smallest is {smallest[0]:g} min "
+                         f"(margin {smallest[1]:g} mm). Raise the budget or test a narrower question.")
+    raise ValueError(f"No representative strip around {around_z:g} mm: the cut edges still reach the judged band at a "
+                     f"{MARGINS_MM[-1]:g} mm margin. Test a full part instead, or a different height.")
