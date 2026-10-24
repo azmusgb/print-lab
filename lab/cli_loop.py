@@ -108,6 +108,31 @@ def cmd_setup(args) -> int:
     return 0
 
 
+def cmd_exp_check(args) -> int:
+    from lab.loop.guards import run_check
+    r = run_check(_paths(args), args.id)
+    print(r.text)
+    return 0 if r.status in ("ready", "approved") else 2
+
+
+def cmd_exp_approve(args) -> int:
+    from lab.loop.guards import approve
+    e = approve(_paths(args), args.id, args.reason)
+    print(f"Approved {e['approval']['build_id']} for: {', '.join(e['approval']['approved_reasons'])}. "
+          f"Start it with `lab exp start {args.id}` when you send it.")
+    return 0
+
+
+def cmd_exp_start(args) -> int:
+    from lab.loop.guards import start
+    e, warn = start(_paths(args), args.id)
+    for w in warn:
+        print(w)
+    run = e["print_runs"][-1]
+    print(f"{e['id']} printing as {run['id']} ({run['build_id']})")
+    return 0
+
+
 def register(sub) -> None:
     s = sub.add_parser("migrate", help="move the hand-written E-001..E-004 into Stage 1A.1 records (once)")
     s.add_argument("--project", default="hex-tile")
@@ -158,6 +183,17 @@ def register(sub) -> None:
     bd.add_argument("--replace", action="store_true")
     bd.add_argument("--project", default="hex-tile")
     bd.set_defaults(fn=cmd_exp_build)
+    for name, fn, help_ in (("check", cmd_exp_check, "check a build against every guard"),
+                            ("start", cmd_exp_start, "record that you sent the print (re-checks first)")):
+        c = es.add_parser(name, help=help_)
+        c.add_argument("id")
+        c.add_argument("--project", default="hex-tile")
+        c.set_defaults(fn=fn)
+    ap = es.add_parser("approve", help="approve a build that needs it (never an owner stop)")
+    ap.add_argument("id")
+    ap.add_argument("--reason", required=True)
+    ap.add_argument("--project", default="hex-tile")
+    ap.set_defaults(fn=cmd_exp_approve)
     v = es.add_parser("verdict", help="record your verdict on a printed experiment")
     v.add_argument("id")
     v.add_argument("--rank", help="best first, e.g. 'B>A'; 'A=B' for no meaningful difference")
