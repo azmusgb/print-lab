@@ -30,7 +30,7 @@
     "nozzle_confirmed": null,
     "plate": "textured PEI"
   },
-  "status": "printing",
+  "status": "answered",
   "blocked_reason": "",
   "print_runs": [
     {
@@ -44,7 +44,38 @@
       "filament_g": 9.35,
       "layers": 60,
       "started": "2026-10-24",
-      "slice_job": "job-20261024T203240-947d"
+      "slice_job": "job-20261024T203240-947d",
+      "result": {
+        "printed_at": "2026-10-24",
+        "photos": [
+          "IMG_0769 (owner's phone)"
+        ],
+        "owner_words": "the last print was much better -- smoother for both fronts -- just a weird artifact on the one end",
+        "owner_verdict": {
+          "kind": "ranking",
+          "better": "E-002 strip",
+          "than": "E-001 PR-002 v58 strip",
+          "strength": "a lot",
+          "judged_on": "face smoothness"
+        },
+        "ai_observations": [
+          {
+            "type": "artifact",
+            "where": "one end of a face, near the tip",
+            "assessment": "fine strings (hair-like wisps)",
+            "likely_cause": "seam_position 'back' starts every wall loop at that end tip (G-code: outer walls begin at X128.9 Y201.5, the strip's Y-max end); retraction, wipe and z-hop there leave strings",
+            "confirmed": false
+          },
+          {
+            "type": "edge_lip",
+            "where": "one long edge of the left strip",
+            "assessment": "thin lip along the cut edge; an artifact of cutting a strip (first layer), not of the tile",
+            "confirmed": false
+          }
+        ],
+        "baseline_recorded": null,
+        "open": "Which baseline steps were done before this print? Are any bands still visible on the faces?"
+      }
     }
   ],
   "findings": [],
