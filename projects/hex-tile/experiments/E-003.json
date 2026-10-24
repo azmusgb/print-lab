@@ -1,0 +1,66 @@
+{
+  "id": "E-003",
+  "project": "hex-tile",
+  "question": "Do the bands come from the jump between fast inner walls and the slow outer wall?",
+  "hypothesis": "At 210 \u00b0C the inner walls (250 mm/s) ask for more melt than the nozzle gives, then the 80 mm/s outer wall gets the surplus; on matte PLA the uneven flow shows as sheen bands. The spool labels pair 210 \u00b0C with 100 mm/s or less.",
+  "prediction": "With inner walls at the outer wall's speed, the face's bands are clearly fainter than on E-002's strip.",
+  "why_this_test": "One setting, one v58 strip; compared against E-002 (same spool, baseline done).",
+  "test_kind": "height_strip",
+  "factor": {
+    "name": "inner_wall_speed",
+    "values": [
+      [
+        "250",
+        "250",
+        "250",
+        "200",
+        "200",
+        "200"
+      ],
+      [
+        "80",
+        "80",
+        "80",
+        "50",
+        "50",
+        "50"
+      ]
+    ],
+    "unit": "mm/s"
+  },
+  "controlled": {
+    "model": "v58 (0.6-variant geometry)",
+    "settings": "v55 0.4 process, everything else unchanged",
+    "nozzle": "0.4",
+    "layer_height": "0.2",
+    "plate": "textured PEI",
+    "filament": "Kexcelled K5 PLA M, Light Matte Terracotta (lot C6719062)",
+    "strip": "Z 60\u201372 mm of the 6\" pair",
+    "run_after": "E-002, with its baseline (dried filament, vibration calibration)"
+  },
+  "dependent_adjustments": {},
+  "baseline": {
+    "filament_dried": null,
+    "vibration_calibration": null,
+    "nozzle_confirmed": null,
+    "plate": "textured PEI"
+  },
+  "status": "planned",
+  "blocked_reason": "",
+  "print_runs": [
+    {
+      "id": "PR-005",
+      "file": "hex-tile_E003_PR005.3mf",
+      "artifact_sha256": "374fb0537982adf53b9778cf7e19a204f12684530696eaceec31a721d9e091f3",
+      "variants": [
+        "v58 strip Z60-72, inner walls = outer wall speed"
+      ],
+      "sliced_estimate": "0 h 34 min",
+      "filament_g": 9.35,
+      "layers": 60,
+      "checked": "inner-wall moves in the G-code run at 80 mm/s"
+    }
+  ],
+  "findings": [],
+  "jobs": []
+}

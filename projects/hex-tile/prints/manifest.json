@@ -41,5 +41,15 @@
     "settings_from": "hexagon_v57_X2D_0.4nozzle.3mf (v55 0.4 settings)",
     "file": "hex-tile_E002_PR004.3mf",
     "artifact_sha256": "51f1229cf19e53012c6c4fbae880750cbc393ec0d70f906a9a6fde247a1d7b7a"
+  },
+  {
+    "experiment_id": "E-003",
+    "print_run_id": "PR-005",
+    "variants": [
+      "v58 strip Z60-72, inner walls = outer wall speed"
+    ],
+    "settings_from": "hexagon_v57_X2D_0.4nozzle.3mf (v55 0.4 settings), inner_wall_speed set to outer_wall_speed",
+    "file": "hex-tile_E003_PR005.3mf",
+    "artifact_sha256": "374fb0537982adf53b9778cf7e19a204f12684530696eaceec31a721d9e091f3"
   }
 ]

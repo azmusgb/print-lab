@@ -20,7 +20,7 @@
     "layer_height": "0.2",
     "plate": "textured PEI",
     "strip": "Z 60\u201372 mm of the 6\" pair (PR-002); the line is expected 6 mm above the strip's base",
-    "filament": "matte PLA"
+    "filament": "Kexcelled K5 PLA M, Light Matte Terracotta (lot C6719062)"
   },
   "dependent_adjustments": {
     "nozzle_variant": "Both strips are cut from the 0.6-variant files (the 0.4 v58 files weren't downloaded); both print on the 0.4 so only the model differs.",

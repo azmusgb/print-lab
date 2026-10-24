@@ -20,7 +20,7 @@
     "nozzle": "0.4",
     "layer_height": "0.2",
     "plate": "textured PEI",
-    "filament": "matte PLA, same spool as E-001",
+    "filament": "Kexcelled K5 PLA M, Light Matte Terracotta (lot C6719062), same spool as E-001",
     "strip": "Z 60\u201372 mm of the 6\" pair"
   },
   "dependent_adjustments": {},
