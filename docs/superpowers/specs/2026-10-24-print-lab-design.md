@@ -35,6 +35,26 @@ stays on Bambu cloud, so the lab hands over a ready 3MF to open in Bambu Studio 
   the open defect. It also keeps every facet face-up, puts contact scars on hidden backs, keeps layers long (no
   slowdown), and fits about 3 tents of 6" tiles on one plate.
 
+- **What the full chat history adds** (`history/hex-tile/chat/owner-notes.md`, all 13 pages, 15–24 Oct):
+  - The cleanest signal in the whole project: **v39, same design and settings, 3" pair "perfect", 6" pair "fine up to
+    the first point where the hexagon goes to the next side of it -- then breaks up every layer"**. Height and
+    stiffness, not the face design.
+  - The upper-edge ripple appears on single tiles with fins (v36, v37), on pairs (v39, v51) and on v56. It outlived
+    every stabiliser and seam strategy.
+  - **The owner proposed printing at an angle on 15 Oct** ("would printing with the tile at a slight angle help?");
+    the AI argued against it and it was never tested.
+  - Proposed and never tried: the printer's vibration (resonance) calibration, a slower speed only on the upper half,
+    matte PLA, and confirmed-dry filament.
+  - The earlier "good finish" prints used stock settings, a thicker skin (~2.2 mm median vs 1.2) and a continuous
+    back frame; skin thickness has not been varied since v31.
+  - Stacked steps with no print between them: v42–v44 (three revisions in 22 minutes), v34→v35 (eight settings and
+    a chamfer), v40→v41 (six settings).
+  - A coupon was used once (v49 seam coupons, 20 minutes); its result was never reported.
+
+**Baseline conditions before any experiment** (recorded with every print, not experiments themselves): filament dried
+and printed from a dry box, the printer's vibration calibration run, the nozzle and profile confirmed on the
+printer, and the same plate type. A result printed without them is graded F.
+
 These are hypotheses until coupons test them. The lab exists to test them properly.
 
 ## Principles
