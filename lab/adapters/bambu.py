@@ -2,6 +2,7 @@
 import os
 import re
 import subprocess
+import tempfile
 from pathlib import Path
 
 EXPECTED_VERSION = "02.08.02.61"
@@ -14,7 +15,8 @@ def bambu_binary() -> tuple[Path, str]:
     if not path.exists():
         raise FileNotFoundError(f"Bambu Studio not found at {path}. Install Bambu Studio {EXPECTED_VERSION}.")
     # --help writes result.json into the working directory, so run it somewhere disposable.
-    out = subprocess.run([str(path), "--help"], capture_output=True, text=True, cwd="/tmp")
+    with tempfile.TemporaryDirectory() as d:
+        out = subprocess.run([str(path), "--help"], capture_output=True, text=True, cwd=d)
     m = re.search(r"BambuStudio-(\d+\.\d+\.\d+\.\d+)", out.stdout + out.stderr)
     if not m:
         raise FileNotFoundError(f"Couldn't read the Bambu Studio version from {path}.")
