@@ -1,0 +1,277 @@
+[
+  {
+    "at": "2026-10-15T05:57Z",
+    "version": 29,
+    "size": null,
+    "nozzle": null,
+    "owner_words": "from prior run",
+    "defects": [
+      "strings",
+      "supports"
+    ],
+    "defects_from": "ai-reading",
+    "confirmed": false,
+    "note": ""
+  },
+  {
+    "at": "2026-10-15T12:18Z",
+    "version": 31,
+    "size": null,
+    "nozzle": null,
+    "owner_words": "grainy at front?!",
+    "defects": [
+      "grainy face",
+      "pad ghost lines"
+    ],
+    "defects_from": "owner",
+    "confirmed": false,
+    "note": ""
+  },
+  {
+    "at": "2026-10-15T13:43Z",
+    "version": 31,
+    "size": null,
+    "nozzle": null,
+    "owner_words": "found that the edges of the back pads where creating lines into the surface of the front",
+    "defects": [
+      "pad ghost lines"
+    ],
+    "defects_from": "owner",
+    "confirmed": false,
+    "note": ""
+  },
+  {
+    "at": "2026-10-15T15:00Z",
+    "version": 32,
+    "size": "6in",
+    "nozzle": null,
+    "owner_words": "the right side corner - look there",
+    "defects": [
+      "lines along slanted edges"
+    ],
+    "defects_from": "owner",
+    "confirmed": false,
+    "note": ""
+  },
+  {
+    "at": "2026-10-15T16:36Z",
+    "version": 33,
+    "size": "6in",
+    "nozzle": null,
+    "owner_words": "nooooooooooooo",
+    "defects": [
+      "tipped over"
+    ],
+    "defects_from": "ai-reading",
+    "confirmed": false,
+    "note": ""
+  },
+  {
+    "at": "2026-10-15T18:18Z",
+    "version": 34,
+    "size": null,
+    "nozzle": null,
+    "owner_words": "front face finish not smooth",
+    "defects": [
+      "rough face"
+    ],
+    "defects_from": "owner",
+    "confirmed": false,
+    "note": ""
+  },
+  {
+    "at": "2026-10-15T23:00Z",
+    "version": 36,
+    "size": null,
+    "nozzle": null,
+    "owner_words": "defects -- and the fins are hard to pull off the back",
+    "defects": [
+      "upper-edge ripple",
+      "fins hard to remove"
+    ],
+    "defects_from": "ai-reading",
+    "confirmed": false,
+    "note": ""
+  },
+  {
+    "at": "2026-10-16T12:55Z",
+    "version": 37,
+    "size": null,
+    "nozzle": null,
+    "owner_words": "still not good enough - feel like we may need the fins to reach the top of the tiles?",
+    "defects": [
+      "upper-edge ripple"
+    ],
+    "defects_from": "ai-reading",
+    "confirmed": false,
+    "note": ""
+  },
+  {
+    "at": "2026-10-16T22:55Z",
+    "version": 39,
+    "size": "6in",
+    "nozzle": "0.4",
+    "owner_words": "its bad--- fine up to the first point where the hexagon goes to the next side of it -- then breaks up every layer / 3\" was perfect --- 6\" was far from it",
+    "defects": [
+      "upper-edge ripple",
+      "breaks up above widest point"
+    ],
+    "defects_from": "owner",
+    "confirmed": false,
+    "note": ""
+  },
+  {
+    "at": "2026-10-17T16:41Z",
+    "version": 40,
+    "size": "6in",
+    "nozzle": "0.4",
+    "owner_words": "better! 6\" tiles printed -- front face could use a bit more polish",
+    "defects": [
+      "rough bottom edge",
+      "margins"
+    ],
+    "defects_from": "owner",
+    "confirmed": false,
+    "note": ""
+  },
+  {
+    "at": "2026-10-18T15:31Z",
+    "version": 41,
+    "size": "10in",
+    "nozzle": "0.4",
+    "owner_words": "lines are on all four prints (i printed two pairs at once) the models were diagonal / it was printed with v41",
+    "defects": [
+      "lines across face (tabs)",
+      "edge ridges",
+      "seam on face corner"
+    ],
+    "defects_from": "owner",
+    "confirmed": false,
+    "note": ""
+  },
+  {
+    "at": "2026-10-18T18:26Z",
+    "version": 46,
+    "size": null,
+    "nozzle": "0.4",
+    "owner_words": "def better - though cant separate the pair once printed",
+    "defects": [
+      "pair welded"
+    ],
+    "defects_from": "owner",
+    "confirmed": false,
+    "note": ""
+  },
+  {
+    "at": "2026-10-18T19:25Z",
+    "version": 47,
+    "size": null,
+    "nozzle": "0.4",
+    "owner_words": "need the seam to allow me to separate the pair - the two are almost welded together",
+    "defects": [
+      "pair welded"
+    ],
+    "defects_from": "owner",
+    "confirmed": false,
+    "note": ""
+  },
+  {
+    "at": "2026-10-18T23:32Z",
+    "version": 48,
+    "size": null,
+    "nozzle": "0.4",
+    "owner_words": "i need a better separation between the paired tile - its almost fused together",
+    "defects": [
+      "pair welded"
+    ],
+    "defects_from": "owner",
+    "confirmed": false,
+    "note": ""
+  },
+  {
+    "at": "2026-10-19T12:14Z",
+    "version": 49,
+    "size": "10in",
+    "nozzle": "0.4",
+    "owner_words": "from the single pair of 10\" tile print",
+    "defects": [
+      "lines across face (pad ends)",
+      "ridges near corner"
+    ],
+    "defects_from": "ai-reading",
+    "confirmed": false,
+    "note": ""
+  },
+  {
+    "at": "2026-10-19T23:56Z",
+    "version": 50,
+    "size": null,
+    "nozzle": "0.4",
+    "owner_words": "improve the back tabs on the bottom of the back of the tile. also, front margins have a bit of print/finish issues",
+    "defects": [
+      "ridges along edge",
+      "rough edge",
+      "bottom-edge band",
+      "lines across face",
+      "tabs flimsy"
+    ],
+    "defects_from": "owner",
+    "confirmed": false,
+    "note": ""
+  },
+  {
+    "at": "2026-10-20T13:52Z",
+    "version": 51,
+    "size": "6in",
+    "nozzle": "0.4",
+    "owner_words": "defects - 6\"",
+    "defects": [
+      "strings",
+      "upper-edge ripple",
+      "line near edges",
+      "bottom texture"
+    ],
+    "defects_from": "ai-reading",
+    "confirmed": false,
+    "note": ""
+  },
+  {
+    "at": "2026-10-20T23:10Z",
+    "version": null,
+    "size": null,
+    "nozzle": null,
+    "owner_words": "bad!",
+    "defects": [],
+    "defects_from": "owner",
+    "confirmed": false,
+    "note": "v53 or v54: unanswered (AI spend limit)"
+  },
+  {
+    "at": "2026-10-24T03:04Z",
+    "version": 54,
+    "size": null,
+    "nozzle": "0.4",
+    "owner_words": "forget the sunlight -- the line/quality is really bad --- way worse than prior versions",
+    "defects": [
+      "ribbed face",
+      "strings"
+    ],
+    "defects_from": "owner",
+    "confirmed": false,
+    "note": ""
+  },
+  {
+    "at": "2026-10-24T08:12Z",
+    "version": 56,
+    "size": "6in",
+    "nozzle": "0.6",
+    "owner_words": "ugh / the ripple is not new and not unique to the .6 -- though this was v56 .6 this round",
+    "defects": [
+      "mid-height line",
+      "upper-edge ripple"
+    ],
+    "defects_from": "owner",
+    "confirmed": false,
+    "note": ""
+  }
+]

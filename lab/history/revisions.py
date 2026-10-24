@@ -20,6 +20,7 @@ class Revision:
     scad_params: dict = field(default_factory=dict)
     settings: dict | None = None
     nozzle_profile: str | None = None
+    nozzle_in_name: str | None = None
     mesh: dict = field(default_factory=dict)
 
 
@@ -57,6 +58,7 @@ def revisions(artifacts: list[Artifact], lineage: str) -> list[Revision]:
         projects = [a for a in arts if a.kind == "3mf"]
         if projects:
             p = next((a for a in projects if a.nozzle == "0.4"), projects[0])
+            rev.nozzle_in_name = p.nozzle
             rev.settings = read_settings(Path(p.path))
             nd = rev.settings.get("nozzle_diameter")
             rev.nozzle_profile = f"{float(nd[0] if isinstance(nd, list) else nd):g}" if nd else None
