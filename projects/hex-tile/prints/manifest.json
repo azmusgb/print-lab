@@ -62,5 +62,11 @@
     "settings_from": "hexagon_v57_X2D_0.4nozzle.3mf (v55 0.4 settings)",
     "file": "hex-tile_E004_PR006.3mf",
     "artifact_sha256": "4eb40dec91dbfc31c4e2fe4bfa2dbfc7b1efbe5e9f2eaf7828d880b58812cf9e"
+  },
+  {
+    "experiment_id": "E-005",
+    "build_id": "BLD-005-01",
+    "file": "hex-tile_E-005_BLD-005-01.3mf",
+    "artifact_sha256": "7764e52e31ece6d6f6324226ff46a87a1339df617391a3234409b68565ac4007"
   }
 ]
