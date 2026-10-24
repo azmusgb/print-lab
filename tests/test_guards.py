@@ -124,12 +124,14 @@ def test_retry_limit(proj):
     assert "retry_limit" in codes(r, "needs_approval") and "adhesion" in r.text
 
 
-def test_preliminary_plate_mismatch_needs_approval_and_stays_confounded(proj):
+def test_preliminary_plate_mismatch_needs_approval_and_stays_confounded(proj, monkeypatch):
+    import lab.loop.realized as realized
+    monkeypatch.setattr(realized, "realization", lambda *a: None)  # the fake slicer's G-code is the same file twice
     first = built(proj, values=["250"], expect="")
     edit(proj, first, lambda e: (e["builds"][-1]["measured"].update(
         layer_time_profile=[[z, 36.0] for z, _ in e["builds"][-1]["measured"]["layer_time_profile"]]),
         e.update(print_runs=[{"id": "PR-001-01", "build_id": e["builds"][-1]["id"]}])))
-    eid = built(proj, values=["250"], expect="", references=[f"{first}-A"])
+    eid = built(proj, values=["80"], expect="", references=[f"{first}-A"])
     r = check_experiment(proj, eid)
     assert "plate_mismatch" in codes(r, "needs_approval")
     approve(proj, eid, "testing anyway")
