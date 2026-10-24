@@ -216,3 +216,113 @@ def question_status(paths: ProjectPaths, qid: str) -> str:
     if not nxt and not plans:
         lines.append("  plan the next experiment (`lab exp plan`)")
     return "\n".join(lines)
+
+
+def new_question(paths: ProjectPaths, text: str, budget: dict) -> str:
+    from lab.records.store import create_record
+    for p in paths.questions.glob("Q-*.json"):
+        q = load(p, "question")
+        if q["status"] == "active" and q["question"].strip().lower() == text.strip().lower():
+            raise ValueError(f"{q['id']} already open with that question.")
+    s = project_settings(paths)
+    b = dict(s["budget"])
+    if budget.get("minutes") is not None:
+        b["max_minutes"] = budget["minutes"]
+    if budget.get("g") is not None:
+        b["max_g"] = budget["g"]
+
+    def make(qid):
+        return {"schema": 1, "record_type": "question", "id": qid, "project": paths.name, "question": text,
+                "status": "active", "autonomy_level": s["autonomy_level"], "budget": b, "experiments": [],
+                "plans": [], "stops": []}
+    qid, _ = create_record(paths.locks, paths.questions, "Q", make,
+                           validate=lambda r: validate(r, "question", paths.questions / f"{r['id']}.json"))
+    return qid
+
+
+def _save_question(paths: ProjectPaths, q: dict) -> dict:
+    path = paths.questions / f"{q['id']}.json"
+    atomic_write_json(path, validate(q, "question", path))
+    return q
+
+
+def stop_question(paths: ProjectPaths, qid: str, reason: str) -> dict:
+    with record_lock(paths.locks, qid, f"lab question stop {qid}"):
+        q = load_question(paths, qid)
+        if ledger.owner_stopped(q):
+            raise ValueError(f"{qid} is already stopped: {ledger.owner_stopped(q)['reason']}")
+        q["stops"].append({"reason": reason, "at": now(), "resumed_at": None, "resume": None, "auto_code": None})
+        return _save_question(paths, q)
+
+
+def resume_question(paths: ProjectPaths, qid: str, add: dict | None, reason: str) -> dict:
+    exps = all_experiments(paths)
+    tol = project_settings(paths)["plate_time_tolerance_pct"]
+    with record_lock(paths.locks, qid, f"lab question resume {qid}"):
+        q = load_question(paths, qid)
+        resume = {"added": {"minutes": (add or {}).get("minutes"), "g": (add or {}).get("g")}, "reason": reason}
+        if st := ledger.owner_stopped(q):
+            st.update(resumed_at=now(), resume=resume)
+        elif auto := ledger.auto_stop(q, exps, tol):
+            t = now()
+            q["stops"].append({"reason": "auto", "auto_code": auto["code"], "at": t, "resumed_at": t,
+                               "resume": resume})
+        else:
+            raise ValueError(f"{qid} isn't stopped; nothing to resume.")
+        return _save_question(paths, q)
+
+
+def rebuild_question(paths: ProjectPaths, qid: str) -> list[str]:
+    """Validate everything first; any problem means a full report and no writes. Otherwise refresh the cached
+    outcomes and validity, and report orphaned print files and unattached experiments."""
+    from lab.records.store import RecordError
+    problems, exps = [], {}
+    try:
+        q = load_question(paths, qid)
+    except (RecordError, ValueError) as err:
+        return [f"{qid}: {err}", "No derived state updated."]
+    for p in sorted(paths.experiments.glob("E-*.json")):
+        try:
+            exps[p.stem] = load(p, "experiment")
+        except RecordError as err:
+            problems.append(f"{p.stem}: {err}")
+    for eid in q["experiments"]:
+        if eid not in exps and not any(x.startswith(f"{eid}:") for x in problems):
+            problems.append(f"{eid}: listed in {qid} but its file is missing")
+    if problems:
+        return [f"{qid} rebuild: {len(problems)} problem(s)", *problems, "No derived state updated."]
+    report = [f"{qid} rebuild"]
+    for eid in q["experiments"]:
+        e = exps[eid]
+        before = (e.get("prediction_outcome"), e.get("comparison_validity"))
+        refresh_derived(paths, e, exps)
+        if (e["prediction_outcome"], e["comparison_validity"]) != before:
+            save_experiment(paths, e)
+            report.append(f"{eid}: outcome {e['prediction_outcome'] or '-'}, comparison "
+                          f"{e['comparison_validity']['status']} (updated)")
+        else:
+            report.append(f"{eid}: unchanged")
+    for eid, e in exps.items():
+        if e["question"] == qid and eid not in q["experiments"]:
+            report.append(f"{eid}: unattached (names {qid} but isn't in its list)")
+    used = {b.get("artifact") for e in exps.values() for b in e.get("builds") or []}
+    used |= {f"prints/{r['file']}" for e in exps.values() for r in ((e.get("legacy") or {}).get("print_runs") or [])}
+    for f in sorted(paths.prints.glob("*.3mf")) if paths.prints.exists() else []:
+        if f"prints/{f.name}" not in used:
+            report.append(f"orphaned print file: prints/{f.name}")
+    return report
+
+
+def abandon(paths: ProjectPaths, eid: str, reason: str) -> dict:
+    with record_lock(paths.locks, eid, f"lab exp abandon {eid}"):
+        e = load_experiment(paths, eid)
+        e.update(status="abandoned", abandoned_reason=reason)
+        return save_experiment(paths, e)
+
+
+def observe(paths: ProjectPaths, eid: str, observation: dict) -> dict:
+    """An AI observation: kept apart from the owner's verdict and never read by outcomes, stops or budgets."""
+    with record_lock(paths.locks, eid, f"lab exp observe {eid}"):
+        e = load_experiment(paths, eid)
+        e.setdefault("ai_observations", []).append({**observation, "confirmed": False, "at": now()})
+        return save_experiment(paths, e)

@@ -1621,8 +1621,11 @@
       "at": "2026-10-24"
     }
   ],
-  "comparison_validity": null,
-  "prediction_outcome": null,
+  "comparison_validity": {
+    "status": "valid",
+    "reasons": []
+  },
+  "prediction_outcome": "unresolved",
   "analysis": [],
   "legacy": {
     "id": "E-001",

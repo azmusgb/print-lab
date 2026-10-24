@@ -408,7 +408,10 @@
   "superseded_verdicts": [],
   "anchors": [],
   "ai_observations": [],
-  "comparison_validity": null,
+  "comparison_validity": {
+    "status": "valid",
+    "reasons": []
+  },
   "prediction_outcome": null,
   "analysis": []
 }

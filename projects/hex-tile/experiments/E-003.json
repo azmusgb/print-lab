@@ -388,7 +388,15 @@
   "superseded_verdicts": [],
   "anchors": [],
   "ai_observations": [],
-  "comparison_validity": null,
+  "comparison_validity": {
+    "status": "unknown",
+    "reasons": [
+      {
+        "code": "cross_plate_no_anchor",
+        "note": "separate plates without a shared anchor are a weak comparison"
+      }
+    ]
+  },
   "prediction_outcome": null,
   "analysis": [],
   "legacy": {

@@ -396,8 +396,24 @@
       "where": "one long edge of the left strip"
     }
   ],
-  "comparison_validity": null,
-  "prediction_outcome": null,
+  "comparison_validity": {
+    "status": "confounded",
+    "reasons": [
+      {
+        "code": "cross_plate_no_anchor",
+        "note": "separate plates without a shared anchor are a weak comparison"
+      },
+      {
+        "code": "layer_time_mismatch",
+        "variant": "E-001-B",
+        "this_s": 17.72,
+        "other_s": 34.63,
+        "worst_pct": 95.4,
+        "at_z": 12.5
+      }
+    ]
+  },
+  "prediction_outcome": "inconclusive",
   "analysis": [
     {
       "claim": "plate layout (1 object, 18.34 s/layer, against E-001's 2 objects, 34.74 s/layer) may explain the difference",

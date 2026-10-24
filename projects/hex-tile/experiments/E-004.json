@@ -374,7 +374,14 @@
   "superseded_verdicts": [],
   "anchors": [],
   "ai_observations": [],
-  "comparison_validity": null,
+  "comparison_validity": {
+    "status": "valid",
+    "reasons": [
+      {
+        "code": "cross_plate_by_design"
+      }
+    ]
+  },
   "prediction_outcome": null,
   "analysis": [],
   "legacy": {

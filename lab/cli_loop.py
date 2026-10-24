@@ -16,10 +16,26 @@ def cmd_migrate(args) -> int:
 
 
 def cmd_question(args) -> int:
-    import json
     from lab.loop import commands, ledger
+    from lab.records.store import parse_budget
     paths = _paths(args)
-    if args.action == "status":
+    if args.action == "new":
+        qid = commands.new_question(paths, args.id, parse_budget(args.budget) if args.budget else {})
+        print(f"Created {qid}")
+        return 0
+    if args.action in ("stop", "resume") and not args.reason:
+        raise ValueError(f"`lab question {args.action}` needs --reason.")
+    if args.action == "stop":
+        commands.stop_question(paths, args.id, args.reason)
+        print(f"Stopped {args.id}. Nothing in it can start until `lab question resume {args.id}`.")
+    elif args.action == "resume":
+        commands.resume_question(paths, args.id, parse_budget(args.add) if args.add else None, args.reason)
+        print(f"Resumed {args.id}.")
+    elif args.action == "rebuild":
+        report = commands.rebuild_question(paths, args.id)
+        print("\n".join(report))
+        return 2 if report[-1] == "No derived state updated." else 0
+    elif args.action == "status":
         print(commands.question_status(paths, args.id))
     elif args.action == "show":
         q = commands.load_question(paths, args.id)
@@ -133,14 +149,32 @@ def cmd_exp_start(args) -> int:
     return 0
 
 
+def cmd_exp_abandon(args) -> int:
+    from lab.loop.commands import abandon
+    abandon(_paths(args), args.id, args.reason)
+    print(f"{args.id} abandoned.")
+    return 0
+
+
+def cmd_exp_observe(args) -> int:
+    from lab.loop.commands import observe
+    observe(_paths(args), args.id, {"type": args.type, "variant": args.variant, "assessment": args.assessment,
+                                    "confidence": args.confidence})
+    print(f"Observation added to {args.id} (unconfirmed; never counts as your verdict).")
+    return 0
+
+
 def register(sub) -> None:
     s = sub.add_parser("migrate", help="move the hand-written E-001..E-004 into Stage 1A.1 records (once)")
     s.add_argument("--project", default="hex-tile")
     s.set_defaults(fn=cmd_migrate)
 
-    q = sub.add_parser("question", help="questions: status, show")
-    q.add_argument("action", choices=["status", "show"])
-    q.add_argument("id")
+    q = sub.add_parser("question", help="questions: new, status, show, stop, resume, rebuild")
+    q.add_argument("action", choices=["new", "status", "show", "stop", "resume", "rebuild"])
+    q.add_argument("id", help="the question's ID (for `new`: the question's text)")
+    q.add_argument("--budget", help="for new: e.g. 3h,100g")
+    q.add_argument("--add", help="for resume: budget to add, e.g. 60m,30g")
+    q.add_argument("--reason")
     q.add_argument("--project", default="hex-tile")
     q.set_defaults(fn=cmd_question)
 
@@ -194,6 +228,19 @@ def register(sub) -> None:
     ap.add_argument("--reason", required=True)
     ap.add_argument("--project", default="hex-tile")
     ap.set_defaults(fn=cmd_exp_approve)
+    ab = es.add_parser("abandon", help="stop an experiment on purpose")
+    ab.add_argument("id")
+    ab.add_argument("--reason", required=True)
+    ab.add_argument("--project", default="hex-tile")
+    ab.set_defaults(fn=cmd_exp_abandon)
+    ob = es.add_parser("observe", help="an AI observation (kept apart from verdicts)")
+    ob.add_argument("id")
+    ob.add_argument("--type", required=True)
+    ob.add_argument("--variant")
+    ob.add_argument("--assessment", required=True)
+    ob.add_argument("--confidence", type=float)
+    ob.add_argument("--project", default="hex-tile")
+    ob.set_defaults(fn=cmd_exp_observe)
     v = es.add_parser("verdict", help="record your verdict on a printed experiment")
     v.add_argument("id")
     v.add_argument("--rank", help="best first, e.g. 'B>A'; 'A=B' for no meaningful difference")
