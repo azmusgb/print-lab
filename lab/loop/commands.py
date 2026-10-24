@@ -326,3 +326,51 @@ def observe(paths: ProjectPaths, eid: str, observation: dict) -> dict:
         e = load_experiment(paths, eid)
         e.setdefault("ai_observations", []).append({**observation, "confirmed": False, "at": now()})
         return save_experiment(paths, e)
+
+
+def _captured_at(src) -> str | None:
+    import subprocess
+    out = subprocess.run(["mdls", "-raw", "-name", "kMDItemContentCreationDate", str(src)], capture_output=True,
+                         text=True).stdout.strip()
+    if out and out != "(null)":
+        from datetime import datetime
+        try:
+            return datetime.strptime(out, "%Y-%m-%d %H:%M:%S %z").isoformat()
+        except ValueError:
+            pass
+    from datetime import datetime, timezone
+    from pathlib import Path
+    return datetime.fromtimestamp(Path(src).stat().st_mtime, timezone.utc).isoformat(timespec="seconds")
+
+
+def add_photos(paths: ProjectPaths, run_id: str, files: list) -> list[dict]:
+    """Convert each photo to JPEG (EXIF orientation kept) into photos/ (outside git) and list it on the print run.
+    All or nothing: a photo that won't convert means none are added."""
+    import subprocess
+    from pathlib import Path
+    from lab.jobs import sha256
+    e, run = find_run(paths, run_id)
+    paths.photos.mkdir(parents=True, exist_ok=True)
+    start = len(run.get("photos") or []) + 1
+    made, entries = [], []
+    try:
+        for i, src in enumerate(map(Path, files), start):
+            dst = paths.photos / f"{run_id}-{i}.jpg"
+            r = subprocess.run(["sips", "-s", "format", "jpeg", "-Z", "2400", str(src), "--out", str(dst)],
+                               capture_output=True, text=True)
+            if r.returncode != 0 or not dst.exists() or dst.stat().st_size == 0:
+                raise ValueError(f"{src.name} couldn't be converted to JPEG ({(r.stderr or r.stdout).strip()[-200:]}). "
+                                 "No photos were added.")
+            made.append(dst)
+            entries.append({"path": str(dst.relative_to(paths.root)), "sha256": sha256(dst),
+                            "captured_at": _captured_at(src), "source": src.name})
+    except Exception:
+        for f in made:
+            f.unlink(missing_ok=True)
+        raise
+    with record_lock(paths.locks, e["id"], f"lab photos add {run_id}"):
+        e = load_experiment(paths, e["id"])
+        run = next(r for r in e["print_runs"] if r["id"] == run_id)
+        run.setdefault("photos", []).extend(entries)
+        save_experiment(paths, e)
+    return entries

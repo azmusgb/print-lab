@@ -180,6 +180,14 @@ def cmd_capability(args) -> int:
     return 0
 
 
+def cmd_photos(args) -> int:
+    from lab.loop.commands import add_photos
+    out = add_photos(_paths(args), args.run_id, args.files)
+    for p in out:
+        print(f"Added {p['path']} ({p['source']}, taken {p['captured_at']})")
+    return 0
+
+
 def register(sub) -> None:
     s = sub.add_parser("migrate", help="move the hand-written E-001..E-004 into Stage 1A.1 records (once)")
     s.add_argument("--project", default="hex-tile")
@@ -193,6 +201,13 @@ def register(sub) -> None:
     q.add_argument("--reason")
     q.add_argument("--project", default="hex-tile")
     q.set_defaults(fn=cmd_question)
+
+    ph = sub.add_parser("photos", help="add photos to a print run (converted to JPEG, kept outside git)")
+    ph.add_argument("action", choices=["add"])
+    ph.add_argument("run_id")
+    ph.add_argument("files", nargs="+")
+    ph.add_argument("--project", default="hex-tile")
+    ph.set_defaults(fn=cmd_photos)
 
     cp = sub.add_parser("capability", help="prove a slicer mechanism with a real slice: run NAME, list")
     cp.add_argument("action", choices=["run", "list"])
