@@ -34,7 +34,7 @@ def _write_temp(folder: Path, obj: dict) -> Path:
     return Path(f.name)
 
 
-def atomic_write_json(path: Path, obj: dict) -> None:
+def atomic_write_json(path: Path, obj) -> None:
     """Write to a temporary file in the same folder, then replace: a crash never leaves half a record."""
     path = Path(path)
     tmp = _write_temp(path.parent, obj)

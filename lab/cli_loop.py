@@ -55,6 +55,29 @@ def cmd_exp_usage(args) -> int:
     return 0
 
 
+def cmd_exp_plan(args) -> int:
+    from lab.loop.builders import plan_experiment
+    z0, z1 = (float(x) for x in args.z.split(":"))
+    adjust = dict(a.split("=", 1) for a in args.adjust or [])
+    eid = plan_experiment(_paths(args), args.question, factor=args.factor, values=args.values.split(","),
+                          expect=args.expect, judge_on=args.judge_on, test_kind=args.test_kind, source=args.source,
+                          object=args.object, z=(z0, z1), base=args.base, question_text=args.text,
+                          hypothesis=args.hypothesis, prediction=args.prediction, why=args.why or "",
+                          references=args.reference or [], adjust=adjust)
+    print(f"Planned {eid}; build it with `lab exp build {eid}`")
+    return 0
+
+
+def cmd_exp_build(args) -> int:
+    from lab.loop.builders import build_experiment
+    b = build_experiment(_paths(args), args.id, replace=args.replace)
+    est = b["estimate"] or {}
+    print(f"{args.id} {b['id']}: {b['artifact']}\n  sliced {b['sliced']}\n  estimate {est.get('minutes')} min, "
+          f"{est.get('g')} g; median layer time {b['measured']['layer_time_median_s']} s\n"
+          f"Check it with `lab exp check {args.id}`")
+    return 0
+
+
 def register(sub) -> None:
     s = sub.add_parser("migrate", help="move the hand-written E-001..E-004 into Stage 1A.1 records (once)")
     s.add_argument("--project", default="hex-tile")
@@ -68,6 +91,30 @@ def register(sub) -> None:
 
     exp = sub.add_parser("exp", help="experiments: verdict, usage")
     es = exp.add_subparsers(dest="exp_action", required=True)
+    pl = es.add_parser("plan", help="plan an experiment in a question (one factor)")
+    pl.add_argument("question")
+    pl.add_argument("text", help="what this experiment asks")
+    pl.add_argument("--factor", required=True)
+    pl.add_argument("--values", required=True, help="comma-separated, one variant each (A, B, ...)")
+    pl.add_argument("--expect", default="", help="'B>A:clearly' or 'A=B'")
+    pl.add_argument("--judge-on", default="bands")
+    pl.add_argument("--test-kind", default="height_strip")
+    pl.add_argument("--source", required=True, help="sources/<file>.3mf")
+    pl.add_argument("--object", required=True)
+    pl.add_argument("--z", required=True, help="from:to in mm")
+    pl.add_argument("--base", required=True, help="sources/<file>.3mf whose settings to use")
+    pl.add_argument("--hypothesis", required=True)
+    pl.add_argument("--prediction", required=True)
+    pl.add_argument("--why")
+    pl.add_argument("--reference", action="append", help="a variant from an earlier experiment to compare with")
+    pl.add_argument("--adjust", action="append", help="KEY=VALUE, a declared dependent adjustment")
+    pl.add_argument("--project", default="hex-tile")
+    pl.set_defaults(fn=cmd_exp_plan)
+    bd = es.add_parser("build", help="build and slice an experiment's plate")
+    bd.add_argument("id")
+    bd.add_argument("--replace", action="store_true")
+    bd.add_argument("--project", default="hex-tile")
+    bd.set_defaults(fn=cmd_exp_build)
     v = es.add_parser("verdict", help="record your verdict on a printed experiment")
     v.add_argument("id")
     v.add_argument("--rank", help="best first, e.g. 'B>A'; 'A=B' for no meaningful difference")
