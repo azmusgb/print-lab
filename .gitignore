@@ -2,3 +2,6 @@
 history/*/chat/
 history/*/raw/
 .superpowers/
+result.json
+.venv/
+__pycache__/
