@@ -75,3 +75,14 @@ def test_history_audit_runs(tmp_path, hex_dir):
     assert lab("history", "ingest", folder, env_home=tmp_path).returncode == 0
     r = lab("history", "audit", env_home=tmp_path)
     assert r.returncode == 0 and "## Evidence" in r.stdout
+
+
+def test_ingest_keeps_only_the_project_lineage_and_relative_paths(tmp_path, hex_dir):
+    folder = tmp_path / "Downloads"
+    shutil.copytree(hex_dir, folder)
+    (folder / "2023_TaxReturn.pdf").write_text("private")
+    assert lab("history", "ingest", folder, env_home=tmp_path).returncode == 0
+    hist = tmp_path / "projects" / "hex-tile" / "history"
+    text = (hist / "inventory.json").read_text() + (hist / "revisions.json").read_text()
+    assert "TaxReturn" not in text and str(tmp_path) not in text
+    assert all(a["lineage"] == "hex-tile" for a in json.loads((hist / "inventory.json").read_text()))

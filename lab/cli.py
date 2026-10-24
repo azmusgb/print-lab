@@ -148,11 +148,24 @@ def cmd_history(args) -> int:
     hdir = project_dir(args.project) / "history"
     hdir.mkdir(parents=True, exist_ok=True)
     if args.action == "ingest":
-        arts = inventory.inventory(Path(args.folder))
-        (hdir / "inventory.json").write_text(json.dumps([asdict(a) for a in arts], indent=2))
-        revs = revisions.revisions(arts, args.project)
-        (hdir / "revisions.json").write_text(json.dumps([asdict(r) for r in revs], indent=2, default=str))
-        print(f"{len(arts)} files, {sum(1 for a in arts if a.duplicate_of)} duplicates, {len(revs)} revisions")
+        folder = Path(args.folder).resolve()
+        arts = inventory.inventory(folder)
+        mine = [a for a in arts if a.lineage == args.project]
+        revs = revisions.revisions(mine, args.project)
+
+        # Only this project's files are written, with paths relative to the folder: a Downloads folder also holds
+        # private files whose names must never land in the repo.
+        def rel(p: str) -> str:
+            return str(Path(p).relative_to(folder)) if p else p
+
+        out_arts = [{**asdict(a), "path": rel(a.path),
+                     "duplicate_of": rel(a.duplicate_of) if a.duplicate_of and a.duplicate_of.startswith(str(folder))
+                     and inventory.describe(Path(a.duplicate_of)).lineage == args.project else None} for a in mine]
+        out_revs = [{**asdict(r), "artifacts": [rel(p) for p in r.artifacts]} for r in revs]
+        (hdir / "inventory.json").write_text(json.dumps(out_arts, indent=2))
+        (hdir / "revisions.json").write_text(json.dumps(out_revs, indent=2, default=str))
+        print(f"{len(mine)} {args.project} files of {len(arts)} in the folder, "
+              f"{sum(1 for a in mine if a.duplicate_of)} duplicates, {len(revs)} revisions")
         return 0
     revs = [revisions.Revision(**r) for r in json.loads((hdir / "revisions.json").read_text())]
     trans = lineage.transitions(revs)
