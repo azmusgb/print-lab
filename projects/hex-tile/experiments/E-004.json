@@ -32,10 +32,10 @@
   "baseline": {
     "filament_dried": false,
     "vibration_calibration": false,
-    "nozzle_confirmed": null,
+    "nozzle_confirmed": "0.4/0.4 (send dialog: Bambu Lab X2D 0.4/0.4mm)",
     "plate": "textured PEI"
   },
-  "status": "planned",
+  "status": "printing",
   "blocked_reason": "",
   "print_runs": [
     {
@@ -49,7 +49,18 @@
       "slice_job": "job-20261024T213903-5d82",
       "sliced_estimate": "1 h 2 min",
       "filament_g": 18.7,
-      "layers": 60
+      "layers": 60,
+      "started": "2026-10-24",
+      "send_dialog": {
+        "printer": "X2D 0.4/0.4mm",
+        "plate": "PEI",
+        "filament": "PLA, AMS slot A1, main nozzle",
+        "timelapse": "off",
+        "auto_bed_leveling": "auto",
+        "flow_dynamics_calibration": "auto (reuses the last value when filament and nozzle are unchanged)",
+        "nozzle_offset_calibration": "off",
+        "estimate": "1h3m, 0.66 oz"
+      }
     }
   ],
   "findings": [],
