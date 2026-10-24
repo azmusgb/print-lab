@@ -49,10 +49,12 @@ Intent and budget only.
  "budget": {"max_test_minutes": 45, "max_test_g": 25, "max_minutes": 180, "max_g": 100},
  "experiments": ["E-001", "E-002", "E-003", "E-004"],
  "plans": [{"id": "P-005", "after": "E-004", "if": "two-object plate rougher", "next": "one pair per plate vs minimum layer time"}],
- "owner_stop": null, "resumes": []}
+ "stops": []}
 ```
 
-`owner_stop` is `{reason, at}` when the owner stops the question. `resumes` lists `{at, added: {minutes, g}, reason}`.
+`stops` is the question's full stop history: each owner stop is `{"reason", "at", "resumed_at": null, "resume":
+null}`, and `question resume` fills in `resumed_at` and `{"added": {minutes, g}, "reason"}` on the open entry. The
+question is owner-stopped while its last entry has no `resumed_at`. Nothing is removed.
 **Derived, never stored:** spent minutes and grams, the uninformative streak, automatic stop and its reason, the next
 step.
 
@@ -62,6 +64,11 @@ Today's fields (question text, hypothesis, prediction, why this test, test kind,
 adjustments, baseline, findings) plus:
 
 - `question`: the question's ID.
+- `provenance`: `prospective` (planned before printing, through `exp plan`), `migrated` (a record from before 1A.1)
+  or `post_hoc` (a question asked of a print after the fact). **Only a prospective experiment's outcome can be
+  `supported` or `refuted`, count toward the uninformative streak, or later serve as rule evidence.** A migrated or
+  post-hoc result is evidence of what was seen and can motivate a prospective test; its outcome is at most
+  `unresolved`.
 - `judge_on`: what the comparison is about, e.g. `"bands"`.
 - `expect`: `{"better": "E-004-B", "than": "E-004-A", "min_strength": "clearly"}`, or `{"same": ["E-004-A", "E-004-B"]}`.
 - `derived_from_artifact` and `derived_from_result`: lists of experiment IDs. Only `derived_from_result` carries
@@ -78,6 +85,9 @@ adjustments, baseline, findings) plus:
   "actual_g", "usage_source", "completion_fraction"}, "failed": {"at_fraction", "note"} | null, "photos":
   [{"path", "sha256", "captured_at", "source"}]}`.
 - `owner_verdict`: see below. `superseded_verdicts`: earlier ones, kept.
+- `anchors`: the owner's judgment of each anchor against its earlier self, `[{"id": "E-004-ANCHOR", "compared_to":
+  "E-002-A", "condition": "same" | "different" | "inconclusive", "strength": "slightly" | "clearly" | "a lot" | null,
+  "note": null}]`. Entered with the verdict (`--anchor same`).
 - `ai_observations`: `[{"type", "variant", "assessment", "confidence", "confirmed": false, "at"}]`. **Never read by
   stop logic, budgets, outcomes or learning.**
 - `comparison_validity`: `{"status": "valid" | "confounded" | "unknown", "reasons": [{"code", …}]}`, derived.
@@ -97,8 +107,9 @@ adjustments, baseline, findings) plus:
 {"kind": "acceptance", "print_runs": […], "good_enough": false, "blocking_defects": ["banding"], "lighting": "installed", "note": null, "by": "owner", "at": "…"}
 ```
 
-The witness and anchors never appear in `order`; the witness has its own condition, and an anchor is compared with
-its earlier self. `defect_z_mm` = strip start height + `mark_z_mm`. `about_target` is `true` for a verdict entered
+The witness and anchors never appear in `order`; the witness has its own condition, and each anchor its own entry in
+`anchors`. An anchor that is `different` or `inconclusive` makes `comparison_validity` `confounded`
+(`anchor_shifted`) or `unknown`. `defect_z_mm` = strip start height + `mark_z_mm`. `about_target` is `true` for a verdict entered
 through `lab exp verdict` (which shows "Judging on: bands" first) unless `--not-about-target`; migrated history has
 `null`.
 
@@ -106,13 +117,14 @@ through `lab exp verdict` (which shows "Judging on: bands" first) unless `--not-
 
 | Verdict | `expect` B better than A, min strength S | `expect` same |
 |---|---|---|
-| inconclusive, or witness abnormal / inconclusive without override, or comparison confounded | inconclusive | inconclusive |
+| inconclusive, or witness abnormal / inconclusive without override, or comparison confounded or unknown | inconclusive | inconclusive |
 | B above A at strength ≥ S, `about_target` true | supported | refuted (unresolved if only "slightly") |
 | B above A but weaker than S, or `about_target` false or null | unresolved | unresolved |
 | A ≈ B (one group) | refuted | supported (unresolved if `about_target` is false or null) |
 | A above B | refuted | refuted (unresolved if only "slightly") |
 
-`supported` and `refuted` are informative; `unresolved` and `inconclusive` are not.
+`supported` and `refuted` are informative; `unresolved` and `inconclusive` are not. For a `migrated` or `post_hoc`
+experiment, `supported` and `refuted` become `unresolved`, and the streak ignores it.
 
 ### Setup log: `printer/setup.jsonl`
 
@@ -124,7 +136,9 @@ Append-only, one event per line: `{"schema": 1, "record_type": "setup_event", "i
 - **A malformed line** is repaired by `lab setup repair --line N`, which writes `printer/setup-repairs.jsonl`:
   `{"record_type": "setup_repair", "repair_id", "source_line", "source_sha256", "replacement_event", "reason"}`. The
   reader substitutes a repair only when the damaged line's hash matches. The original bytes are never changed.
-- The current setup is derived from the latest event of each kind; `start` snapshots it into the print run, so later
+- **Reducing the log:** substitute matching repairs for damaged lines; drop every event superseded by a correction
+  and put the correction's replacement in its place (at the original event's time); then the current setup is the
+  latest effective event of each kind; `start` snapshots it into the print run, so later
   events never change history.
 
 ## Commands
@@ -134,7 +148,9 @@ the parent or index reference last** (e.g. `exp plan` writes `E-005.json`, then 
 writes the artifact, job, manifest line, then the experiment). Every mutation takes the record's lock
 (`fcntl.flock` on `.locks/<id>.lock`, holding `{pid, command, started_at}`), re-reads the record, validates, writes,
 releases. A command that can't get the lock in 10 s names the holder from the lock file and changes nothing; the OS
-frees the lock if a command dies.
+frees the lock if a command dies. **New IDs** (Q, E, P, PR, BLD, SET) are chosen and their files created while
+holding the project's `.locks/id-allocation.lock`, and each new file is created with exclusive create, so two
+commands can never take the same ID.
 
 | Command | Writes | Refuses / notes |
 |---|---|---|
@@ -145,7 +161,7 @@ frees the lock if a command dies.
 | `lab question resume Q [--add 60m,30g] --reason` | `resumes`, clears `owner_stop` | the streak counts only from the latest resume |
 | `lab exp plan Q --factor … --values … --expect … [--judge-on …]` | `E-NNN.json` (planned), then the question | autonomy level 0; more than one factor; a factor outside the allowlist (`lab/factors.json`: model version, objects on plate, and named slicer settings such as inner and outer wall speed, nozzle temperature, fan speeds, minimum layer time, retraction length, wall loops, filament profile; a new factor is added there by a reviewed change) |
 | `lab exp build E [--replace]` | artifact, job, manifest, then a new `builds` entry; status `built` or `build_failed` | **Idempotent:** unchanged inputs say "already built" and write nothing; changed inputs need `--replace`, which adds a new build and keeps the old |
-| `lab exp check E` | status `ready` or `needs_approval`, with every reason | read-mostly; safe to rerun; output as in the budget section |
+| `lab exp check E` | status `ready` or `needs_approval`, with every reason | read-mostly; safe to rerun; output as in the budget section; includes the actual-difference check |
 | `lab exp approve E --reason` | `approval` bound to the current build's ID and fingerprint | status isn't `needs_approval`; an owner stop (approval can't override it) |
 | `lab exp start E` | a new print run with the setup snapshot; status `printing` | **re-runs the check on live state**; refuses unless it passes or a matching approval exists; already printing says so and writes nothing; missing baseline items warn and are recorded |
 | `lab exp usage PR --failed-at 40%` / `--minutes M --grams G` | the print run's `usage` (and `failed`) | — |
@@ -180,12 +196,25 @@ A failed print isn't a verdict: it uses budget and doesn't touch the streak. **S
 | `full_part_required` | test kind is `scaled_part` or `full_part` | needs approval, always |
 | `autonomy_level` | the project is at level 1 | needs approval (level 0 can't plan) |
 | `refuted_dependency` | a `derived_from_result` experiment came out `refuted` | needs approval |
+| `undeclared_difference` | the built variants differ in anything other than the declared factor and its declared dependent adjustments (see below) | **blocked**; fix the plan or declare the adjustment |
 | `per_test_time` / `per_test_material` | estimate > 45 min or > 25 g | needs approval |
 | `question_time` / `question_material` | spent + estimate > budget (equal fits) | needs approval |
 | `retry_limit` | two physical print runs of this experiment already failed | needs approval, listing both failures |
 | `stale_build` | any input fingerprint (model, settings, builder, OpenSCAD, Bambu Studio) changed since the build | rebuild needed |
 | `no_estimate` | the build has no sliced estimate | rebuild needed |
 | `plate_mismatch` | see the plate rules | needs approval **and** the comparison stays confounded |
+
+**The actual-difference check** runs in `check` and again in `start`. It compares the built variants against each
+other (and an anchor against its original): the full slicer settings, diffed key by key; the plate (objects and
+placements, beyond the mirroring rule); and the geometry (each variant's mesh fingerprint and, where meshes differ,
+which model parameters differ in the source). Every difference must be the declared factor or a declared dependent
+adjustment. Factor granularity matters:
+
+- A **specific factor** (`model_parameter: rib_depth`, `inner_wall_speed`) supports a causal conclusion about that
+  one change.
+- A **bundle factor** (`model_version` v58 → v59, `filament_profile`) is allowed, but its outcome only supports
+  "B differs from A as a whole". The experiment records `factor_scope: "bundle"` with the list of underlying
+  differences, and 1A.3 may not learn a rule about any single one of them from it.
 
 An approval covers the guards it lists, for that exact build only. **Approval to print never makes a confounded
 comparison valid.** Blocking geometry findings (Stage 1A checks) can't be approved away.
@@ -197,7 +226,9 @@ measured layer-time profile from the G-code (a result).
 
 - **Matching:** two plates being compared match only if their layer times over the **judged heights** (the strip's
   judged region, or `defect_z ± 10 mm`) are within 10 % of each other, layer by layer on the median. The whole-print
-  median isn't enough. E-004 calibrates the 10 %.
+  median isn't enough. The tolerance lives in the project settings as `{"plate_time_tolerance_pct": 10, "source":
+"provisional"}`. E-004 (about 18 s against 35 s) can show whether a large difference in layer time matters at all; it
+can't set the threshold. A later graded or repeated test does that and changes `source`.
 - **When the plate is the factor** (e.g. E-004, objects on the plate), the layer-time difference is the thing being
   tested, not a confound; `plate_mismatch` doesn't apply to that factor.
 - **Same plate first:** variants share one plate whenever possible. Repeats mirror positions (A left, B right; then B
@@ -226,8 +257,14 @@ measured layer-time profile from the G-code (a result).
    strip's end at bed level; it touches the first 8 layers only. One-time capability test `CAP-TAB-ISOLATION`: with
    and without tabs, the judged region's layer times are within 2 %, and its speeds and fan are identical.
 
-Builders refuse, with a clear message: a plate too full, colliding tabs, a witness under 25 mm away, a capability
-test not yet passed, a plate that doesn't match the plate it's compared with (unless approved, and then confounded).
+Builders refuse, with a clear message, only what can be known before slicing: a plate too full, colliding tabs, a
+witness under 25 mm away, tabs requested before `CAP-TAB-ISOLATION` has passed. Two things are deliberately not
+refusals:
+
+- **Stepped settings without a passed `CAP-BAMBU-HEIGHT-RANGE`** (failed or never run): the builder makes separate
+  strips on one plate instead, and says so.
+- **A plate-timing mismatch** is only known after slicing: the build succeeds and records the measured profile; `check`
+  then raises `plate_mismatch` (needs approval) and `comparison_validity` is `confounded`.
 
 ## Errors
 
@@ -249,10 +286,12 @@ test not yet passed, a plate that doesn't match the plate it's compared with (un
 Q-001 "What causes the bands on v58's face?" is created around E-001 to E-004. Known facts are kept; anything not
 recorded at the time is `null`; no confidence, lighting, marks or setup are invented.
 
+- **All four** get `provenance: migrated`, except E-004, which was planned before printing (`prospective`, with its
+  plan reconstructed from the record written at the time).
 - **E-001:** owner verdict v58 better than v56 (strength `null`; owner: "looks better … for sure"); prediction "the
   join causes the line" refuted on the AI's reading only, so `unresolved` until the owner confirms.
-- **E-002:** the planned change (drying, calibration) wasn't made; recorded as an accidental plate-layout test (one
-  object, layer time 18.4 s). Against E-001's v58 strip (two objects, 34.8 s): owner "much better", comparison
+- **E-002:** the planned change (drying, calibration) wasn't made. Its plate-layout reading (one object, 18.4 s
+  per layer) is `post_hoc`: it motivated E-004 and isn't itself a test of the plate. Against E-001's v58 strip (two objects, 34.8 s): owner "much better", comparison
   **confounded** (`layer_time_mismatch`).
 - **E-003, E-004:** planned; E-004 tests the plate layout directly.
 
@@ -274,12 +313,17 @@ Studio is marked slow.
   confounded; an anchor that changed makes the comparison inconclusive; mirrored placement on repeats.
 - **Builders:** strip margins and the margin growing; witness geometry, spacing and on/off rule; tab size and 8-layer
   limit; `CAP-BAMBU-HEIGHT-RANGE` and `CAP-TAB-ISOLATION` against real slices (slow).
+- **Provenance:** a migrated or post-hoc experiment never yields supported or refuted and never moves the streak.
+- **Actual difference:** an undeclared settings key, an undeclared plate change or an undeclared geometry change
+  blocks `check` and `start`; a bundle factor records `factor_scope: bundle`.
+- **IDs:** two `exp plan` processes started together get different IDs.
+- **Anchors:** `different` makes the comparison confounded, `inconclusive` makes it unknown.
 - **Locks:** a lock held by another process makes a mutation wait, time out, name the holder and change nothing.
 - **Setup log:** corrections supersede; a repair applies only when the hash matches; history snapshots don't move.
 - **End to end (slow, temporary lab folder, real Bambu Studio):** question new → plan (two variants, one plate) →
   build → check ready → start (snapshot, live re-check) → verdict "B>A clearly" → supported, status shows spend and
   the next plan → an over-budget experiment needs approval → approve → rebuild with `--replace` → start refuses →
-  owner stop, approve still blocked → resume → allowed → `rebuild` reproduces every total and state.
+  owner stop, approve still blocked → resume → allowed, with the stop kept in `stops` → `rebuild` reproduces every total and state.
 
 ## Out of scope for 1A.1
 
