@@ -79,7 +79,9 @@ def test_bundle_factor_records_scope_and_list(proj):
 
 
 def test_cross_plate_reference_compared(proj):
-    first, _ = _plan(proj, values=["250"], expect="")
+    first, fb = _plan(proj, values=["250"], expect="")
+    first["print_runs"] = [{"id": "PR-001-01", "build_id": fb["id"]}]
+    atomic_write_json(proj.experiments / f"{first['id']}.json", first)
     e, b = _plan(proj, values=["80"], expect="", references=[f"{first['id']}-A"])
     diffs = actual_differences(proj, e, b)
     assert [(d["where"], d["key"]) for d in diffs] == [("settings", "inner_wall_speed")]

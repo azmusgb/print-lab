@@ -73,10 +73,15 @@ def test_anchor_conditions(cond, status, code):
 
 
 def _with_profile(e, seconds, eid=None):
-    e["builds"] = [{"id": f"BLD-{(eid or e['id'])[2:]}-01", "ok": True,
+    bid = f"BLD-{(eid or e['id'])[2:]}-01"
+    e["builds"] = [{"id": bid, "ok": True,
                     "measured": {"layer_time_median_s": seconds,
                                  "layer_time_profile": [[0.2 * i, seconds] for i in range(1, 61)]}}]
+    e["print_runs"] = [{"id": f"PR-{(eid or e['id'])[2:]}-01", "build_id": bid}]
     return e
+
+
+ANCHOR = [{"id": "E-009-ANCHOR", "compared_to": "E-002-A", "condition": "same", "strength": None, "note": None}]
 
 
 def test_layer_time_mismatch_confounds_cross_plate():
@@ -84,7 +89,7 @@ def test_layer_time_mismatch_confounds_cross_plate():
     e = _with_profile(judged(["B", "A"], "clearly"), 34.8)
     e["reference_variants"] = ["E-002-A"]
     v = comparison_validity(e, {"E-002": ref}, 10)
-    assert v["status"] == "confounded" and v["reasons"][0]["code"] == "layer_time_mismatch"
+    assert v["status"] == "confounded" and "layer_time_mismatch" in [r["code"] for r in v["reasons"]]
 
 
 def test_layer_time_mismatch_not_a_confound_when_plate_is_the_factor():
@@ -99,4 +104,5 @@ def test_within_tolerance_is_valid():
     ref = _with_profile(minimal_experiment("E-002"), 18.4)
     e = _with_profile(judged(["B", "A"], "clearly"), 19.5)
     e["reference_variants"] = ["E-002-A"]
+    e["anchors"] = ANCHOR
     assert comparison_validity(e, {"E-002": ref}, 10)["status"] == "valid"

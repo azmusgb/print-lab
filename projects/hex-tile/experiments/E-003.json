@@ -361,6 +361,24 @@
             17.72
           ]
         ]
+      },
+      "realization": {
+        "feature": "Inner wall",
+        "status": "realized",
+        "variants": {
+          "E-003-A": {
+            "requested": null,
+            "realized": 80.0,
+            "coverage": 0.991
+          },
+          "E-002-A": {
+            "requested": null,
+            "realized": 147.0,
+            "coverage": 0.991
+          }
+        },
+        "same_pairs": [],
+        "differently": []
       }
     }
   ],

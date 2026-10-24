@@ -75,9 +75,9 @@ def test_plan_refused_at_level_0(proj):
 
 
 def test_objects_on_plate_makes_copies(proj):
-    eid = plan_experiment(proj, "Q-009", **{**PLAN, "factor": "objects_on_plate", "values": ["1", "2"]})
+    eid = plan_experiment(proj, "Q-009", **{**PLAN, "factor": "objects_on_plate", "values": ["2"], "expect": ""})
     e = load(proj.experiments / f"{eid}.json", "experiment")
-    assert [v["copies"] for v in e["build_spec"]["variants"]] == [1, 2]
+    assert [v["copies"] for v in e["build_spec"]["variants"]] == [2]
 
 
 def test_build_records_estimate_profile_plate_and_fingerprints(proj):

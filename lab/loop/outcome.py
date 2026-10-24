@@ -61,6 +61,12 @@ def _latest_build(exp: dict) -> dict | None:
     return next((b for b in reversed(exp.get("builds") or []) if b.get("ok") and b.get("measured")), None)
 
 
+def printed_build(exp: dict) -> dict | None:
+    """The build the experiment's latest print run used (what was really on the printer)."""
+    run = (exp.get("print_runs") or [None])[-1]
+    return next((b for b in exp.get("builds") or [] if run and b["id"] == run.get("build_id")), None)
+
+
 def judged_window(exp: dict) -> tuple[float, float] | None:
     """The heights being judged, in the strip's own heights: the strip without its 6 mm margins, when known."""
     spec = exp.get("build_spec") or {}
@@ -93,18 +99,29 @@ def comparison_validity(exp: dict, others: dict[str, dict], tolerance_pct: float
             reasons.append({"code": "anchor_shifted", "status": "confounded", "anchor": a["id"]})
         elif a["condition"] == "inconclusive":
             reasons.append({"code": "anchor_inconclusive", "status": "unknown", "anchor": a["id"]})
-    mine = _latest_build(exp)
-    if factor_kind(exp) != "plate" and mine:
+    mine = printed_build(exp) or _latest_build(exp)
+    refs = exp.get("reference_variants") or []
+    plate_factor = factor_kind(exp) == "plate"
+    if refs and plate_factor:
+        reasons.append({"code": "cross_plate_by_design", "status": "valid"})
+    elif refs and not any(a["condition"] == "same" for a in exp.get("anchors") or []):
+        reasons.append({"code": "cross_plate_no_anchor", "status": "unknown",
+                        "note": "separate plates without a shared anchor are a weak comparison"})
+    if not plate_factor and mine and mine.get("measured"):
         window = judged_window(exp)
-        for ref in exp.get("reference_variants") or []:
+        for ref in refs:
             other = others.get(ref.rsplit("-", 1)[0])
-            theirs = _latest_build(other) if other else None
+            theirs = printed_build(other) if other else None
             if not theirs:
+                reasons.append({"code": "reference_not_printed", "status": "unknown", "variant": ref})
                 continue
-            a, b = _median(mine, window), _median(theirs, judged_window(other))
-            if a and b and abs(a - b) / min(a, b) * 100 > tolerance_pct:
+            a = _median(mine, window)
+            b = _median(theirs, judged_window(other)) if theirs.get("measured") else None
+            if not a or not b:
+                reasons.append({"code": "reference_unmeasurable", "status": "unknown", "variant": ref})
+            elif abs(a - b) / min(a, b) * 100 > tolerance_pct:
                 reasons.append({"code": "layer_time_mismatch", "status": "confounded", "variant": ref,
                                 "this_s": a, "other_s": b})
     status = ("confounded" if any(r["status"] == "confounded" for r in reasons)
-              else "unknown" if reasons else "valid")
+              else "unknown" if any(r["status"] == "unknown" for r in reasons) else "valid")
     return {"status": status, "reasons": [{k: x for k, x in r.items() if k != "status"} for r in reasons]}

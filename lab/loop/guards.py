@@ -26,6 +26,7 @@ class CheckResult:
     text: str = ""
     build: dict | None = None
     bundle: list = field(default_factory=list)
+    realization: dict | None = None
 
     def failed(self, result: str | None = None) -> list[Guard]:
         return [g for g in self.guards if not g.ok and (result is None or g.result == result)]
@@ -90,14 +91,28 @@ def check_experiment(paths: ProjectPaths, exp_id: str) -> CheckResult:
         add("stale_build", not changed, "rebuild",
             f"changed since {build['id']}: {', '.join(changed)}; `lab exp build {exp_id} --replace`" if changed
             else "inputs unchanged since the build")
-    bundle = []
-    if build.get("artifact") and (paths.root / build["artifact"]).exists():
+    bundle, real = [], None
+    if not build.get("artifact") or not (paths.root / build["artifact"]).exists():
+        add("undeclared_difference", False, "rebuild",
+            f"{build['id']}'s print file is missing, so the one-factor check can't run; rebuild it")
+    else:
         bad, bundle = undeclared(actual_differences(paths, e, build, exps), e)
         add("undeclared_difference", not bad, "blocked",
             "; ".join(f"{d['where']} {d['key']} differs ({d['a']} vs {d['b']})" for d in bad)
             + " — declare it as a dependent adjustment or fix the plan" if bad else "only the declared factor differs")
         geo = _geometry(paths, build)
         add("geometry_blocking", not geo, "blocked", "; ".join(geo) if geo else "no blocking geometry findings")
+        from lab.loop import realized
+        real = realized.realization(paths, e, build, exps)
+        if real:
+            vs = ", ".join(f"{v}: {x['realized']:g} mm/s over {round(x['coverage'] * 100)}%"
+                           + (f" (asked {x['requested']:g})" if x["requested"] is not None else "")
+                           for v, x in real["variants"].items())
+            msg = {"realized": f"realized as asked ({vs})",
+                   "realized_differently": f"realized differently ({vs}); the evidence is about the printed values",
+                   "not_realized": f"no material difference in the G-code ({vs}); the experiment would test nothing",
+                   "single": f"one variant only ({vs})"}[real["status"]]
+            add("factor_not_realized", real["status"] != "not_realized", "blocked", msg)
     if est:
         mt, gt = float(q["budget"]["max_test_minutes"]), float(q["budget"]["max_test_g"])
         add("per_test_time", est["minutes"] <= mt, "needs_approval", f"{_n(est['minutes'])} / {_n(mt)} min per test")
@@ -112,13 +127,16 @@ def check_experiment(paths: ProjectPaths, exp_id: str) -> CheckResult:
         "two attempts failed: " + "; ".join(f"{r['id']} at {round(r['failed']['at_fraction'] * 100)}%"
                                              + (f" ({r['failed']['note']})" if r['failed'].get('note') else "")
                                              for r in failed) if len(failed) >= 2 else f"{len(failed)} / 2 failed attempts")
-    mism = [r for r in comparison_validity(e, exps, tol)["reasons"] if r["code"] == "layer_time_mismatch"]
+    reasons = comparison_validity(e, exps, tol)["reasons"]
+    mism = [r for r in reasons if r["code"] in ("layer_time_mismatch", "reference_unmeasurable",
+                                                "reference_not_printed")]
     add("plate_mismatch", not mism, "needs_approval",
-        "; ".join(f"layer time {r['this_s']} s vs {r['other_s']} s on {r['variant']}'s plate (over {tol}%); "
-                  "approving lets it print, but the comparison stays confounded" for r in mism) if mism
+        "; ".join(f"layer time {r['this_s']} s vs {r['other_s']} s on {r['variant']}'s plate (over {tol}%)"
+                  if r["code"] == "layer_time_mismatch" else f"{r['variant']}'s plate can't be compared ({r['code']})"
+                  for r in mism) + "; approving lets it print, but the comparison stays confounded" if mism
         else "plate timing matches the compared plates")
     res = _finish(e, g, build, q, exps, tol, est)
-    res.bundle = bundle
+    res.bundle, res.realization = bundle, real
     return res
 
 
@@ -156,9 +174,12 @@ def run_check(paths: ProjectPaths, exp_id: str) -> CheckResult:
         new = {"ready": "ready", "approved": "approved", "needs_approval": "needs_approval"}.get(r.status)
         if e["status"] in ("built", "ready", "needs_approval", "approved") and new and e["status"] != new:
             e["status"] = new
-        if r.build and r.bundle:
+        if r.build:
             b = next(x for x in e["builds"] if x["id"] == r.build["id"])
-            b.update(factor_scope="bundle", bundle_differences=r.bundle)
+            if r.bundle:
+                b.update(factor_scope="bundle", bundle_differences=r.bundle)
+            if r.realization:
+                b["realization"] = r.realization
         save_experiment(paths, e)
     return r
 
@@ -185,6 +206,9 @@ def start(paths: ProjectPaths, exp_id: str) -> tuple[dict, list[str]]:
     e = load_experiment(paths, exp_id)
     if e["status"] == "printing":
         return e, [f"{exp_id} already started ({e['print_runs'][-1]['id']}); nothing written."]
+    if e["status"] not in ("built", "ready", "needs_approval", "approved"):
+        raise ValueError(f"{exp_id} is {e['status']}; only a built experiment can be started. "
+                         "To print it again, plan a repeat.")
     r = check_experiment(paths, exp_id)
     if r.status not in ("ready", "approved"):
         raise ValueError(f"Can't start {exp_id}:\n" + "\n".join(f"  {x.code}: {x.message}" for x in r.failed()))

@@ -9,13 +9,16 @@ def run_usage(run: dict, build: dict | None) -> tuple[float, float]:
     """A started print run's cost: telemetry, then manual figures, then estimate x fraction for a failed run, then
     the estimate. A print run exists only once started, so every run listed costs something."""
     u = run.get("usage") or {}
-    if u.get("usage_source") in ("telemetry", "manual") and u.get("actual_minutes") is not None:
-        return float(u["actual_minutes"]), float(u.get("actual_g") or 0.0)
     est = (build or {}).get("estimate") or {}
     m, g = float(est.get("minutes") or 0.0), float(est.get("g") or 0.0)
     if run.get("failed") and run["failed"].get("at_fraction") is not None:
         f = float(run["failed"]["at_fraction"])
-        return round(m * f, 2), round(g * f, 2)
+        m, g = round(m * f, 2), round(g * f, 2)
+    if u.get("usage_source") in ("telemetry", "manual"):  # each figure given replaces its own fallback
+        if u.get("actual_minutes") is not None:
+            m = float(u["actual_minutes"])
+        if u.get("actual_g") is not None:
+            g = float(u["actual_g"])
     return m, g
 
 

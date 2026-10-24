@@ -79,7 +79,8 @@ def actual_differences(paths: ProjectPaths, exp: dict, build: dict, others: dict
         rexp = (others or {}).get(rexp_id)
         if rexp is None and (paths.experiments / f"{rexp_id}.json").exists():
             rexp = load(paths.experiments / f"{rexp_id}.json", "experiment")
-        rb = next((b for b in reversed((rexp or {}).get("builds") or []) if b.get("ok") and b.get("artifact")), None)
+        from lab.loop.outcome import printed_build
+        rb = printed_build(rexp or {})
         if not rb or not (paths.root / rb["artifact"]).exists():
             continue
         rf = variant_facts(paths.root / rb["artifact"])

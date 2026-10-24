@@ -1,14 +1,14 @@
 {
-  "inner_wall_speed": {"kind": "setting", "scope": "specific", "settings_key": "inner_wall_speed", "unit": "mm/s"},
-  "outer_wall_speed": {"kind": "setting", "scope": "specific", "settings_key": "outer_wall_speed", "unit": "mm/s"},
-  "nozzle_temperature": {"kind": "setting", "scope": "specific", "settings_key": "nozzle_temperature", "unit": "°C"},
-  "fan_min_speed": {"kind": "setting", "scope": "specific", "settings_key": "fan_min_speed", "unit": "%"},
-  "fan_max_speed": {"kind": "setting", "scope": "specific", "settings_key": "fan_max_speed", "unit": "%"},
-  "slow_down_layer_time": {"kind": "setting", "scope": "specific", "settings_key": "slow_down_layer_time", "unit": "s"},
-  "retraction_length": {"kind": "setting", "scope": "specific", "settings_key": "retraction_length", "unit": "mm"},
-  "wall_loops": {"kind": "setting", "scope": "specific", "settings_key": "wall_loops", "unit": ""},
-  "objects_on_plate": {"kind": "plate", "scope": "specific", "unit": "objects"},
-  "model_version": {"kind": "model_version", "scope": "bundle", "unit": ""},
-  "filament_profile": {"kind": "filament_profile", "scope": "bundle", "unit": ""},
-  "model_parameter": {"kind": "model_parameter", "scope": "specific", "unit": ""}
+  "inner_wall_speed": {"kind": "setting", "scope": "specific", "settings_key": "inner_wall_speed", "unit": "mm/s", "per_object": true, "gcode_feature": "Inner wall"},
+  "outer_wall_speed": {"kind": "setting", "scope": "specific", "settings_key": "outer_wall_speed", "unit": "mm/s", "per_object": true, "gcode_feature": "Outer wall"},
+  "nozzle_temperature": {"kind": "setting", "scope": "specific", "settings_key": "nozzle_temperature", "unit": "\u00b0C", "per_object": false},
+  "fan_min_speed": {"kind": "setting", "scope": "specific", "settings_key": "fan_min_speed", "unit": "%", "per_object": false},
+  "fan_max_speed": {"kind": "setting", "scope": "specific", "settings_key": "fan_max_speed", "unit": "%", "per_object": false},
+  "slow_down_layer_time": {"kind": "setting", "scope": "specific", "settings_key": "slow_down_layer_time", "unit": "s", "per_object": false},
+  "retraction_length": {"kind": "setting", "scope": "specific", "settings_key": "retraction_length", "unit": "mm", "per_object": false},
+  "wall_loops": {"kind": "setting", "scope": "specific", "settings_key": "wall_loops", "unit": "", "per_object": false},
+  "objects_on_plate": {"kind": "plate", "scope": "specific", "unit": "objects", "per_object": false},
+  "model_version": {"kind": "model_version", "scope": "bundle", "unit": "", "per_object": true},
+  "filament_profile": {"kind": "filament_profile", "scope": "bundle", "unit": "", "per_object": false},
+  "model_parameter": {"kind": "model_parameter", "scope": "specific", "unit": "", "per_object": true}
 }
