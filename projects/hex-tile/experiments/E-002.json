@@ -30,7 +30,7 @@
     "nozzle_confirmed": null,
     "plate": "textured PEI"
   },
-  "status": "planned",
+  "status": "printing",
   "blocked_reason": "",
   "print_runs": [
     {
@@ -42,7 +42,8 @@
       ],
       "sliced_estimate": "0 h 33 min",
       "filament_g": 9.35,
-      "layers": 60
+      "layers": 60,
+      "started": "2026-10-24"
     }
   ],
   "findings": [],
