@@ -1,4 +1,5 @@
 """The Stage 1A.1 experiment loop commands: migrate, question, exp, setup, photos (spec: Commands)."""
+import json
 import sys
 
 
@@ -78,6 +79,35 @@ def cmd_exp_build(args) -> int:
     return 0
 
 
+def _kv(pairs) -> dict:
+    out = {}
+    for p in pairs or []:
+        k, _, v = p.partition("=")
+        try:
+            out[k] = json.loads(v)
+        except ValueError:
+            out[k] = v
+    return out
+
+
+def cmd_setup(args) -> int:
+    from lab.loop import setup_log
+    paths = _paths(args)
+    if args.action == "log":
+        ev = setup_log.append_event(paths, args.kind, _kv(args.set), supersedes=args.supersedes,
+                                    replacement={"kind": args.replacement_kind, "fields": _kv(args.set)}
+                                    if args.kind == "correction" else None)
+        print(f"Logged {ev['id']} {ev['kind']}")
+    elif args.action == "repair":
+        r = setup_log.repair_line(paths, args.line, {"kind": args.replacement_kind, "fields": _kv(args.set),
+                                                     "at": args.at}, args.reason)
+        print(f"Recorded {r['repair_id']} for line {args.line}")
+    else:
+        for kind, ev in sorted(setup_log.current_setup(paths).items()):
+            print(f"{kind:<24} {ev['at']}  {json.dumps(ev['fields'])}  ({ev['id']})")
+    return 0
+
+
 def register(sub) -> None:
     s = sub.add_parser("migrate", help="move the hand-written E-001..E-004 into Stage 1A.1 records (once)")
     s.add_argument("--project", default="hex-tile")
@@ -88,6 +118,19 @@ def register(sub) -> None:
     q.add_argument("id")
     q.add_argument("--project", default="hex-tile")
     q.set_defaults(fn=cmd_question)
+
+    st = sub.add_parser("setup", help="the printer's setup log: log, repair, show")
+    st.add_argument("action", choices=["log", "repair", "show"])
+    st.add_argument("kind", nargs="?", help="filament_dried, vibration_calibration, nozzle_changed, spool_loaded, "
+                                            "correction, ...")
+    st.add_argument("--set", action="append", help="KEY=VALUE")
+    st.add_argument("--supersedes", help="for a correction: the event it replaces")
+    st.add_argument("--replacement-kind", help="for a correction or repair: the event's kind")
+    st.add_argument("--line", type=int)
+    st.add_argument("--at")
+    st.add_argument("--reason")
+    st.add_argument("--project", default="hex-tile")
+    st.set_defaults(fn=cmd_setup)
 
     exp = sub.add_parser("exp", help="experiments: verdict, usage")
     es = exp.add_subparsers(dest="exp_action", required=True)
