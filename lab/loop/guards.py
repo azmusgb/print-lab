@@ -198,6 +198,9 @@ def run_check(paths: ProjectPaths, exp_id: str) -> CheckResult:
                 b.update(factor_scope="bundle", bundle_differences=r.bundle)
             if r.realization:
                 b["realization"] = r.realization
+            b["check"] = {"status": r.status, "at": now(),  # a display for the page; `start` always re-checks
+                          "guards": [{"code": g.code, "ok": g.ok, "result": g.result, "message": g.message}
+                                     for g in r.guards]}
         save_experiment(paths, e)
     return r
 

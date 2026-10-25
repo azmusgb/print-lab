@@ -195,6 +195,9 @@ def cmd_history(args) -> int:
     return 0
 
 
+REFRESHES_PAGE = ("migrate", "question", "exp", "setup", "photos")
+
+
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="lab", description="Print lab: measure, check, cut coupons, slice, learn.")
     p.add_argument("--project", default=os.environ.get("LAB_PROJECT", "hex-tile"))
@@ -231,10 +234,18 @@ def main(argv=None) -> int:
 
     from lab import cli_loop
     cli_loop.register(sub)
+    from lab import page
+    page.register(sub)
 
     args = p.parse_args(argv)
     try:
-        return args.fn(args)
+        rc = args.fn(args)
+        if args.cmd in REFRESHES_PAGE:
+            try:
+                page.refresh(project_dir(args.project))
+            except Exception as e:  # the page is a view; never fail the command over it
+                print(f"(page not rebuilt: {e})", file=sys.stderr)
+        return rc
     except (ValueError, FileNotFoundError) as e:
         print(str(e), file=sys.stderr)
         return 1

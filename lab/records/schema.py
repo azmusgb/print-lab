@@ -29,7 +29,7 @@ VARIANT = {"id": F(S, True), "tab": F((S, NUL)), "factor_value": F(A), "role": F
 BUILD = {"id": F(S, True), "ok": F(B, True), "at": F((S, NUL)), "inputs": F(D), "job": F((S, NUL)), "artifact": F((S, NUL)),
          "artifact_sha256": F((S, NUL)), "sliced": F((S, NUL)), "estimate": F((D, NUL)), "plate": F((D, NUL)),
          "measured": F((D, NUL)), "error": F((S, NUL)), "factor_scope": F(S, choices=("specific", "bundle")),
-         "bundle_differences": F(L), "notes": F(L), "realization": F((D, NUL)), "legacy": F(A)}
+         "bundle_differences": F(L), "notes": F(L), "realization": F((D, NUL)), "check": F((D, NUL)), "legacy": F(A)}
 RUN = {"id": F(S, True), "build_id": F((S, NUL)), "started_at": F((S, NUL)), "setup": F((D, NUL)),
        "baseline_missing": F(L), "usage": F((D, NUL)), "failed": F((D, NUL)), "photos": F(L), "legacy": F(A)}
 MARK = {"variant": F(S, True), "mark_z_mm": F((N, NUL)), "defect_z_mm": F((N, NUL))}
