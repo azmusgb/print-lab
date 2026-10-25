@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 
 from lab.loop import ledger
-from lab.loop.outcome import comparison_validity, prediction_outcome
+from lab.loop.outcome import comparison_validity, prediction_outcome, sweep_finding
 from lab.records.project import ProjectPaths, project_settings
 from lab.records.schema import load
 from lab.records.store import RecordError, now
@@ -45,14 +45,18 @@ def _variants(e: dict) -> list[dict]:
     b = _last_build(e) or {}
     real = ((b.get("realization") or {}).get("variants")) or {}
     unit = (e.get("factor") or {}).get("unit") or ""
+    grades = (e.get("owner_verdict") or {}).get("grades") or {}
     out = []
     for v in e.get("variants") or []:
+        if v.get("role", "variant") != "variant":
+            continue
         r = real.get(v["id"]) or {}
         requested = r.get("requested", v.get("factor_value"))
         realized = r.get("realized")
         out.append({"id": v["id"], "tab": v.get("tab"), "requested": requested, "realized": realized,
                     "as_asked": None if realized is None else v["id"] not in
-                    ((b.get("realization") or {}).get("differently") or []), "unit": unit})
+                    ((b.get("realization") or {}).get("differently") or []), "unit": unit,
+                    "grade": grades.get(v["id"])})
     return out
 
 
@@ -129,7 +133,7 @@ def _experiment(e: dict, exps: dict, root: Path, tol: float, production) -> dict
         "filament": (e.get("controlled") or {}).get("filament"),
         "runs": [{"id": r["id"], "started_at": r.get("started_at"), "baseline_missing": r.get("baseline_missing") or []}
                  for r in e.get("print_runs") or []],
-        "photos": _photos(e, root), "ai_observations": e.get("ai_observations") or [], "needs": _needs(e)}
+        "finding": sweep_finding(e), "photos": _photos(e, root), "ai_observations": e.get("ai_observations") or [], "needs": _needs(e)}
 
 
 def _question(q: dict, exps: dict, tol: float) -> dict:

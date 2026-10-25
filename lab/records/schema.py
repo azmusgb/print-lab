@@ -8,7 +8,8 @@ STATUSES = ("planned", "built", "build_failed", "ready", "needs_approval", "appr
             "abandoned")
 PROVENANCES = ("prospective", "migrated", "post_hoc")
 STRENGTHS = ("slightly", "clearly", "a lot")
-VERDICT_KINDS = ("ranking", "inconclusive", "acceptance")
+VERDICT_KINDS = ("ranking", "inconclusive", "acceptance", "sweep")
+GRADES = ("clean", "faint", "banded")
 WITNESS_CONDITIONS = ("normal", "abnormal", "inconclusive")
 ANCHOR_CONDITIONS = ("same", "different", "inconclusive")
 OUTCOMES = ("supported", "refuted", "unresolved", "inconclusive")
@@ -38,7 +39,7 @@ VERDICT = {"kind": F(S, True, VERDICT_KINDS), "print_runs": F(L), "order": F(L, 
            "strength": F((S, NUL), choices=STRENGTHS + (None,)), "about_target": F((B, NUL)), "lighting": F((S, NUL)),
            "marks": F(L, each=F(D, fields=MARK)), "witness": F((D, NUL), fields=WITNESS),
            "witness_override": F((S, NUL)), "reason": F((S, NUL)), "good_enough": F((B, NUL)),
-           "blocking_defects": F(L), "note": F((S, NUL)), "by": F(S, True, ("owner",)), "at": F((S, NUL), True),
+           "blocking_defects": F(L), "grades": F(D), "note": F((S, NUL)), "by": F(S, True, ("owner",)), "at": F((S, NUL), True),
            "confirmed": F(B)}
 ANCHOR = {"id": F(S, True), "compared_to": F(S, True), "condition": F(S, True, ANCHOR_CONDITIONS),
           "strength": F((S, NUL), choices=STRENGTHS + (None,)), "note": F((S, NUL))}

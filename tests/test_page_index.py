@@ -46,7 +46,7 @@ def test_experiment_outcome_validity_and_requested_vs_realized(tmp_path):
     e = {x["id"]: x for x in ix["experiments"]}["E-001"]
     assert e["outcome"] == "supported" and e["validity"]["status"] == "valid"
     assert e["variants"][0] == {"id": "E-001-A", "tab": "1A", "requested": 250.0, "realized": 147.0,
-                                "as_asked": False, "unit": "mm/s"}
+                                "as_asked": False, "unit": "mm/s", "grade": None}
     assert e["usage"] == {"minutes": 40, "g": 12}
 
 

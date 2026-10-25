@@ -161,6 +161,7 @@ def _variants(x: dict) -> str:
             rows.append(f'<li>{name}: {_e(_n(v["realized"]))}{_e(unit)}</li>')
         else:
             rows.append(f'<li>{name}: {_e(_num(v["requested"]))}{_e(unit)}</li>')
+    rows = [r.replace("</li>", f' · {_e(v["grade"])}</li>') if v.get("grade") else r for r, v in zip(rows, x["variants"])]
     return f'<ul class="variants">{"".join(rows)}</ul>' if rows else ""
 
 
@@ -229,6 +230,7 @@ def _experiment(x: dict, by_id: dict, colours: dict) -> str:
   {f'<p class="sub">{_e(", ".join(cost))}</p>' if cost else ""}
   {f'<p class="sub">Why: {_e(why)}</p>' if why and x.get("outcome") else ""}
   {verdict}
+  {f'<p class="verdict">Finding: {_e(x["finding"])}</p>' if x.get("finding") else ""}
   {_wipe(x, by_id)}
   {f'<div class="shots">{shots}</div>' if shots else ""}
   <details><summary>Details</summary><dl>{details}</dl>
