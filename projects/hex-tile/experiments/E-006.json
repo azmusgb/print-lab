@@ -2747,7 +2747,115 @@
           ]
         ]
       },
-      "error": null
+      "error": null,
+      "check": {
+        "status": "needs_approval",
+        "at": "2026-10-25T02:12:19+00:00",
+        "guards": [
+          {
+            "code": "owner_stopped",
+            "ok": true,
+            "result": "blocked",
+            "message": "question active"
+          },
+          {
+            "code": "auto_stopped",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "no automatic stop"
+          },
+          {
+            "code": "full_part_required",
+            "ok": false,
+            "result": "needs_approval",
+            "message": "a full_part always needs your approval"
+          },
+          {
+            "code": "autonomy_level",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "autonomy level 2"
+          },
+          {
+            "code": "refuted_dependency",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "no contradicted reasoning"
+          },
+          {
+            "code": "no_estimate",
+            "ok": true,
+            "result": "rebuild",
+            "message": "estimate present"
+          },
+          {
+            "code": "stale_build",
+            "ok": true,
+            "result": "rebuild",
+            "message": "the builder code changed, but it writes an identical print file for BLD-006-01"
+          },
+          {
+            "code": "factor_not_applied",
+            "ok": true,
+            "result": "blocked",
+            "message": "the declared factor differs between the variants"
+          },
+          {
+            "code": "reference_not_comparable",
+            "ok": true,
+            "result": "blocked",
+            "message": "references compared"
+          },
+          {
+            "code": "undeclared_difference",
+            "ok": true,
+            "result": "blocked",
+            "message": "only the declared factor differs"
+          },
+          {
+            "code": "geometry_blocking",
+            "ok": true,
+            "result": "blocked",
+            "message": "no blocking geometry findings"
+          },
+          {
+            "code": "per_test_time",
+            "ok": false,
+            "result": "needs_approval",
+            "message": "248.7 / 45 min per test"
+          },
+          {
+            "code": "per_test_material",
+            "ok": false,
+            "result": "needs_approval",
+            "message": "76.4 / 25 g per test"
+          },
+          {
+            "code": "question_time",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "99.4 + 248.7 / 480 min for Q-002"
+          },
+          {
+            "code": "question_material",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "29.1 + 76.4 / 300 g for Q-002"
+          },
+          {
+            "code": "retry_limit",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "0 / 2 failed attempts"
+          },
+          {
+            "code": "plate_mismatch",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "plate timing matches the compared plates"
+          }
+        ]
+      }
     }
   ],
   "approval": null,
