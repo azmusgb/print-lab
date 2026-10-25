@@ -84,7 +84,8 @@ def parse_rank(e: dict, rank: str) -> list[list[str]]:
 
 
 def record_verdict(paths: ProjectPaths, eid: str, *, rank, strength, inconclusive, accept, defects, marks, witness,
-                   witness_override, anchors, not_about_target, note, replace, runs, lighting="diagnostic") -> dict:
+                   witness_override, anchors, not_about_target, note, replace, runs, lighting="diagnostic",
+                   grades=None) -> dict:
     with record_lock(paths.locks, eid, f"lab exp verdict {eid}"):
         e = load_experiment(paths, eid)
         if not e.get("print_runs"):
@@ -103,6 +104,8 @@ def record_verdict(paths: ProjectPaths, eid: str, *, rank, strength, inconclusiv
         base = {"print_runs": run_ids, "note": note, "by": "owner", "at": now()}
         if inconclusive:
             v = {"kind": "inconclusive", "reason": inconclusive, **base}
+        elif e["test_kind"] == "speed_sweep":
+            v = {"kind": "sweep", "grades": _grades(e, grades), "lighting": lighting or "diagnostic", **base}
         elif accept is not None:
             if e["test_kind"] not in ("scaled_part", "full_part"):
                 raise ValueError(f"{eid} is a {e['test_kind']}; the good-enough verdict is for full or scaled parts. "
@@ -141,6 +144,26 @@ def record_verdict(paths: ProjectPaths, eid: str, *, rank, strength, inconclusiv
         e["anchors"] = judged_anchors or e.get("anchors", [])
         e["status"] = "answered"
         return save_experiment(paths, refresh_derived(paths, e))
+
+
+def _grades(e: dict, text: str | None) -> dict:
+    """'40=clean,60=faint,…' (by speed, tab or variant id) -> {variant id: grade}; every strip needs one."""
+    from lab.records.schema import GRADES
+    own = [v for v in e["variants"] if v.get("role", "variant") == "variant"]
+    names = {str(k): v["id"] for v in own for k in (v["id"], v.get("tab"), v.get("factor_value")) if k is not None}
+    out = {}
+    for part in (text or "").split(","):
+        if not part.strip():
+            continue
+        k, _, g = part.partition("=")
+        if k.strip() not in names or g.strip() not in GRADES:
+            raise ValueError(f"Grade each strip as SPEED=clean|faint|banded, e.g. "
+                             f"{','.join(str(v['factor_value']) + '=clean' for v in own)}; '{part.strip()}' isn't one.")
+        out[names[k.strip()]] = g.strip()
+    missing = [str(v["factor_value"]) for v in own if v["id"] not in out]
+    if missing:
+        raise ValueError(f"Grade every strip of {e['id']}; missing {', '.join(missing)}.")
+    return out
 
 
 def _anchor(text: str, e: dict) -> dict:

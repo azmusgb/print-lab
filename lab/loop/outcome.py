@@ -29,14 +29,60 @@ def _witness_spoils(v: dict) -> bool:
     return bool(w and w.get("condition") in ("abnormal", "inconclusive") and not v.get("witness_override"))
 
 
+def _sweep_strips(exp: dict) -> list[tuple[float, str | None]]:
+    """(speed, grade) per strip, slowest first."""
+    grades = (exp.get("owner_verdict") or {}).get("grades") or {}
+    own = [v for v in exp.get("variants") or [] if v.get("role", "variant") == "variant"]
+    return sorted((float(v["factor_value"]), grades.get(v["id"])) for v in own)
+
+
+def _sweep_outcome(exp: dict, v: dict) -> str:
+    """'bands>=X': supported when every strip at or over X is banded and every one under it clean."""
+    if v.get("lighting") not in (None, "diagnostic"):
+        return "unresolved"
+    x = float(exp["expect"]["bands_from"])
+    strips = _sweep_strips(exp)
+    if any((s >= x and g == "clean") or (s < x and g == "banded") for s, g in strips):
+        out = "refuted"
+    elif all((g == "banded") if s >= x else (g == "clean") for s, g in strips):
+        out = "supported"
+    else:
+        out = "unresolved"
+    return out if exp.get("provenance") == "prospective" or out == "unresolved" else "unresolved"
+
+
+def sweep_finding(exp: dict) -> str | None:
+    """'clean up to 60, faint at 80, bands from 100 mm/s', from the owner's grades."""
+    strips = _sweep_strips(exp)
+    if not strips or any(g is None for _, g in strips):
+        return None
+    n = lambda s: f"{s:g}"
+    parts = []
+    clean = [s for s, g in strips if g == "clean"]
+    faint = [s for s, g in strips if g == "faint"]
+    banded = [s for s, g in strips if g == "banded"]
+    if clean:
+        parts.append(f"clean up to {n(max(clean))}")
+    if faint:
+        parts.append("faint at " + ", ".join(n(s) for s in faint))
+    if banded:
+        parts.append(f"bands from {n(min(banded))}")
+    unit = (exp.get("factor") or {}).get("unit") or ""
+    return ", ".join(parts) + (f" {unit}" if unit else "")
+
+
 def prediction_outcome(exp: dict, validity: dict) -> str | None:
     """supported / refuted / unresolved / inconclusive, or None with no verdict to judge (or an acceptance verdict,
     which answers 'good enough', not a prediction)."""
     v = exp.get("owner_verdict")
     if not v or v["kind"] == "acceptance":
         return None
+    if v["kind"] == "sweep" and not (exp.get("expect") or {}).get("bands_from"):
+        return None  # a sweep without a prediction is a finding (sweep_finding), not a test of one
     if v["kind"] == "inconclusive" or _witness_spoils(v) or validity.get("status") in ("confounded", "unknown"):
         return "inconclusive"
+    if v["kind"] == "sweep":
+        return _sweep_outcome(exp, v)
     expect, order = exp.get("expect") or {}, v["order"]
     strength = STRENGTH_RANK[v.get("strength")]
     if v.get("about_target") is not True or v.get("lighting") not in (None, "diagnostic"):

@@ -67,6 +67,36 @@ def input_fingerprints(paths: ProjectPaths, exp: dict, tools: bool = True) -> di
     return fp
 
 
+SWEEP_SIZES = range(3, 7)
+LINE_WIDTH = {"outer_wall_speed": "outer_wall_line_width", "inner_wall_speed": "inner_wall_line_width"}
+
+
+def flow_cap(paths: ProjectPaths, base: str, factor: str) -> float:
+    """The fastest a wall can print with these settings: Bambu Studio caps speed at filament_max_volumetric_speed /
+    mm3_per_mm (GCode.cpp, v02.08.02.61, noted by `lab source`), a line being a w x h rectangle with round ends."""
+    from math import pi
+    from lab.adapters.bambu import read_settings
+    s = read_settings(paths.root / base) or {}
+    first = lambda k, d: float(str((s.get(k) if not isinstance(s.get(k), list) else s[k][0]) or d).rstrip("%") or d)
+    w, h = first(LINE_WIDTH.get(factor, "line_width"), 0.42), first("layer_height", 0.2)
+    w = w if w > 0 else first("line_width", 0.42)
+    return first("filament_max_volumetric_speed", 12) / ((w - h * (1 - pi / 4)) * h)
+
+
+def _check_sweep(paths: ProjectPaths, factor: str, f: dict, values: list[str], base: str) -> None:
+    if f["kind"] != "setting" or f.get("execution_scope") != "per_object_verified" or not f.get("gcode_feature"):
+        raise ValueError(f"A speed sweep varies a wall speed set per strip (outer_wall_speed, inner_wall_speed); "
+                         f"{factor} isn't one.")
+    if len(values) not in SWEEP_SIZES or len(set(values)) != len(values):
+        raise ValueError(f"A speed sweep has 3 to 6 different speeds; got {', '.join(values)}.")
+    cap = flow_cap(paths, base, factor)
+    over = [v for v in values if float(v) > cap]
+    if over:
+        raise ValueError(f"{', '.join(over)} mm/s is over the flow cap of {cap:.0f} mm/s (the filament's maximum flow "
+                         "over this line), so it would print at the cap. Sweep at or under it, or raise the cap as its "
+                         "own experiment.")
+
+
 def _parse_expect(text: str, ids: dict[str, str], refs: list[str]) -> dict | None:
     """'B>A:clearly' -> better/than/min_strength; 'A=B' -> same. Letters name this experiment's variants."""
     def vid(t):
@@ -78,6 +108,8 @@ def _parse_expect(text: str, ids: dict[str, str], refs: list[str]) -> dict | Non
         raise ValueError(f"--expect names '{t}'; use this experiment's letters ({', '.join(ids)}) or a --reference.")
     if not text:
         return None
+    if m := re.fullmatch(r"\s*bands\s*>=\s*(\d+(?:\.\d+)?)\s*", text):
+        return {"bands_from": float(m.group(1))}
     if "=" in text:
         return {"same": [vid(t) for t in text.split("=")]}
     pair, _, strength = text.partition(":")
@@ -94,6 +126,8 @@ def plan_experiment(paths: ProjectPaths, q_id: str, *, factor: str, values: list
     if settings["autonomy_level"] == 0:
         raise ValueError(f"{paths.name} is at autonomy level 0 (observe only); the lab can't plan experiments.")
     f = factor_info(factor)
+    if test_kind == "speed_sweep":
+        _check_sweep(paths, factor, f, list(values), base)
     if f["kind"] not in ("setting", "plate", "model_version", "filament_profile"):
         raise ValueError(f"{factor}: the lab can't build {f['kind']} variants yet, so every strip would be the same. "
                          "Make each value its own source file and plan --factor model_version instead.")
@@ -127,7 +161,8 @@ def plan_experiment(paths: ProjectPaths, q_id: str, *, factor: str, values: list
         variants, spec_variants = [], []
         for i, val in enumerate(values):
             vid = ids[LETTERS[i]]
-            sv = {"id": vid, "tab": f"{n}{LETTERS[i]}", "settings_patch": {}, "copies": 1}
+            tab = str(val) if test_kind == "speed_sweep" else f"{n}{LETTERS[i]}"  # a sweep's photo needs no key
+            sv = {"id": vid, "tab": tab, "settings_patch": {}, "copies": 1}
             if f["kind"] == "setting":
                 sv["settings_patch"] = {f["settings_key"]: val}
             elif f["kind"] == "plate":

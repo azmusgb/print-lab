@@ -58,8 +58,11 @@ def cmd_exp_verdict(args) -> int:
                        accept=accept, defects=args.defects or [], marks=args.mark or [], witness=args.witness,
                        witness_override=args.witness_override, anchors=args.anchor or [],
                        not_about_target=args.not_about_target, note=args.note, replace=args.replace, runs=args.run,
-                       lighting=args.lighting)
+                       lighting=args.lighting, grades=args.grade)
     print(f"{e['id']} answered: outcome {e['prediction_outcome'] or '-'}, comparison {e['comparison_validity']['status']}")
+    from lab.loop.outcome import sweep_finding
+    if finding := sweep_finding(e):
+        print(f"  finding: {finding}")
     for r in e["comparison_validity"]["reasons"]:
         print(f"  {r['code']}: {r}")
     return 0
@@ -78,7 +81,8 @@ def cmd_exp_plan(args) -> int:
     judged = None
     if args.around is not None:
         from lab.loop.builders import JUDGED_HALF_MM, size_strip
-        z0, z1 = size_strip(_paths(args), args.source, args.object, args.around, args.target_minutes, args.base)
+        per = args.target_minutes / len(args.values.split(",")) if args.test_kind == "speed_sweep" else args.target_minutes
+        z0, z1 = size_strip(_paths(args), args.source, args.object, args.around, per, args.base)
         judged = (args.around - JUDGED_HALF_MM, args.around + JUDGED_HALF_MM)
         print(f"Strip Z {z0:g}–{z1:g} mm fits {args.target_minutes:g} min around {args.around:g} mm")
     elif args.z:
@@ -304,6 +308,7 @@ def register(sub) -> None:
     v.add_argument("--witness-override", metavar="REASON")
     v.add_argument("--anchor", action="append", help="ANCHOR=EARLIER:same|different|inconclusive[:strength]")
     v.add_argument("--not-about-target", action="store_true")
+    v.add_argument("--grade", help="for a speed sweep: each strip by its speed, e.g. 40=clean,60=faint,100=banded")
     v.add_argument("--lighting", default="diagnostic", help="the light you judged under: diagnostic (raking, side "
                    "by side), or e.g. room; only the diagnostic light can support or refute a prediction")
     v.add_argument("--note")
