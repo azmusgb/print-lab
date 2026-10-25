@@ -71,3 +71,17 @@ def test_tabs_do_not_count_as_a_geometry_difference(proj):
     e = load(proj.experiments / f"{eid}.json", "experiment")
     assert e["build_spec"]["tabs"] is True
     assert undeclared(actual_differences(proj, e, b), e) == ([], [])
+
+
+
+def test_tab_text_is_not_a_geometry_finding(tmp_path):
+    """The '7' of a '7A' tab is thinner than a line (E-007): a label at bed level, not part of the judged strip."""
+    import trimesh
+    from lab.checks import run_checks
+    from lab.loop.guards import blocking_geometry
+    from lab.loop.tabs import attach_tab
+    strip = attach_tab(trimesh.creation.box([10, 40, 20]).apply_translation([0, 0, 10]), "7A", tmp_path)
+    findings = run_checks(strip, nozzle=0.4)
+    assert any(f.rule == "feature-below-line-width" for f in findings)  # the check does see the text
+    assert blocking_geometry(findings, tabbed=True) == []
+    assert blocking_geometry(findings, tabbed=False)
