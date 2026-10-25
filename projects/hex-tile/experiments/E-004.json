@@ -435,7 +435,7 @@
     ],
     "strength": null,
     "about_target": true,
-    "lighting": "diagnostic",
+    "lighting": "room",
     "marks": [],
     "witness": null,
     "witness_override": null,
@@ -444,9 +444,31 @@
     ],
     "note": "owner: 'they look good' (photos IMG_0770\u20130778; not a side-by-side under the diagnostic light)",
     "by": "owner",
-    "at": "2026-10-24T23:14:18+00:00"
+    "at": "2026-10-25T02:54:45+00:00"
   },
-  "superseded_verdicts": [],
+  "superseded_verdicts": [
+    {
+      "kind": "ranking",
+      "order": [
+        [
+          "E-002-A",
+          "E-004-A"
+        ]
+      ],
+      "strength": null,
+      "about_target": true,
+      "lighting": "diagnostic",
+      "marks": [],
+      "witness": null,
+      "witness_override": null,
+      "print_runs": [
+        "PR-006"
+      ],
+      "note": "owner: 'they look good' (photos IMG_0770\u20130778; not a side-by-side under the diagnostic light)",
+      "by": "owner",
+      "at": "2026-10-24T23:14:18+00:00"
+    }
+  ],
   "anchors": [],
   "ai_observations": [
     {
@@ -466,7 +488,7 @@
       }
     ]
   },
-  "prediction_outcome": "refuted",
+  "prediction_outcome": "unresolved",
   "analysis": [],
   "legacy": {
     "id": "E-004",

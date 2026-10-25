@@ -76,7 +76,7 @@
     "E-002-A"
   ],
   "build_spec": null,
-  "status": "needs_approval",
+  "status": "abandoned",
   "variants": [
     {
       "id": "E-003-A",
@@ -573,5 +573,6 @@
     ],
     "findings": [],
     "jobs": []
-  }
+  },
+  "abandoned_reason": "replaced by E-005, the same question on one plate"
 }
