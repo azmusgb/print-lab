@@ -74,5 +74,17 @@
     "build_id": "BLD-006-01",
     "file": "hex-tile_E-006_BLD-006-01.3mf",
     "artifact_sha256": "8569e9f0105bc0069064dbcb26bef448df5b78723840bccabefafad13b11a0a0"
+  },
+  {
+    "experiment_id": "E-007",
+    "build_id": "BLD-007-01",
+    "file": "hex-tile_E-007_BLD-007-01.3mf",
+    "artifact_sha256": "12e573a4055726fe16803b154315c5f0d75e45a95d20bdeeb46ce6a6cac117a0"
+  },
+  {
+    "experiment_id": "E-008",
+    "build_id": "BLD-008-01",
+    "file": "hex-tile_E-008_BLD-008-01.3mf",
+    "artifact_sha256": "c83014c1667b8675a62d25aab12e0b7dfbd5421fb10823a8ae9546d8b677c7b4"
   }
 ]
