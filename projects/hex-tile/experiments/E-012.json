@@ -74,7 +74,7 @@
     "tabs": true,
     "notes": []
   },
-  "status": "needs_approval",
+  "status": "approved",
   "variants": [
     {
       "id": "E-012-A",
@@ -1325,7 +1325,17 @@
       }
     }
   ],
-  "approval": null,
+  "approval": {
+    "build_id": "BLD-012-01",
+    "artifact_sha256": "b213f68883fad51e997cc85d6935440d702224635226269db46413d797fd8748",
+    "approved_reasons": [
+      "per_test_time",
+      "per_test_material"
+    ],
+    "by": "owner",
+    "at": "2026-10-25T06:41:52+00:00",
+    "reason": "rib gap sweep 0.10/0.15/0.20"
+  },
   "print_runs": [],
   "owner_verdict": null,
   "superseded_verdicts": [],
