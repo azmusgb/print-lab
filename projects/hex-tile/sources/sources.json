@@ -13,5 +13,12 @@
     "path": "sources/hexagon_v58_X2D_0.6nozzle.3mf",
     "sha256": "24ec2fef4762ec2094cde108a9a24b0c38b515d60612934f7fadad8f84d6705e",
     "source": "migration_fixture"
+  },
+  {
+    "path": "sources/hexagon_v59_X2D_0.6nozzle.3mf",
+    "sha256": "e3f4e6121dab7eca4ff9ca85797de4a206667e13b4fa3238e8f4060c008dc2a5",
+    "source": "derived",
+    "derived_from": "sources/hexagon_v58_X2D_0.6nozzle.3mf",
+    "change": "each tile of every pair moved 0.2 mm outward (the right tile with its back ribs): the gap between the tiles 0.1 -> 0.5 mm so they separate (owner, 25 Oct: they mount separately, face out); tile geometry unchanged"
   }
 ]

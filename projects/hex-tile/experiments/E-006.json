@@ -58,7 +58,7 @@
     "tabs": false,
     "notes": []
   },
-  "status": "needs_approval",
+  "status": "abandoned",
   "variants": [
     {
       "id": "E-006-A",
@@ -2884,5 +2884,6 @@
   "ai_observations": [],
   "comparison_validity": null,
   "prediction_outcome": null,
-  "analysis": []
+  "analysis": [],
+  "abandoned_reason": "v58 fuses the tiles (0.1 mm gap); the full pair moves to v59 (Q-003)"
 }

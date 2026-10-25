@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "record_type": "question",
+  "id": "Q-003",
+  "project": "hex-tile",
+  "question": "Is v59 (tiles 0.5 mm apart) good enough, and do the tiles come apart?",
+  "status": "active",
+  "autonomy_level": 2,
+  "budget": {
+    "max_test_minutes": 45,
+    "max_test_g": 25,
+    "max_minutes": 360,
+    "max_g": 250
+  },
+  "experiments": [
+    "E-011"
+  ],
+  "plans": [],
+  "stops": []
+}
