@@ -45,5 +45,12 @@
     "source": "derived",
     "derived_from": "sources/hexagon_v58_X2D_0.6nozzle.3mf",
     "change": "each tile moved 0.05 mm outward: rib tip to partner tile 0.10 -> 0.20 mm (rib_kiss sweep after E-011: 0.5 mm stopped the tiles bracing each other); object names kept as v58 so the same object name builds all three"
+  },
+  {
+    "path": "sources/hexagon_v57_X2D_0.4nozzle_kexcelled.3mf",
+    "sha256": "92a1bd3f78404c165b3a25f0b0ad085b9249086535ff7a587b9f3b86215dfd95",
+    "source": "derived",
+    "derived_from": "sources/hexagon_v57_X2D_0.4nozzle.3mf",
+    "change": "filament settings replaced by the user preset 'Kexcelled K5 PLA Matte - Light Matte Terracotta @BBL X2D 0.4 nozzle' (inherits Bambu PLA Matte @BBL X2D 0.4 nozzle; flow 0.96, 12 mm3/s, 210/215 C, retraction 0.4 + wipe + spiral lift, slow down under 4 s). Settings base only; owner chose it for E-013 on 25 Oct."
   }
 ]
