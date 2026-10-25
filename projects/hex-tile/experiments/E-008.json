@@ -58,7 +58,7 @@
     "tabs": false,
     "notes": []
   },
-  "status": "printing",
+  "status": "answered",
   "variants": [
     {
       "id": "E-008-A",
@@ -1174,10 +1174,60 @@
       ],
       "usage": null,
       "failed": null,
-      "photos": []
+      "photos": [
+        {
+          "path": "photos/PR-008-01-1.jpg",
+          "sha256": "d7296e10ed933f953a752feaab1fbe267940bd86d234d9dc302e152acfb57689",
+          "captured_at": "2026-10-25T03:47:38+00:00",
+          "source": "remote-1792900058365341000-bf57cad6c2684e4198ce6309f28b744f.jpg"
+        },
+        {
+          "path": "photos/PR-008-01-2.jpg",
+          "sha256": "a8c0f47a92d9169aaec9659428841156ae14cac69250c30432d47796bf45926e",
+          "captured_at": "2026-10-25T03:47:38+00:00",
+          "source": "remote-1792900058749033000-b57b6a3682ce4d28b26d496b7172ea75.jpg"
+        },
+        {
+          "path": "photos/PR-008-01-3.jpg",
+          "sha256": "3b11ea0584853a7ee76b13a11109ba5a4250af09854afe2dff1d340426011ad5",
+          "captured_at": "2026-10-25T03:47:39+00:00",
+          "source": "remote-1792900059238887000-205b2d47458b4ddc8058e01d051ac693.jpg"
+        },
+        {
+          "path": "photos/PR-008-01-4.jpg",
+          "sha256": "4bb4eced34fb650df88aaf13e5c46450fedee3c3fe814564f8fa0d18b3c91e9b",
+          "captured_at": "2026-10-25T03:47:39+00:00",
+          "source": "remote-1792900059724028000-c4113de602ab42f7b9b00c637e511ca8.jpg"
+        },
+        {
+          "path": "photos/PR-008-01-5.jpg",
+          "sha256": "b4c93bacc95b21e93d2ed0d4d5ce0704833114f5323f0b6ac27ec9a5f9022c5c",
+          "captured_at": "2026-10-25T03:47:40+00:00",
+          "source": "remote-1792900060174533000-6add48c413cb47d79361d6f8ce67d6d0.jpg"
+        }
+      ]
     }
   ],
-  "owner_verdict": null,
+  "owner_verdict": {
+    "kind": "ranking",
+    "order": [
+      [
+        "E-008-A"
+      ]
+    ],
+    "strength": null,
+    "about_target": true,
+    "lighting": "room",
+    "marks": [],
+    "witness": null,
+    "witness_override": null,
+    "print_runs": [
+      "PR-008-01"
+    ],
+    "note": "owner: 'looks really good - just fused too much between the tiles - and a bit of an artifact on the one tile's front at the top'. Photos: faces and the 89.75 mm facet switch clean; strings and blobs along the top edge of one front (worst at the centre); the two tiles fused along their 0.1 mm gap.",
+    "by": "owner",
+    "at": "2026-10-25T03:48:16+00:00"
+  },
   "superseded_verdicts": [],
   "anchors": [],
   "ai_observations": [],
@@ -1185,6 +1235,6 @@
     "status": "valid",
     "reasons": []
   },
-  "prediction_outcome": null,
+  "prediction_outcome": "unresolved",
   "analysis": []
 }
