@@ -1,4 +1,7 @@
-"""Experiments as JSON files: one experimental factor, a test kind, baseline conditions and the server-style checks
+"""LEGACY (Stage 1A): the record behind `lab plan`. Stage 1A.1 records live in lab.records and lab.loop; this module
+must not be imported by lab.loop.
+
+Experiments as JSON files: one experimental factor, a test kind, baseline conditions and the server-style checks
 (here run locally; Stage 1B moves them to Local AI)."""
 import json
 import re

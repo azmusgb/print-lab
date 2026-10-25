@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "record_type": "question",
+  "id": "Q-001",
+  "project": "hex-tile",
+  "question": "What causes the bands on v58's face?",
+  "status": "active",
+  "autonomy_level": 2,
+  "budget": {
+    "max_test_minutes": 45,
+    "max_test_g": 25,
+    "max_minutes": 180,
+    "max_g": 100
+  },
+  "experiments": [
+    "E-001",
+    "E-002",
+    "E-003",
+    "E-004",
+    "E-005"
+  ],
+  "stops": [],
+  "plans": [
+    {
+      "id": "P-001",
+      "after": "E-004",
+      "if": "the two-object strips are clearly rougher",
+      "next": "one pair per plate against a minimum layer time"
+    },
+    {
+      "id": "P-002",
+      "after": "E-004",
+      "if": "no meaningful difference",
+      "next": "E-003 (inner walls at the outer wall's speed), then the matte filament profile"
+    }
+  ]
+}

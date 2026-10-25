@@ -229,6 +229,9 @@ def main(argv=None) -> int:
     s.add_argument("action", choices=["ingest", "audit", "timeline"]); s.add_argument("folder", nargs="?")
     s.set_defaults(fn=cmd_history)
 
+    from lab import cli_loop
+    cli_loop.register(sub)
+
     args = p.parse_args(argv)
     try:
         return args.fn(args)

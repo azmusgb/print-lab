@@ -1,7 +1,11 @@
 {
+  "schema": 1,
+  "record_type": "experiment",
   "id": "E-002",
   "project": "hex-tile",
-  "question": "Do the soft bands on v58's face come from the printer setup rather than the model?",
+  "question": "Q-001",
+  "provenance": "migrated",
+  "question_text": "Do the soft bands on v58's face come from the printer setup rather than the model?",
   "hypothesis": "The bands are extrusion variation from damp filament or uncompensated vibration; matte PLA shows small flow and speed changes as sheen bands.",
   "prediction": "With dried filament and a fresh vibration calibration, the v58 strip's face is even; if the bands stay at the same heights, the cause is elsewhere (slicer or model).",
   "why_this_test": "E-001 showed similar bands on both models, so the model change is not the main cause. Baseline conditions were never recorded on any print, so they come first. One v58 strip, 1 hour.",
@@ -30,59 +34,479 @@
     "nozzle_confirmed": null,
     "plate": "textured PEI"
   },
+  "findings": [],
+  "judge_on": "face smoothness",
+  "expect": null,
+  "derived_from_artifact": [],
+  "derived_from_result": [],
+  "controls": {
+    "witness_required": false,
+    "anchor": null
+  },
+  "reference_variants": [
+    "E-001-B"
+  ],
+  "build_spec": null,
   "status": "answered",
-  "blocked_reason": "",
-  "print_runs": [
+  "variants": [
     {
-      "id": "PR-004",
-      "file": "hex-tile_E002_PR004.3mf",
+      "id": "E-002-A",
+      "tab": null,
+      "factor_value": "v58 alone on the plate"
+    }
+  ],
+  "builds": [
+    {
+      "id": "BLD-002-01",
+      "ok": true,
+      "at": null,
+      "inputs": {
+        "model": {
+          "sources/hexagon_v56_X2D_0.6nozzle.3mf": "a399c465f99ecf297e9311eed35c07cf7dec0516e84c26f29d12e6c0f894b89f",
+          "sources/hexagon_v57_X2D_0.4nozzle.3mf": "1d4c063e2ed94f9358dd1e496cb5cfbe1bfac507f531d4ef13a94c98ec0822b9",
+          "sources/hexagon_v58_X2D_0.6nozzle.3mf": "24ec2fef4762ec2094cde108a9a24b0c38b515d60612934f7fadad8f84d6705e"
+        },
+        "settings": "1d4c063e2ed94f9358dd1e496cb5cfbe1bfac507f531d4ef13a94c98ec0822b9",
+        "builder_version": "script (before 1A.1)"
+      },
+      "job": "job-20261024T203240-947d",
+      "artifact": "prints/hex-tile_E002_PR004.3mf",
       "artifact_sha256": "51f1229cf19e53012c6c4fbae880750cbc393ec0d70f906a9a6fde247a1d7b7a",
-      "variants": [
-        "v58 strip Z60-72"
-      ],
-      "sliced_estimate": "0 h 33 min",
-      "filament_g": 9.35,
-      "layers": 60,
-      "started": "2026-10-24",
-      "slice_job": "job-20261024T203240-947d",
-      "result": {
-        "printed_at": "2026-10-24",
-        "photos": [
-          "IMG_0769 (owner's phone)"
+      "sliced": "prints/sliced/hex-tile_E002_PR004.gcode.3mf",
+      "estimate": {
+        "minutes": 33.9,
+        "g": 9.35
+      },
+      "plate": {
+        "objects": [
+          "v58 strip Z60-72"
         ],
-        "owner_words": "the last print was much better -- smoother for both fronts -- just a weird artifact on the one end",
-        "owner_verdict": {
-          "kind": "ranking",
-          "better": "E-002 strip",
-          "than": "E-001 PR-002 v58 strip",
-          "strength": "a lot",
-          "judged_on": "face smoothness"
-        },
-        "ai_observations": [
-          {
-            "type": "artifact",
-            "where": "one end of a face, near the tip",
-            "assessment": "fine strings (hair-like wisps)",
-            "likely_cause": "seam_position 'back' starts every wall loop at that end tip (G-code: outer walls begin at X128.9 Y201.5, the strip's Y-max end); retraction, wipe and z-hop there leave strings",
-            "confirmed": false
-          },
-          {
-            "type": "edge_lip",
-            "where": "one long edge of the left strip",
-            "assessment": "thin lip along the cut edge; an artifact of cutting a strip (first layer), not of the tile",
-            "confirmed": false
-          }
-        ],
-        "baseline_recorded": {
-          "filament_dried": false,
-          "vibration_calibration": false,
-          "source": "owner: 'all i did was print the 3mf - thats it'"
-        },
-        "prediction_outcome": "not tested: the planned change (drying + calibration) wasn't made",
-        "what_actually_differed": "E-001's v58 strip shared the plate with the v56 strip (layer time median 34.8 s); E-002's strip printed alone (18.4 s). Outer wall stays at 80 mm/s for 98% of its length in both; fan 100% in both."
+        "placements": [
+          [
+            128.0,
+            128.0
+          ]
+        ]
+      },
+      "measured": {
+        "layer_time_median_s": 18.34,
+        "layer_time_profile": [
+          [
+            0.2,
+            160.91
+          ],
+          [
+            0.4,
+            18.0
+          ],
+          [
+            0.6,
+            18.03
+          ],
+          [
+            0.8,
+            18.05
+          ],
+          [
+            1.0,
+            18.08
+          ],
+          [
+            1.2,
+            18.11
+          ],
+          [
+            1.4,
+            18.13
+          ],
+          [
+            1.6,
+            18.14
+          ],
+          [
+            1.8,
+            18.17
+          ],
+          [
+            2.0,
+            18.2
+          ],
+          [
+            2.2,
+            18.23
+          ],
+          [
+            2.4,
+            18.25
+          ],
+          [
+            2.6,
+            18.28
+          ],
+          [
+            2.8,
+            18.3
+          ],
+          [
+            3.0,
+            18.33
+          ],
+          [
+            3.2,
+            18.36
+          ],
+          [
+            3.4,
+            18.39
+          ],
+          [
+            3.6,
+            18.42
+          ],
+          [
+            3.8,
+            18.44
+          ],
+          [
+            4.0,
+            18.47
+          ],
+          [
+            4.2,
+            18.49
+          ],
+          [
+            4.4,
+            18.52
+          ],
+          [
+            4.6,
+            18.55
+          ],
+          [
+            4.8,
+            18.57
+          ],
+          [
+            5.0,
+            18.6
+          ],
+          [
+            5.2,
+            18.63
+          ],
+          [
+            5.4,
+            18.66
+          ],
+          [
+            5.6,
+            18.69
+          ],
+          [
+            5.8,
+            18.72
+          ],
+          [
+            6.0,
+            18.73
+          ],
+          [
+            6.2,
+            18.67
+          ],
+          [
+            6.4,
+            18.68
+          ],
+          [
+            6.6,
+            18.64
+          ],
+          [
+            6.8,
+            18.61
+          ],
+          [
+            7.0,
+            18.59
+          ],
+          [
+            7.2,
+            18.56
+          ],
+          [
+            7.4,
+            18.54
+          ],
+          [
+            7.6,
+            18.52
+          ],
+          [
+            7.8,
+            18.49
+          ],
+          [
+            8.0,
+            18.46
+          ],
+          [
+            8.2,
+            18.44
+          ],
+          [
+            8.4,
+            18.41
+          ],
+          [
+            8.6,
+            18.38
+          ],
+          [
+            8.8,
+            18.36
+          ],
+          [
+            9.0,
+            18.33
+          ],
+          [
+            9.2,
+            18.3
+          ],
+          [
+            9.4,
+            18.28
+          ],
+          [
+            9.6,
+            18.25
+          ],
+          [
+            9.8,
+            18.22
+          ],
+          [
+            10.0,
+            18.19
+          ],
+          [
+            10.2,
+            18.17
+          ],
+          [
+            10.4,
+            18.14
+          ],
+          [
+            10.6,
+            18.11
+          ],
+          [
+            10.8,
+            18.09
+          ],
+          [
+            11.0,
+            18.06
+          ],
+          [
+            11.2,
+            18.03
+          ],
+          [
+            11.4,
+            18.01
+          ],
+          [
+            11.6,
+            17.98
+          ],
+          [
+            11.8,
+            17.95
+          ],
+          [
+            12.0,
+            17.72
+          ]
+        ]
       }
     }
   ],
-  "findings": [],
-  "jobs": []
+  "approval": null,
+  "print_runs": [
+    {
+      "id": "PR-004",
+      "build_id": "BLD-002-01",
+      "started_at": null,
+      "setup": {
+        "filament_dried": false,
+        "vibration_calibration": false,
+        "source": "owner: 'all i did was print the 3mf - thats it'"
+      },
+      "usage": null,
+      "failed": null,
+      "photos": []
+    }
+  ],
+  "owner_verdict": {
+    "kind": "ranking",
+    "print_runs": [
+      "PR-004"
+    ],
+    "order": [
+      [
+        "E-002-A"
+      ],
+      [
+        "E-001-B"
+      ]
+    ],
+    "strength": "a lot",
+    "about_target": null,
+    "lighting": null,
+    "marks": [],
+    "witness": null,
+    "witness_override": null,
+    "note": "the last print was much better -- smoother for both fronts -- just a weird artifact on the one end",
+    "by": "owner",
+    "at": null
+  },
+  "superseded_verdicts": [],
+  "anchors": [],
+  "ai_observations": [
+    {
+      "type": "artifact",
+      "variant": "E-002-A",
+      "assessment": "fine strings (hair-like wisps)",
+      "confidence": null,
+      "confirmed": false,
+      "at": "2026-10-24",
+      "where": "one end of a face, near the tip"
+    },
+    {
+      "type": "edge_lip",
+      "variant": "E-002-A",
+      "assessment": "thin lip along the cut edge; an artifact of cutting a strip (first layer), not of the tile",
+      "confidence": null,
+      "confirmed": false,
+      "at": "2026-10-24",
+      "where": "one long edge of the left strip"
+    }
+  ],
+  "comparison_validity": {
+    "status": "confounded",
+    "reasons": [
+      {
+        "code": "cross_plate_no_anchor",
+        "note": "separate plates without a shared anchor are a weak comparison"
+      },
+      {
+        "code": "layer_time_mismatch",
+        "variant": "E-001-B",
+        "this_s": 17.72,
+        "other_s": 34.63,
+        "worst_pct": 95.4,
+        "at_z": 12.5
+      }
+    ]
+  },
+  "prediction_outcome": "inconclusive",
+  "analysis": [
+    {
+      "claim": "plate layout (1 object, 18.34 s/layer, against E-001's 2 objects, 34.74 s/layer) may explain the difference",
+      "provenance": "post_hoc",
+      "at": "2026-10-24"
+    }
+  ],
+  "legacy": {
+    "id": "E-002",
+    "project": "hex-tile",
+    "question": "Do the soft bands on v58's face come from the printer setup rather than the model?",
+    "hypothesis": "The bands are extrusion variation from damp filament or uncompensated vibration; matte PLA shows small flow and speed changes as sheen bands.",
+    "prediction": "With dried filament and a fresh vibration calibration, the v58 strip's face is even; if the bands stay at the same heights, the cause is elsewhere (slicer or model).",
+    "why_this_test": "E-001 showed similar bands on both models, so the model change is not the main cause. Baseline conditions were never recorded on any print, so they come first. One v58 strip, 1 hour.",
+    "test_kind": "height_strip",
+    "factor": {
+      "name": "baseline",
+      "values": [
+        "as-is (E-001 PR-002)",
+        "dried + vibration calibration"
+      ],
+      "unit": ""
+    },
+    "controlled": {
+      "model": "v58 (0.6-variant geometry)",
+      "settings": "v55 0.4 process and filament (from the v57 0.4 project)",
+      "nozzle": "0.4",
+      "layer_height": "0.2",
+      "plate": "textured PEI",
+      "filament": "Kexcelled K5 PLA M, Light Matte Terracotta (lot C6719062), same spool as E-001",
+      "strip": "Z 60\u201372 mm of the 6\" pair"
+    },
+    "dependent_adjustments": {},
+    "baseline": {
+      "filament_dried": null,
+      "vibration_calibration": null,
+      "nozzle_confirmed": null,
+      "plate": "textured PEI"
+    },
+    "status": "answered",
+    "blocked_reason": "",
+    "print_runs": [
+      {
+        "id": "PR-004",
+        "file": "hex-tile_E002_PR004.3mf",
+        "artifact_sha256": "51f1229cf19e53012c6c4fbae880750cbc393ec0d70f906a9a6fde247a1d7b7a",
+        "variants": [
+          "v58 strip Z60-72"
+        ],
+        "sliced_estimate": "0 h 33 min",
+        "filament_g": 9.35,
+        "layers": 60,
+        "started": "2026-10-24",
+        "slice_job": "job-20261024T203240-947d",
+        "result": {
+          "printed_at": "2026-10-24",
+          "photos": [
+            "IMG_0769 (owner's phone)"
+          ],
+          "owner_words": "the last print was much better -- smoother for both fronts -- just a weird artifact on the one end",
+          "owner_verdict": {
+            "kind": "ranking",
+            "better": "E-002 strip",
+            "than": "E-001 PR-002 v58 strip",
+            "strength": "a lot",
+            "judged_on": "face smoothness"
+          },
+          "ai_observations": [
+            {
+              "type": "artifact",
+              "where": "one end of a face, near the tip",
+              "assessment": "fine strings (hair-like wisps)",
+              "likely_cause": "seam_position 'back' starts every wall loop at that end tip (G-code: outer walls begin at X128.9 Y201.5, the strip's Y-max end); retraction, wipe and z-hop there leave strings",
+              "confirmed": false
+            },
+            {
+              "type": "edge_lip",
+              "where": "one long edge of the left strip",
+              "assessment": "thin lip along the cut edge; an artifact of cutting a strip (first layer), not of the tile",
+              "confirmed": false
+            }
+          ],
+          "baseline_recorded": {
+            "filament_dried": false,
+            "vibration_calibration": false,
+            "source": "owner: 'all i did was print the 3mf - thats it'"
+          },
+          "prediction_outcome": "not tested: the planned change (drying + calibration) wasn't made",
+          "what_actually_differed": "E-001's v58 strip shared the plate with the v56 strip (layer time median 34.8 s); E-002's strip printed alone (18.4 s). Outer wall stays at 80 mm/s for 98% of its length in both; fan 100% in both."
+        }
+      }
+    ],
+    "findings": [],
+    "jobs": []
+  }
 }

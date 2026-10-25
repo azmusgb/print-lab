@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "record_type": "question",
+  "id": "Q-002",
+  "project": "hex-tile",
+  "question": "Is v58 good enough on a full tile?",
+  "status": "active",
+  "autonomy_level": 2,
+  "budget": {
+    "max_test_minutes": 45,
+    "max_test_g": 25,
+    "max_minutes": 480,
+    "max_g": 300
+  },
+  "experiments": [
+    "E-006",
+    "E-007",
+    "E-008"
+  ],
+  "plans": [],
+  "stops": []
+}

@@ -15,3 +15,10 @@ def need(path: Path) -> Path:
     if not path.exists():
         pytest.skip(f"{path.name} not downloaded yet")
     return path
+
+
+@pytest.fixture(autouse=True)
+def _isolated_capabilities(tmp_path, monkeypatch):
+    """Tests never see (or write) the lab's recorded capability results."""
+    from lab.loop import capabilities
+    monkeypatch.setattr(capabilities, "CAP_DIR", tmp_path / "capabilities-under-test")

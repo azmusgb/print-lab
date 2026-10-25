@@ -1,0 +1,417 @@
+{
+  "schema": 1,
+  "record_type": "experiment",
+  "id": "E-005",
+  "project": "hex-tile",
+  "question": "Q-001",
+  "provenance": "prospective",
+  "question_text": "Do slower inner walls (147 \u2192 80 mm/s as printed) reduce v58's face bands, on one plate?",
+  "hypothesis": "At 210 \u00b0C the fast inner walls (asked 250, capped at 147 mm/s) take more melt than the nozzle delivers evenly; the 80 mm/s outer wall then gets uneven flow, which matte PLA shows as sheen bands.",
+  "prediction": "B (inner walls 80 mm/s) is clearly smoother than A (147 mm/s) under the diagnostic light.",
+  "why_this_test": "E-003 asks the same across separate plates with no anchor, a weak comparison; two strips on one plate share every condition except the inner-wall speed.",
+  "test_kind": "height_strip",
+  "factor": {
+    "name": "inner_wall_speed",
+    "values": [
+      "250",
+      "80"
+    ],
+    "unit": "mm/s"
+  },
+  "factor_scope": "specific",
+  "dependent_adjustments": {},
+  "controlled": {},
+  "baseline": {},
+  "findings": [],
+  "judge_on": "bands",
+  "expect": {
+    "better": "E-005-B",
+    "than": "E-005-A",
+    "min_strength": "clearly"
+  },
+  "derived_from_artifact": [],
+  "derived_from_result": [],
+  "controls": {
+    "witness_required": false,
+    "anchor": null
+  },
+  "reference_variants": [],
+  "build_spec": {
+    "kind": "height_strip",
+    "source": "sources/hexagon_v58_X2D_0.6nozzle.3mf",
+    "object": "v58_06_6in",
+    "z": [
+      60.0,
+      72.0
+    ],
+    "judged": [
+      66.0,
+      66.0
+    ],
+    "base": "sources/hexagon_v57_X2D_0.4nozzle.3mf",
+    "variants": [
+      {
+        "id": "E-005-A",
+        "tab": "5A",
+        "settings_patch": {
+          "inner_wall_speed": "250"
+        },
+        "copies": 1
+      },
+      {
+        "id": "E-005-B",
+        "tab": "5B",
+        "settings_patch": {
+          "inner_wall_speed": "80"
+        },
+        "copies": 1
+      }
+    ],
+    "witness": false
+  },
+  "status": "approved",
+  "variants": [
+    {
+      "id": "E-005-A",
+      "tab": "5A",
+      "factor_value": "250",
+      "copies": 1
+    },
+    {
+      "id": "E-005-B",
+      "tab": "5B",
+      "factor_value": "80",
+      "copies": 1
+    }
+  ],
+  "builds": [
+    {
+      "id": "BLD-005-01",
+      "ok": true,
+      "at": "2026-10-24T22:41:45+00:00",
+      "inputs": {
+        "model": {
+          "sources/hexagon_v58_X2D_0.6nozzle.3mf": "24ec2fef4762ec2094cde108a9a24b0c38b515d60612934f7fadad8f84d6705e"
+        },
+        "settings": "1d4c063e2ed94f9358dd1e496cb5cfbe1bfac507f531d4ef13a94c98ec0822b9",
+        "build_spec_sha256": "b676f7636aa0cad0e992e63b7ef1087a86ed42cb0d08155d9d8cd3b6e2b94c31",
+        "builder_version": "1a1.1",
+        "builder_fingerprint": "799d33d55fe7d3616e6b1c15baa322b53ed1876e507608bca10ff63d0e26c6f2",
+        "openscad": "2026.10.11",
+        "bambu_studio": "02.08.02.61"
+      },
+      "job": "job-20261024T224145-f49a",
+      "artifact": "prints/hex-tile_E-005_BLD-005-01.3mf",
+      "artifact_sha256": "7764e52e31ece6d6f6324226ff46a87a1339df617391a3234409b68565ac4007",
+      "sliced": "prints/sliced/hex-tile_E-005_BLD-005-01.gcode.3mf",
+      "estimate": {
+        "minutes": 63.2,
+        "g": 18.7
+      },
+      "plate": {
+        "objects": [
+          "E-005-A",
+          "E-005-B"
+        ],
+        "placements": [
+          [
+            109.42,
+            128.0
+          ],
+          [
+            146.58,
+            128.0
+          ]
+        ]
+      },
+      "measured": {
+        "layer_time_median_s": 37.49,
+        "layer_time_profile": [
+          [
+            0.2,
+            321.88
+          ],
+          [
+            0.4,
+            36.75
+          ],
+          [
+            0.6,
+            36.8
+          ],
+          [
+            0.8,
+            36.85
+          ],
+          [
+            1.0,
+            36.91
+          ],
+          [
+            1.2,
+            36.96
+          ],
+          [
+            1.4,
+            37.01
+          ],
+          [
+            1.6,
+            37.02
+          ],
+          [
+            1.8,
+            37.08
+          ],
+          [
+            2.0,
+            37.13
+          ],
+          [
+            2.2,
+            37.19
+          ],
+          [
+            2.4,
+            37.24
+          ],
+          [
+            2.6,
+            37.29
+          ],
+          [
+            2.8,
+            37.34
+          ],
+          [
+            3.0,
+            37.4
+          ],
+          [
+            3.2,
+            37.45
+          ],
+          [
+            3.4,
+            37.51
+          ],
+          [
+            3.6,
+            37.56
+          ],
+          [
+            3.8,
+            37.62
+          ],
+          [
+            4.0,
+            37.67
+          ],
+          [
+            4.2,
+            37.71
+          ],
+          [
+            4.4,
+            37.77
+          ],
+          [
+            4.6,
+            37.83
+          ],
+          [
+            4.8,
+            37.88
+          ],
+          [
+            5.0,
+            37.94
+          ],
+          [
+            5.2,
+            37.99
+          ],
+          [
+            5.4,
+            38.05
+          ],
+          [
+            5.6,
+            38.11
+          ],
+          [
+            5.8,
+            38.15
+          ],
+          [
+            6.0,
+            38.19
+          ],
+          [
+            6.2,
+            38.2
+          ],
+          [
+            6.4,
+            38.24
+          ],
+          [
+            6.6,
+            38.15
+          ],
+          [
+            6.8,
+            38.1
+          ],
+          [
+            7.0,
+            38.06
+          ],
+          [
+            7.2,
+            38.0
+          ],
+          [
+            7.4,
+            37.96
+          ],
+          [
+            7.6,
+            37.91
+          ],
+          [
+            7.8,
+            37.86
+          ],
+          [
+            8.0,
+            37.8
+          ],
+          [
+            8.2,
+            37.75
+          ],
+          [
+            8.4,
+            37.69
+          ],
+          [
+            8.6,
+            37.64
+          ],
+          [
+            8.8,
+            37.59
+          ],
+          [
+            9.0,
+            37.53
+          ],
+          [
+            9.2,
+            37.48
+          ],
+          [
+            9.4,
+            37.42
+          ],
+          [
+            9.6,
+            37.37
+          ],
+          [
+            9.8,
+            37.32
+          ],
+          [
+            10.0,
+            37.26
+          ],
+          [
+            10.2,
+            37.21
+          ],
+          [
+            10.4,
+            37.15
+          ],
+          [
+            10.6,
+            37.1
+          ],
+          [
+            10.8,
+            37.04
+          ],
+          [
+            11.0,
+            36.99
+          ],
+          [
+            11.2,
+            36.94
+          ],
+          [
+            11.4,
+            36.88
+          ],
+          [
+            11.6,
+            36.83
+          ],
+          [
+            11.8,
+            36.77
+          ],
+          [
+            12.0,
+            35.48
+          ]
+        ]
+      },
+      "error": null,
+      "realization": {
+        "feature": "Inner wall",
+        "status": "realized_differently",
+        "variants": {
+          "E-005-B": {
+            "requested": 80.0,
+            "realized": 80.0,
+            "coverage": 0.991
+          },
+          "E-005-A": {
+            "requested": 250.0,
+            "realized": 147.0,
+            "coverage": 0.991
+          }
+        },
+        "same_pairs": [],
+        "differently": [
+          "E-005-A"
+        ]
+      }
+    }
+  ],
+  "approval": {
+    "build_id": "BLD-005-01",
+    "artifact_sha256": "7764e52e31ece6d6f6324226ff46a87a1339df617391a3234409b68565ac4007",
+    "approved_reasons": [
+      "per_test_time",
+      "question_time"
+    ],
+    "by": "owner",
+    "at": "2026-10-24T22:43:48+00:00",
+    "reason": "Same-plate controlled comparison of realized inner-wall speed 147 vs 80 mm/s. This replaces the confounded cross-plate EXP-003 comparison and is necessary to test the active speed hypothesis despite exceeding the diagnostic-test and question budgets."
+  },
+  "print_runs": [],
+  "owner_verdict": null,
+  "superseded_verdicts": [],
+  "anchors": [],
+  "ai_observations": [],
+  "comparison_validity": {
+    "status": "valid",
+    "reasons": []
+  },
+  "prediction_outcome": null,
+  "analysis": []
+}

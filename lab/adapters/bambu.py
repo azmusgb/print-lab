@@ -109,3 +109,12 @@ def slice_with_job(path_3mf: Path, out_dir: Path, plate: int, jobs_dir: Path):
 def extract_gcode(sliced: Path, plate: int) -> str:
     with zipfile.ZipFile(sliced) as z:
         return z.read(f"Metadata/plate_{plate}.gcode").decode("utf-8", "replace")
+
+
+def slice_estimate(sliced: Path) -> tuple[float, float]:
+    """Bambu Studio's own estimate for plate 1 of a sliced file: (minutes, grams)."""
+    with zipfile.ZipFile(sliced) as z:
+        info = z.read("Metadata/slice_info.config").decode()
+    pred = re.search(r'key="prediction" value="(\d+)"', info)
+    weight = re.search(r'key="weight" value="([\d.]+)"', info)
+    return (round(int(pred.group(1)) / 60, 1) if pred else 0.0), (float(weight.group(1)) if weight else 0.0)
