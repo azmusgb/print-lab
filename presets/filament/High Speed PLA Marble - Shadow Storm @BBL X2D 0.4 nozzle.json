@@ -1,0 +1,79 @@
+{
+    "filament_extruder_variant": [
+        "Direct Drive Standard",
+        "Direct Drive High Flow",
+        "Direct Drive E3D High Flow",
+        "Bowden Standard",
+        "Bowden High Flow",
+        "Bowden E3D High Flow"
+    ],
+    "filament_settings_id": [
+        "High Speed PLA Marble - Shadow Storm @BBL X2D 0.4 nozzle"
+    ],
+    "from": "User",
+    "inherits": "Generic PLA @BBL X2D 0.4 nozzle",
+    "name": "High Speed PLA Marble - Shadow Storm @BBL X2D 0.4 nozzle",
+    "filament_vendor": [
+        "Generic"
+    ],
+    "filament_density": [
+        "1.24"
+    ],
+    "filament_flow_ratio": [
+        "0.98",
+        "0.98",
+        "0.98",
+        "0.98",
+        "0.98",
+        "0.98"
+    ],
+    "filament_max_volumetric_speed": [
+        "18",
+        "18",
+        "18",
+        "18",
+        "18",
+        "18"
+    ],
+    "nozzle_temperature": [
+        "215",
+        "215",
+        "215",
+        "215",
+        "215",
+        "215"
+    ],
+    "nozzle_temperature_initial_layer": [
+        "220",
+        "220",
+        "220",
+        "220",
+        "220",
+        "220"
+    ],
+    "textured_plate_temp": [
+        "55"
+    ],
+    "textured_plate_temp_initial_layer": [
+        "60"
+    ],
+    "cool_plate_temp": [
+        "45"
+    ],
+    "cool_plate_temp_initial_layer": [
+        "50"
+    ],
+    "eng_plate_temp": [
+        "55"
+    ],
+    "eng_plate_temp_initial_layer": [
+        "55"
+    ],
+    "hot_plate_temp": [
+        "55"
+    ],
+    "hot_plate_temp_initial_layer": [
+        "60"
+    ],
+    "version": "2.8.2.61"
+}
