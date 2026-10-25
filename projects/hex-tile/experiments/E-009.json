@@ -1,0 +1,616 @@
+{
+  "schema": 1,
+  "record_type": "experiment",
+  "id": "E-009",
+  "project": "hex-tile",
+  "question": "Q-001",
+  "provenance": "prospective",
+  "question_text": "Which outer-wall speeds put bands on v58's face?",
+  "hypothesis": "The face bands depend on outer-wall speed; some speeds band and some don't.",
+  "prediction": "A clean range exists below some speed; the sweep finds it.",
+  "why_this_test": "One plate shows six speeds side by side with the same layer time and printer state; a stepped tower can't, because Bambu eases outer-wall speed changes over many layers.",
+  "test_kind": "speed_sweep",
+  "factor": {
+    "name": "outer_wall_speed",
+    "values": [
+      "40",
+      "60",
+      "80",
+      "100",
+      "120",
+      "140"
+    ],
+    "unit": "mm/s"
+  },
+  "factor_scope": "specific",
+  "dependent_adjustments": {},
+  "controlled": {},
+  "baseline": {},
+  "findings": [],
+  "judge_on": "bands on the face",
+  "expect": null,
+  "derived_from_artifact": [],
+  "derived_from_result": [],
+  "controls": {
+    "witness_required": false,
+    "anchor": null
+  },
+  "reference_variants": [],
+  "build_spec": {
+    "kind": "speed_sweep",
+    "source": "sources/hexagon_v58_X2D_0.6nozzle.3mf",
+    "object": "v58_06_6in",
+    "z": [
+      60.0,
+      72.0
+    ],
+    "judged": [
+      66.0,
+      66.0
+    ],
+    "base": "sources/hexagon_v57_X2D_0.4nozzle.3mf",
+    "variants": [
+      {
+        "id": "E-009-A",
+        "tab": "40",
+        "settings_patch": {
+          "outer_wall_speed": "40"
+        },
+        "copies": 1
+      },
+      {
+        "id": "E-009-B",
+        "tab": "60",
+        "settings_patch": {
+          "outer_wall_speed": "60"
+        },
+        "copies": 1
+      },
+      {
+        "id": "E-009-C",
+        "tab": "80",
+        "settings_patch": {
+          "outer_wall_speed": "80"
+        },
+        "copies": 1
+      },
+      {
+        "id": "E-009-D",
+        "tab": "100",
+        "settings_patch": {
+          "outer_wall_speed": "100"
+        },
+        "copies": 1
+      },
+      {
+        "id": "E-009-E",
+        "tab": "120",
+        "settings_patch": {
+          "outer_wall_speed": "120"
+        },
+        "copies": 1
+      },
+      {
+        "id": "E-009-F",
+        "tab": "140",
+        "settings_patch": {
+          "outer_wall_speed": "140"
+        },
+        "copies": 1
+      }
+    ],
+    "witness": false,
+    "anchor": null,
+    "tabs": true,
+    "notes": []
+  },
+  "status": "abandoned",
+  "variants": [
+    {
+      "id": "E-009-A",
+      "tab": "40",
+      "factor_value": "40",
+      "copies": 1
+    },
+    {
+      "id": "E-009-B",
+      "tab": "60",
+      "factor_value": "60",
+      "copies": 1
+    },
+    {
+      "id": "E-009-C",
+      "tab": "80",
+      "factor_value": "80",
+      "copies": 1
+    },
+    {
+      "id": "E-009-D",
+      "tab": "100",
+      "factor_value": "100",
+      "copies": 1
+    },
+    {
+      "id": "E-009-E",
+      "tab": "120",
+      "factor_value": "120",
+      "copies": 1
+    },
+    {
+      "id": "E-009-F",
+      "tab": "140",
+      "factor_value": "140",
+      "copies": 1
+    }
+  ],
+  "builds": [
+    {
+      "id": "BLD-009-01",
+      "ok": true,
+      "at": "2026-10-25T03:37:20+00:00",
+      "inputs": {
+        "model": {
+          "sources/hexagon_v58_X2D_0.6nozzle.3mf": "24ec2fef4762ec2094cde108a9a24b0c38b515d60612934f7fadad8f84d6705e"
+        },
+        "settings": "1d4c063e2ed94f9358dd1e496cb5cfbe1bfac507f531d4ef13a94c98ec0822b9",
+        "build_spec_sha256": "89089f68ff44d774b62e0a5d6beef1a8121534cd3e51330366468d36caf5fc52",
+        "builder_version": "1a1.1",
+        "builder_fingerprint": "c060f03e8fa8b4b17fa1c9c283f7cabcb2716beb19edb14de975cdeb97c9e00d",
+        "openscad": "2026.10.11",
+        "bambu_studio": "02.08.02.61"
+      },
+      "job": "job-20261025T033720-8ac2",
+      "artifact": "prints/hex-tile_E-009_BLD-009-01.3mf",
+      "artifact_sha256": "21ecb007a989e2dc12040f955eaa2b7257f8cd2cc1c77a55ada1a325ffbb2832",
+      "sliced": "prints/sliced/hex-tile_E-009_BLD-009-01.gcode.3mf",
+      "estimate": {
+        "minutes": 192.5,
+        "g": 56.93
+      },
+      "plate": {
+        "objects": [
+          "E-009-A",
+          "E-009-B",
+          "E-009-C",
+          "E-009-D",
+          "E-009-E",
+          "E-009-F"
+        ],
+        "placements": [
+          [
+            35.08,
+            128.0
+          ],
+          [
+            72.25,
+            128.0
+          ],
+          [
+            109.42,
+            128.0
+          ],
+          [
+            146.58,
+            128.0
+          ],
+          [
+            183.75,
+            128.0
+          ],
+          [
+            220.92,
+            128.0
+          ]
+        ]
+      },
+      "measured": {
+        "layer_time_median_s": 117.99,
+        "layer_time_profile": [
+          [
+            0.2,
+            1046.61
+          ],
+          [
+            0.4,
+            122.95
+          ],
+          [
+            0.6,
+            123.73
+          ],
+          [
+            0.8,
+            122.77
+          ],
+          [
+            1.0,
+            123.63
+          ],
+          [
+            1.2,
+            118.27
+          ],
+          [
+            1.4,
+            118.46
+          ],
+          [
+            1.6,
+            118.54
+          ],
+          [
+            1.8,
+            116.23
+          ],
+          [
+            2.0,
+            116.4
+          ],
+          [
+            2.2,
+            116.56
+          ],
+          [
+            2.4,
+            116.73
+          ],
+          [
+            2.6,
+            116.89
+          ],
+          [
+            2.8,
+            117.06
+          ],
+          [
+            3.0,
+            117.23
+          ],
+          [
+            3.2,
+            117.41
+          ],
+          [
+            3.4,
+            117.59
+          ],
+          [
+            3.6,
+            117.76
+          ],
+          [
+            3.8,
+            117.93
+          ],
+          [
+            4.0,
+            118.11
+          ],
+          [
+            4.2,
+            118.26
+          ],
+          [
+            4.4,
+            118.44
+          ],
+          [
+            4.6,
+            118.61
+          ],
+          [
+            4.8,
+            118.8
+          ],
+          [
+            5.0,
+            118.98
+          ],
+          [
+            5.2,
+            119.15
+          ],
+          [
+            5.4,
+            119.34
+          ],
+          [
+            5.6,
+            119.52
+          ],
+          [
+            5.8,
+            119.61
+          ],
+          [
+            6.0,
+            119.78
+          ],
+          [
+            6.2,
+            119.59
+          ],
+          [
+            6.4,
+            119.61
+          ],
+          [
+            6.6,
+            119.35
+          ],
+          [
+            6.8,
+            119.2
+          ],
+          [
+            7.0,
+            119.04
+          ],
+          [
+            7.2,
+            118.87
+          ],
+          [
+            7.4,
+            118.72
+          ],
+          [
+            7.6,
+            118.56
+          ],
+          [
+            7.8,
+            118.4
+          ],
+          [
+            8.0,
+            118.22
+          ],
+          [
+            8.2,
+            118.05
+          ],
+          [
+            8.4,
+            117.87
+          ],
+          [
+            8.6,
+            117.7
+          ],
+          [
+            8.8,
+            117.53
+          ],
+          [
+            9.0,
+            117.36
+          ],
+          [
+            9.2,
+            117.19
+          ],
+          [
+            9.4,
+            117.02
+          ],
+          [
+            9.6,
+            116.84
+          ],
+          [
+            9.8,
+            116.67
+          ],
+          [
+            10.0,
+            116.69
+          ],
+          [
+            10.2,
+            116.54
+          ],
+          [
+            10.4,
+            116.37
+          ],
+          [
+            10.6,
+            116.2
+          ],
+          [
+            10.8,
+            116.02
+          ],
+          [
+            11.0,
+            115.86
+          ],
+          [
+            11.2,
+            115.68
+          ],
+          [
+            11.4,
+            115.51
+          ],
+          [
+            11.6,
+            115.34
+          ],
+          [
+            11.8,
+            115.17
+          ],
+          [
+            12.0,
+            112.69
+          ]
+        ]
+      },
+      "error": null,
+      "realization": {
+        "feature": "Outer wall",
+        "status": "realized",
+        "variants": {
+          "E-009-F": {
+            "requested": 140.0,
+            "realized": 140.0,
+            "coverage": 0.972
+          },
+          "E-009-E": {
+            "requested": 120.0,
+            "realized": 120.0,
+            "coverage": 0.973
+          },
+          "E-009-D": {
+            "requested": 100.0,
+            "realized": 100.0,
+            "coverage": 0.975
+          },
+          "E-009-C": {
+            "requested": 80.0,
+            "realized": 80.0,
+            "coverage": 0.975
+          },
+          "E-009-B": {
+            "requested": 60.0,
+            "realized": 60.0,
+            "coverage": 0.977
+          },
+          "E-009-A": {
+            "requested": 40.0,
+            "realized": 40.0,
+            "coverage": 0.977
+          }
+        },
+        "same_pairs": [],
+        "differently": []
+      },
+      "check": {
+        "status": "blocked",
+        "at": "2026-10-25T03:37:24+00:00",
+        "guards": [
+          {
+            "code": "owner_stopped",
+            "ok": true,
+            "result": "blocked",
+            "message": "question active"
+          },
+          {
+            "code": "auto_stopped",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "no automatic stop"
+          },
+          {
+            "code": "full_part_required",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "diagnostic test type"
+          },
+          {
+            "code": "autonomy_level",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "autonomy level 2"
+          },
+          {
+            "code": "refuted_dependency",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "no contradicted reasoning"
+          },
+          {
+            "code": "no_estimate",
+            "ok": true,
+            "result": "rebuild",
+            "message": "estimate present"
+          },
+          {
+            "code": "stale_build",
+            "ok": true,
+            "result": "rebuild",
+            "message": "inputs unchanged since the build"
+          },
+          {
+            "code": "factor_not_applied",
+            "ok": true,
+            "result": "blocked",
+            "message": "the declared factor differs between the variants"
+          },
+          {
+            "code": "reference_not_comparable",
+            "ok": true,
+            "result": "blocked",
+            "message": "references compared"
+          },
+          {
+            "code": "undeclared_difference",
+            "ok": true,
+            "result": "blocked",
+            "message": "only the declared factor differs"
+          },
+          {
+            "code": "geometry_blocking",
+            "ok": false,
+            "result": "blocked",
+            "message": "E-009-A: mesh-validity: The model is 3 separate pieces, so its measurements and any coupon cut from it can't be trusted.; E-009-B: mesh-validity: The model is 3 separate pieces, so its measurements and any coupon cut from it can't be trusted.; E-009-C: mesh-validity: The model is 3 separate pieces, so its measurements and any coupon cut from it can't be trusted.; E-009-D: mesh-validity: The model is 3 separate pieces, so its measurements and any coupon cut from it can't be trusted.; E-009-E: mesh-validity: The model is 3 separate pieces, so its measurements and any coupon cut from it can't be trusted.; E-009-F: mesh-validity: The model is 3 separate pieces, so its measurements and any coupon cut from it can't be trusted."
+          },
+          {
+            "code": "factor_not_realized",
+            "ok": true,
+            "result": "blocked",
+            "message": "realized as asked (E-009-F: 140 mm/s over 97% (asked 140), E-009-E: 120 mm/s over 97% (asked 120), E-009-D: 100 mm/s over 98% (asked 100), E-009-C: 80 mm/s over 98% (asked 80), E-009-B: 60 mm/s over 98% (asked 60), E-009-A: 40 mm/s over 98% (asked 40))"
+          },
+          {
+            "code": "per_test_time",
+            "ok": false,
+            "result": "needs_approval",
+            "message": "192.5 / 45 min per test"
+          },
+          {
+            "code": "per_test_material",
+            "ok": false,
+            "result": "needs_approval",
+            "message": "56.9 / 25 g per test"
+          },
+          {
+            "code": "question_time",
+            "ok": false,
+            "result": "needs_approval",
+            "message": "159.2 + 192.5 / 180 min for Q-001"
+          },
+          {
+            "code": "question_material",
+            "ok": false,
+            "result": "needs_approval",
+            "message": "46.9 + 56.9 / 100 g for Q-001"
+          },
+          {
+            "code": "retry_limit",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "0 / 2 failed attempts"
+          },
+          {
+            "code": "plate_mismatch",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "plate timing matches the compared plates"
+          }
+        ]
+      }
+    }
+  ],
+  "approval": null,
+  "print_runs": [],
+  "owner_verdict": null,
+  "superseded_verdicts": [],
+  "anchors": [],
+  "ai_observations": [],
+  "comparison_validity": null,
+  "prediction_outcome": null,
+  "analysis": [],
+  "abandoned_reason": "replanned shorter (6 strips Z60-72 came to 192 min); the tab didn't reach the strip end at bed level (fixed)"
+}

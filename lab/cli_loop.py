@@ -81,8 +81,10 @@ def cmd_exp_plan(args) -> int:
     judged = None
     if args.around is not None:
         from lab.loop.builders import JUDGED_HALF_MM, size_strip
-        per = args.target_minutes / len(args.values.split(",")) if args.test_kind == "speed_sweep" else args.target_minutes
-        z0, z1 = size_strip(_paths(args), args.source, args.object, args.around, per, args.base)
+        if args.test_kind == "speed_sweep":  # sizing measures one strip alone; a sweep's time is the whole plate's
+            raise ValueError("Give a speed sweep its strip height with --z FROM:TO (e.g. --z 60:72); --around sizes one "
+                             "strip alone, and a sweep's time is the whole plate's.")
+        z0, z1 = size_strip(_paths(args), args.source, args.object, args.around, args.target_minutes, args.base)
         judged = (args.around - JUDGED_HALF_MM, args.around + JUDGED_HALF_MM)
         print(f"Strip Z {z0:g}–{z1:g} mm fits {args.target_minutes:g} min around {args.around:g} mm")
     elif args.z:

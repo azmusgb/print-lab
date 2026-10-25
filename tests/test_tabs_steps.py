@@ -85,3 +85,16 @@ def test_tab_text_is_not_a_geometry_finding(tmp_path):
     assert any(f.rule == "feature-below-line-width" for f in findings)  # the check does see the text
     assert blocking_geometry(findings, tabbed=True) == []
     assert blocking_geometry(findings, tabbed=False)
+
+
+def test_the_tab_joins_a_strip_whose_end_leans_in_at_the_bed(tmp_path):
+    """E-009: a strip cut from the tile's upper face is shorter at bed level than at its top; the tab must reach it."""
+    import numpy as np
+    import trimesh
+    from lab.loop.tabs import attach_tab
+    # a slab 40 mm long at the top, 30 mm at the bed: the -Y end leans in by 5 mm
+    v = np.array([[-5, -15, 0], [5, -15, 0], [5, 15, 0], [-5, 15, 0],
+                  [-5, -20, 12], [5, -20, 12], [5, 20, 12], [-5, 20, 12]], float)
+    strip = trimesh.convex.convex_hull(v)
+    joined = attach_tab(strip, "40", tmp_path)
+    assert len(joined.split(only_watertight=False)) == 1

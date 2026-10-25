@@ -53,6 +53,8 @@ def _sweep_outcome(exp: dict, v: dict) -> str:
 
 def sweep_finding(exp: dict) -> str | None:
     """'clean up to 60, faint at 80, bands from 100 mm/s', from the owner's grades."""
+    if exp.get("test_kind") != "speed_sweep":
+        return None
     strips = _sweep_strips(exp)
     if not strips or any(g is None for _, g in strips):
         return None

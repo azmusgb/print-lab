@@ -108,3 +108,10 @@ def test_the_page_shows_each_strip_grade_and_the_finding(proj):
     assert x["finding"] == "clean up to 60, faint at 80, bands from 100 mm/s"
     html = page.build(proj.root, colours={})
     assert "Finding: clean up to 60, faint at 80, bands from 100 mm/s" in html and "80: 80 mm/s · faint" in html
+
+
+def test_only_a_sweep_has_a_finding(proj):
+    from loop_fixtures import minimal_experiment
+    e = minimal_experiment()
+    e["variants"][0]["factor_value"] = "sources/hexagon_v58_X2D_0.6nozzle.3mf"
+    assert sweep_finding(e) is None

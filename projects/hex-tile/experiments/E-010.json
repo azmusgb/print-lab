@@ -1,0 +1,507 @@
+{
+  "schema": 1,
+  "record_type": "experiment",
+  "id": "E-010",
+  "project": "hex-tile",
+  "question": "Q-001",
+  "provenance": "prospective",
+  "question_text": "Which outer-wall speeds put bands on v58's face?",
+  "hypothesis": "The face bands depend on outer-wall speed; some speeds band and some don't.",
+  "prediction": "A clean range exists below some speed; the sweep finds it.",
+  "why_this_test": "One plate shows five speeds side by side with the same layer time and printer state; a stepped tower can't, because Bambu eases outer-wall speed changes over many layers.",
+  "test_kind": "speed_sweep",
+  "factor": {
+    "name": "outer_wall_speed",
+    "values": [
+      "60",
+      "80",
+      "100",
+      "120",
+      "140"
+    ],
+    "unit": "mm/s"
+  },
+  "factor_scope": "specific",
+  "dependent_adjustments": {},
+  "controlled": {},
+  "baseline": {},
+  "findings": [],
+  "judge_on": "bands on the face, Z 64-68",
+  "expect": null,
+  "derived_from_artifact": [],
+  "derived_from_result": [],
+  "controls": {
+    "witness_required": false,
+    "anchor": null
+  },
+  "reference_variants": [],
+  "build_spec": {
+    "kind": "speed_sweep",
+    "source": "sources/hexagon_v58_X2D_0.6nozzle.3mf",
+    "object": "v58_06_6in",
+    "z": [
+      62.0,
+      70.0
+    ],
+    "judged": null,
+    "base": "sources/hexagon_v57_X2D_0.4nozzle.3mf",
+    "variants": [
+      {
+        "id": "E-010-A",
+        "tab": "60",
+        "settings_patch": {
+          "outer_wall_speed": "60"
+        },
+        "copies": 1
+      },
+      {
+        "id": "E-010-B",
+        "tab": "80",
+        "settings_patch": {
+          "outer_wall_speed": "80"
+        },
+        "copies": 1
+      },
+      {
+        "id": "E-010-C",
+        "tab": "100",
+        "settings_patch": {
+          "outer_wall_speed": "100"
+        },
+        "copies": 1
+      },
+      {
+        "id": "E-010-D",
+        "tab": "120",
+        "settings_patch": {
+          "outer_wall_speed": "120"
+        },
+        "copies": 1
+      },
+      {
+        "id": "E-010-E",
+        "tab": "140",
+        "settings_patch": {
+          "outer_wall_speed": "140"
+        },
+        "copies": 1
+      }
+    ],
+    "witness": false,
+    "anchor": null,
+    "tabs": true,
+    "notes": []
+  },
+  "status": "needs_approval",
+  "variants": [
+    {
+      "id": "E-010-A",
+      "tab": "60",
+      "factor_value": "60",
+      "copies": 1
+    },
+    {
+      "id": "E-010-B",
+      "tab": "80",
+      "factor_value": "80",
+      "copies": 1
+    },
+    {
+      "id": "E-010-C",
+      "tab": "100",
+      "factor_value": "100",
+      "copies": 1
+    },
+    {
+      "id": "E-010-D",
+      "tab": "120",
+      "factor_value": "120",
+      "copies": 1
+    },
+    {
+      "id": "E-010-E",
+      "tab": "140",
+      "factor_value": "140",
+      "copies": 1
+    }
+  ],
+  "builds": [
+    {
+      "id": "BLD-010-01",
+      "ok": true,
+      "at": "2026-10-25T03:38:16+00:00",
+      "inputs": {
+        "model": {
+          "sources/hexagon_v58_X2D_0.6nozzle.3mf": "24ec2fef4762ec2094cde108a9a24b0c38b515d60612934f7fadad8f84d6705e"
+        },
+        "settings": "1d4c063e2ed94f9358dd1e496cb5cfbe1bfac507f531d4ef13a94c98ec0822b9",
+        "build_spec_sha256": "b4af60d2ef68b6c24472688138102edfd9ac5d5cc52fd4b164518604d909756f",
+        "builder_version": "1a1.1",
+        "builder_fingerprint": "4cd1ccdc50000d43f52d4268204b7b73f4d120efab9b268ebe9b4c9948a01c06",
+        "openscad": "2026.10.11",
+        "bambu_studio": "02.08.02.61"
+      },
+      "job": "job-20261025T033816-8e64",
+      "artifact": "prints/hex-tile_E-010_BLD-010-01.3mf",
+      "artifact_sha256": "4c4a5add0cc3cdab5ce37cb059dce57fe343c5bab6449ca817054ee69421a075",
+      "sliced": "prints/sliced/hex-tile_E-010_BLD-010-01.gcode.3mf",
+      "estimate": {
+        "minutes": 105.4,
+        "g": 33.27
+      },
+      "plate": {
+        "objects": [
+          "E-010-A",
+          "E-010-B",
+          "E-010-C",
+          "E-010-D",
+          "E-010-E"
+        ],
+        "placements": [
+          [
+            53.66,
+            128.0
+          ],
+          [
+            90.83,
+            128.0
+          ],
+          [
+            128.0,
+            128.0
+          ],
+          [
+            165.17,
+            128.0
+          ],
+          [
+            202.34,
+            128.0
+          ]
+        ]
+      },
+      "measured": {
+        "layer_time_median_s": 84.0,
+        "layer_time_profile": [
+          [
+            0.2,
+            872.35
+          ],
+          [
+            0.4,
+            93.37
+          ],
+          [
+            0.6,
+            95.32
+          ],
+          [
+            0.8,
+            87.96
+          ],
+          [
+            1.0,
+            89.26
+          ],
+          [
+            1.2,
+            84.94
+          ],
+          [
+            1.4,
+            85.08
+          ],
+          [
+            1.6,
+            85.2
+          ],
+          [
+            1.8,
+            83.47
+          ],
+          [
+            2.0,
+            83.56
+          ],
+          [
+            2.2,
+            83.67
+          ],
+          [
+            2.4,
+            83.79
+          ],
+          [
+            2.6,
+            83.92
+          ],
+          [
+            2.8,
+            84.04
+          ],
+          [
+            3.0,
+            84.17
+          ],
+          [
+            3.2,
+            84.3
+          ],
+          [
+            3.4,
+            84.43
+          ],
+          [
+            3.6,
+            84.55
+          ],
+          [
+            3.8,
+            84.61
+          ],
+          [
+            4.0,
+            84.72
+          ],
+          [
+            4.2,
+            84.44
+          ],
+          [
+            4.4,
+            84.48
+          ],
+          [
+            4.6,
+            84.29
+          ],
+          [
+            4.8,
+            84.19
+          ],
+          [
+            5.0,
+            84.08
+          ],
+          [
+            5.2,
+            83.95
+          ],
+          [
+            5.4,
+            83.86
+          ],
+          [
+            5.6,
+            83.74
+          ],
+          [
+            5.8,
+            83.64
+          ],
+          [
+            6.0,
+            83.5
+          ],
+          [
+            6.2,
+            83.39
+          ],
+          [
+            6.4,
+            83.26
+          ],
+          [
+            6.6,
+            83.15
+          ],
+          [
+            6.8,
+            83.03
+          ],
+          [
+            7.0,
+            82.9
+          ],
+          [
+            7.2,
+            82.78
+          ],
+          [
+            7.4,
+            82.66
+          ],
+          [
+            7.6,
+            82.54
+          ],
+          [
+            7.8,
+            82.42
+          ],
+          [
+            8.0,
+            81.09
+          ]
+        ]
+      },
+      "error": null,
+      "realization": {
+        "feature": "Outer wall",
+        "status": "realized",
+        "variants": {
+          "E-010-E": {
+            "requested": 140.0,
+            "realized": 140.0,
+            "coverage": 0.964
+          },
+          "E-010-D": {
+            "requested": 120.0,
+            "realized": 120.0,
+            "coverage": 0.965
+          },
+          "E-010-C": {
+            "requested": 100.0,
+            "realized": 100.0,
+            "coverage": 0.967
+          },
+          "E-010-B": {
+            "requested": 80.0,
+            "realized": 80.0,
+            "coverage": 0.967
+          },
+          "E-010-A": {
+            "requested": 60.0,
+            "realized": 60.0,
+            "coverage": 0.969
+          }
+        },
+        "same_pairs": [],
+        "differently": []
+      },
+      "check": {
+        "status": "needs_approval",
+        "at": "2026-10-25T03:38:20+00:00",
+        "guards": [
+          {
+            "code": "owner_stopped",
+            "ok": true,
+            "result": "blocked",
+            "message": "question active"
+          },
+          {
+            "code": "auto_stopped",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "no automatic stop"
+          },
+          {
+            "code": "full_part_required",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "diagnostic test type"
+          },
+          {
+            "code": "autonomy_level",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "autonomy level 2"
+          },
+          {
+            "code": "refuted_dependency",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "no contradicted reasoning"
+          },
+          {
+            "code": "no_estimate",
+            "ok": true,
+            "result": "rebuild",
+            "message": "estimate present"
+          },
+          {
+            "code": "stale_build",
+            "ok": true,
+            "result": "rebuild",
+            "message": "inputs unchanged since the build"
+          },
+          {
+            "code": "factor_not_applied",
+            "ok": true,
+            "result": "blocked",
+            "message": "the declared factor differs between the variants"
+          },
+          {
+            "code": "reference_not_comparable",
+            "ok": true,
+            "result": "blocked",
+            "message": "references compared"
+          },
+          {
+            "code": "undeclared_difference",
+            "ok": true,
+            "result": "blocked",
+            "message": "only the declared factor differs"
+          },
+          {
+            "code": "geometry_blocking",
+            "ok": true,
+            "result": "blocked",
+            "message": "no blocking geometry findings"
+          },
+          {
+            "code": "factor_not_realized",
+            "ok": true,
+            "result": "blocked",
+            "message": "realized as asked (E-010-E: 140 mm/s over 96% (asked 140), E-010-D: 120 mm/s over 96% (asked 120), E-010-C: 100 mm/s over 97% (asked 100), E-010-B: 80 mm/s over 97% (asked 80), E-010-A: 60 mm/s over 97% (asked 60))"
+          },
+          {
+            "code": "per_test_time",
+            "ok": false,
+            "result": "needs_approval",
+            "message": "105.4 / 45 min per test"
+          },
+          {
+            "code": "per_test_material",
+            "ok": false,
+            "result": "needs_approval",
+            "message": "33.3 / 25 g per test"
+          },
+          {
+            "code": "question_time",
+            "ok": false,
+            "result": "needs_approval",
+            "message": "159.2 + 105.4 / 180 min for Q-001"
+          },
+          {
+            "code": "question_material",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "46.9 + 33.3 / 100 g for Q-001"
+          },
+          {
+            "code": "retry_limit",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "0 / 2 failed attempts"
+          },
+          {
+            "code": "plate_mismatch",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "plate timing matches the compared plates"
+          }
+        ]
+      }
+    }
+  ],
+  "approval": null,
+  "print_runs": [],
+  "owner_verdict": null,
+  "superseded_verdicts": [],
+  "anchors": [],
+  "ai_observations": [],
+  "comparison_validity": null,
+  "prediction_outcome": null,
+  "analysis": []
+}
