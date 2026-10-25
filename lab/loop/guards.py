@@ -36,18 +36,21 @@ def _n(x) -> str:
     return f"{x:.1f}".rstrip("0").rstrip(".")
 
 
-def _geometry(paths: ProjectPaths, build: dict) -> list[str]:
+def blocking_geometry(findings: list, tabbed: bool) -> list:
+    """The findings that block. On a tabbed strip, thin material no higher than the tab is the tab's own text."""
+    from lab.loop.tabs import TAB_HEIGHT_MM
+    return [f for f in findings if f.severity == "blocking" and f.rule != "nozzle-mismatch"
+            and not (tabbed and f.rule == "feature-below-line-width" and f.data["z_max"] <= TAB_HEIGHT_MM)]
+
+
+def _geometry(paths: ProjectPaths, build: dict, tabbed: bool = False) -> list[str]:
     """Stage 1A blocking findings on each built object (these can't be approved away)."""
     from lab.adapters.threemf import load_object
     from lab.checks import run_checks
     from lab.loop.diff import _objects
     art = paths.root / build["artifact"]
-    out = []
-    for name, _ in _objects(art):
-        for f in run_checks(load_object(art, name), nozzle=0.4):
-            if f.severity == "blocking" and f.rule != "nozzle-mismatch":
-                out.append(f"{name}: {f.rule}: {f.why}")
-    return out
+    return [f"{name}: {f.rule}: {f.why}" for name, _ in _objects(art)
+            for f in blocking_geometry(run_checks(load_object(art, name), nozzle=0.4), tabbed)]
 
 
 def check_experiment(paths: ProjectPaths, exp_id: str) -> CheckResult:
@@ -107,7 +110,7 @@ def check_experiment(paths: ProjectPaths, exp_id: str) -> CheckResult:
         add("undeclared_difference", not bad, "blocked",
             "; ".join(f"{d['where']} {d['key']} differs ({d['a']} vs {d['b']})" for d in bad)
             + " — declare it as a dependent adjustment or fix the plan" if bad else "only the declared factor differs")
-        geo = _geometry(paths, build)
+        geo = _geometry(paths, build, tabbed=bool((e.get("build_spec") or {}).get("tabs")))
         add("geometry_blocking", not geo, "blocked", "; ".join(geo) if geo else "no blocking geometry findings")
         from lab.loop import realized
         real = realized.realization(paths, e, build, exps)

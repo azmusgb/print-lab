@@ -294,6 +294,9 @@ def rebuild_question(paths: ProjectPaths, qid: str) -> list[str]:
     report = [f"{qid} rebuild"]
     for eid in q["experiments"]:
         e = exps[eid]
+        if not e.get("print_runs") and not e.get("owner_verdict"):
+            report.append(f"{eid}: unchanged (not printed yet)")  # step by step, derived state starts at `start`
+            continue
         before = (e.get("prediction_outcome"), e.get("comparison_validity"))
         refresh_derived(paths, e, exps)
         if (e["prediction_outcome"], e["comparison_validity"]) != before:
