@@ -165,3 +165,11 @@ def test_approval_does_not_survive_rebuild(proj):
     build_experiment(proj, eid, replace=True, slicer=fake_slicer)
     with pytest.raises(ValueError, match="per_test_time"):
         start(proj, eid)
+
+
+def test_check_result_is_kept_on_the_build_for_the_page(proj):
+    eid = built(proj)
+    r = run_check(proj, eid)
+    b = load(proj.experiments / f"{eid}.json", "experiment")["builds"][-1]
+    assert b["check"]["status"] == r.status and b["check"]["at"]
+    assert {g["code"] for g in b["check"]["guards"]} == {g.code for g in r.guards}
