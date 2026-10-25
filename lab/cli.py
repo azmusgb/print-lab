@@ -234,9 +234,10 @@ def main(argv=None) -> int:
 
     from lab import cli_loop
     cli_loop.register(sub)
-    from lab import page, sync
+    from lab import page, source, sync
     page.register(sub)
     sync.register(sub)
+    source.register(sub)
 
     args = p.parse_args(argv)
     try:
