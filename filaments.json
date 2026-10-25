@@ -42,7 +42,8 @@
     "fan_speed_max_pct": 100,
     "pressure_advance_k": 0.026,
     "notes": "Same formulation as Spool 1. Cap outer wall speed to <=80 mm/s to preserve matte texture and avoid sheen transitions.",
-    "made_in": "China"
+    "made_in": "China",
+    "lot": "unreadable (label photo blurred)"
   },
   {
     "spool_id": 3,
@@ -74,7 +75,7 @@
     "finish": "standard",
     "color": "Peach Pink",
     "lot": "01460618Y2",
-    "diameter_mm": "1.75 ± 0.03",
+    "diameter_mm": "1.75",
     "density_g_cm3": 1.24,
     "nozzle_c": "200-240",
     "optimal_nozzle_c": 210,
@@ -88,7 +89,8 @@
     "fan_speed_max_pct": 100,
     "pressure_advance_k": 0.023,
     "notes": "Standard gloss/satin PLA. Lot 01460618Y2. Rated 200-210 °C at 50-100 mm/s; bump to 215-225 °C if running at 100-200 mm/s.",
-    "net_weight_kg": 1
+    "net_weight_kg": 1,
+    "spool_max_c": 70
   },
   {
     "spool_id": 5,
@@ -97,7 +99,7 @@
     "finish": "standard",
     "color": "Grey",
     "lot": "01660608Y",
-    "diameter_mm": "1.75 ± 0.03",
+    "diameter_mm": "1.75",
     "density_g_cm3": 1.24,
     "nozzle_c": "200-240",
     "optimal_nozzle_c": 210,
@@ -111,16 +113,17 @@
     "fan_speed_max_pct": 100,
     "pressure_advance_k": 0.023,
     "notes": "Standard general-purpose PLA. Lot 01660608Y. Identical resin matrix to Spool 4. Excellent for calibration cubes, test strips, and functional brackets.",
-    "net_weight_kg": 1
+    "net_weight_kg": 1,
+    "spool_max_c": 70
   },
   {
     "spool_id": 6,
     "brand": "Unbranded",
     "line": "High Speed PLA Marble",
     "finish": "marble",
-    "color": "Shadow Storm",
+    "color": "Shadow Storm Marble",
     "lot": "03960821Z",
-    "diameter_mm": "1.75 ± 0.03",
+    "diameter_mm": "1.75",
     "density_g_cm3": 1.24,
     "nozzle_c": "190-260",
     "optimal_nozzle_c": 215,
@@ -134,6 +137,7 @@
     "fan_speed_max_pct": 100,
     "pressure_advance_k": 0.024,
     "notes": "High-speed polymer matrix blended with dark particulate flecks. Best on 0.4 mm and 0.6 mm nozzles. Capable of 150-300 mm/s printing without extrusion deficit.",
-    "net_weight_kg": 1
+    "net_weight_kg": 1,
+    "spool_max_c": 70
   }
 ]
