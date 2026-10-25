@@ -58,7 +58,7 @@
     "tabs": false,
     "notes": []
   },
-  "status": "printing",
+  "status": "answered",
   "variants": [
     {
       "id": "E-011-A",
@@ -898,10 +898,38 @@
       ],
       "usage": null,
       "failed": null,
-      "photos": []
+      "photos": [
+        {
+          "path": "photos/PR-011-01-1.jpg",
+          "sha256": "2beda7a28ffb30d35d755dec9e16c98d8f51e21ae7d18a56a6111694d7dda625",
+          "captured_at": "2026-10-25T06:32:03+00:00",
+          "source": "remote-1792909923070736000-5abe621ad6704a29bb5d8079ff80417c.jpg"
+        },
+        {
+          "path": "photos/PR-011-01-2.jpg",
+          "sha256": "4609e96fd0844928608ae120b6b7e5fcc2658b5974a4d7fdbc594f1b01252987",
+          "captured_at": "2026-10-25T06:32:04+00:00",
+          "source": "remote-1792909924598828000-53df8918167d4b9c83ae41763da23d2b.jpg"
+        },
+        {
+          "path": "photos/PR-011-01-3.jpg",
+          "sha256": "504609f341ba4581a5a20dc73701e9bfbe9277d9ac0fb560b1af467bb8d93f2e",
+          "captured_at": "2026-10-25T06:32:06+00:00",
+          "source": "remote-1792909926236297000-3fd905a2ac254986965f09c538fa71f5.jpg"
+        }
+      ]
     }
   ],
-  "owner_verdict": null,
+  "owner_verdict": {
+    "kind": "inconclusive",
+    "reason": "the print failed: the two faces broke away from the strip's base and printed loose (long strings, stepped ledges on one face); with 0.5 mm the tiles no longer brace each other",
+    "print_runs": [
+      "PR-011-01"
+    ],
+    "note": "owner: 'Not good'",
+    "by": "owner",
+    "at": "2026-10-25T06:32:57+00:00"
+  },
   "superseded_verdicts": [],
   "anchors": [],
   "ai_observations": [],
@@ -909,6 +937,6 @@
     "status": "valid",
     "reasons": []
   },
-  "prediction_outcome": null,
+  "prediction_outcome": "inconclusive",
   "analysis": []
 }
