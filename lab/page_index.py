@@ -75,9 +75,11 @@ def _photos(e: dict, root: Path) -> list[dict]:
 
 
 def _verdict_command(e: dict) -> str:
-    if len(e.get("variants") or []) > 1:
+    if e.get("test_kind") in ("scaled_part", "full_part"):
+        return f'uv run lab exp verdict {e["id"]} --accept yes --note "what you see"'
+    if len([v for v in e.get("variants") or [] if v.get("role", "variant") == "variant"]) > 1:
         return f'uv run lab exp verdict {e["id"]} --rank "B>A" --strength clearly'
-    return f'uv run lab exp verdict {e["id"]} --accept yes --note "what you see"'
+    return f'uv run lab exp verdict {e["id"]} --rank A --note "what you see"'
 
 
 def _needs(e: dict) -> dict | None:

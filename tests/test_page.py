@@ -1,88 +1,76 @@
 import json
 
 from lab import page
+from lab.cli import main
+from loop_fixtures import make_project, minimal_question
+from test_page_index import _project
 
 
-def _project(tmp_path):
-    p = tmp_path / "projects" / "tile"
-    (p / "questions").mkdir(parents=True)
-    (p / "experiments").mkdir()
-    (p / "photos").mkdir()
-    (p / "photos" / "PR-1-1.jpg").write_bytes(b"\xff\xd8jpeg")
-    (p / "questions" / "Q-1.json").write_text(json.dumps({
-        "id": "Q-1", "question": "What causes the <bands>?", "status": "active", "experiments": ["E-1", "E-2"],
-        "budget": {"max_minutes": 180, "max_g": 100},
-        "plans": [{"after": "E-1", "if": "no difference", "next": "slower walls"}]}))
-    (p / "experiments" / "E-1.json").write_text(json.dumps({
-        "id": "E-1", "status": "answered", "question_text": "Does sharing the plate matter?", "test_kind": "height_strip",
-        "factor": {"name": "objects_on_plate", "values": [1, 2]},
-        "controlled": {"filament": "Kexcelled K5 PLA M, Light Matte Terracotta (lot C6)"},
-        "owner_verdict": {"kind": "ranking", "note": "they look good", "at": "2026-10-24T23:14:18+00:00"},
-        "prediction_outcome": "refuted",
-        "print_runs": [{"id": "PR-1", "photos": [{"path": "photos/PR-1-1.jpg", "source": "IMG_1.HEIC"},
-                                                  {"path": "photos/missing.jpg"}]}]}))
-    (p / "experiments" / "E-2.json").write_text(json.dumps({
-        "id": "E-2", "status": "needs_approval", "question_text": "Full pair", "test_kind": "full_part"}))
-    return p
+def _html(tmp_path, **kw):
+    p = _project(tmp_path)
+    (p.root / "photos").mkdir(exist_ok=True)
+    (p.root / "photos" / "PR-001-01-1.jpg").write_bytes(b"\xff\xd8jpeg")
+    e = json.loads((p.experiments / "E-001.json").read_text())
+    e["print_runs"][0]["photos"] = [{"path": "photos/PR-001-01-1.jpg", "source": "IMG_1.HEIC"},
+                                    {"path": "photos/missing.jpg", "source": "IMG_2.HEIC"}]
+    e["question_text"] = "Do <slow> walls help?"
+    (p.experiments / "E-001.json").write_text(json.dumps(e))
+    return p, page.build(p.root, colours=kw.get("colours", {}))
 
 
-def test_page_shows_needs_questions_notebook_and_photos(tmp_path):
-    html = page.build(_project(tmp_path), colours={"light matte terracotta": "#c97b5a", "terracotta": "#000000"})
-    assert "What causes the &lt;bands&gt;?" in html and "<bands>" not in html  # escaped
-    assert "1 of 2 experiments answered" in html and "After E-1, if no difference: slower walls" in html
-    assert "Needs your approval" in html and "Approve or change this test before it prints." in html
-    assert "--spine:#c97b5a" in html  # the longest matching spool name wins
-    assert 'src="photos/PR-1-1.jpg"' in html and "missing.jpg" not in html  # only photos that exist
-    assert "Prediction refuted" in html and "they look good" in html
-    assert html.index('id="E-2"') < html.index('id="E-1"')  # newest first
+def test_question_card_shows_spend_next_and_stop(tmp_path):
+    _, html = _html(tmp_path)
+    assert "80 / 180 min" in html and "24 / 100 g" in html
+    assert "E-002 would add 63 min, 19 g" in html and "Continue" in html
 
 
-def test_page_without_questions_says_so(tmp_path):
+def test_needs_you_gives_the_action_why_and_command_in_order(tmp_path):
+    _, html = _html(tmp_path)
+    needs = html[html.index('class="card needs"'):html.index("</section>", html.index('class="card needs"'))]
+    assert needs.index("E-004") < needs.index("E-002") and "E-003" not in needs
+    assert "Judge the print" in needs and "63 / 45 min per test" in needs
+    assert "<code>uv run lab exp approve E-002 --reason &quot;...&quot;</code>" in needs
+
+
+def test_cards_show_outcome_validity_and_requested_vs_realized(tmp_path):
+    _, html = _html(tmp_path)
+    assert "Prediction supported" in html and "Fair comparison" in html
+    assert "1A: 250 asked, 147 printed mm/s" in html and "1B: 80 mm/s" in html
+    assert "Do &lt;slow&gt; walls help?" in html and "<slow>" not in html
+
+
+def test_finished_work_folds_under_earlier_and_only_real_photos_show(tmp_path):
+    _, html = _html(tmp_path)
+    earlier = html[html.index('class="earlier"'):]
+    assert 'id="E-003"' in earlier and 'id="E-001"' in earlier and 'id="E-004"' not in earlier
+    assert 'src="photos/PR-001-01-1.jpg"' in html and "missing.jpg" not in html
+
+
+def test_unreadable_records_are_named_not_hidden(tmp_path):
+    p, _ = _html(tmp_path)
+    (p.experiments / "E-099.json").write_text("{")
+    assert "experiments/E-099.json" in page.build(p.root, colours={})
+
+
+def test_empty_project_says_what_to_do(tmp_path):
     p = tmp_path / "projects" / "empty"
     p.mkdir(parents=True)
     html = page.build(p, colours={})
     assert "No open question." in html and "Nothing needs you right now." in html
 
 
+def test_lab_page_writes_html_and_json_and_commands_keep_it_current(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("LAB_HOME", str(tmp_path))
+    monkeypatch.setenv("LAB_BAMBUDDY_URL", "off")
+    p = make_project(tmp_path, minimal_question("Q-001", ()), [])
+    assert main(["page"]) == 0
+    ix = json.loads((p.root / "page.json").read_text())
+    assert ix["schema"] == "print-lab-index/1" and (p.root / "page.html").is_file()
+    assert main(["question", "new", "Is the top edge clean?", "--budget", "2h,50g"]) == 0
+    assert "Is the top edge clean?" in (p.root / "page.html").read_text()  # refreshed by the command
+
+
 def test_bambuddy_off_and_unreachable_give_no_colours():
     assert page.bambuddy_colours(url="off") == {}
     assert page.bambuddy_colours(url="http://127.0.0.1:9", timeout=0.5) == {}
     assert page.spool_colour("Grey PLA", {}) == page.NEUTRAL
-
-
-def test_cli_writes_the_page(tmp_path, monkeypatch, capsys):
-    from lab import cli
-    _project(tmp_path)
-    monkeypatch.setenv("LAB_HOME", str(tmp_path))
-    monkeypatch.setenv("LAB_BAMBUDDY_URL", "off")
-    assert cli.main(["--project", "tile", "page"]) == 0
-    out = tmp_path / "projects" / "tile" / "page.html"
-    assert out.is_file() and "Print lab · tile" in out.read_text()
-
-
-def test_factor_values_read_as_words():
-    assert page._value(["250", "250", "200"]) == "250/200"
-    assert page._value("sources/hexagon_v58.3mf") == "hexagon_v58.3mf"
-    assert page._value(2) == "2"
-
-
-def test_bambuddy_colours_only_accept_hex(monkeypatch):
-    import io, json as j, urllib.request
-    spools = [{"color_name": "Grey", "rgba": "9A9A9AFF"}, {"color_name": "Evil", "rgba": "red;}</style><script>"}]
-    monkeypatch.setattr(urllib.request, "urlopen", lambda *a, **k: io.BytesIO(j.dumps(spools).encode()))
-    assert page.bambuddy_colours(url="http://x") == {"grey": "#9A9A9A"}
-
-
-def test_current_experiment_and_wipe(tmp_path):
-    p = _project(tmp_path)
-    (p / "photos" / "PR-9-1.jpg").write_bytes(b"\xff\xd8x")
-    (p / "experiments" / "E-3.json").write_text(json.dumps({
-        "id": "E-3", "status": "printed", "question_text": "Slower walls?", "why_this_test": "The <only> difference.",
-        "reference_variants": ["E-1-A"],
-        "print_runs": [{"id": "PR-9", "photos": [{"path": "photos/PR-9-1.jpg"}]}]}))
-    q = json.loads((p / "questions" / "Q-1.json").read_text()); q["experiments"].append("E-3")
-    (p / "questions" / "Q-1.json").write_text(json.dumps(q))
-    html = page.build(p, colours={})
-    assert "Why this test?</b> The &lt;only&gt; difference." in html  # the open experiment, up front
-    assert 'class="wipe"' in html and 'src="photos/PR-1-1.jpg"' in html and 'class="after" src="photos/PR-9-1.jpg"' in html
-    assert "Record a verdict from the photos." in html

@@ -54,7 +54,7 @@ def test_needs_you_lists_actions_with_commands_most_urgent_first(tmp_path):
     ix = page_index.build_index(_project(tmp_path).root)
     needs = ix["needs"]
     assert [n["id"] for n in needs] == ["E-004", "E-002"]  # a print to judge, then an approval; never the abandoned
-    assert needs[0]["action"] == "Judge the print" and "lab exp verdict E-004" in needs[0]["command"]
+    assert needs[0]["action"] == "Judge the print" and "lab exp verdict E-004 --rank \"B>A\"" in needs[0]["command"]
     assert needs[1]["action"] == "Approve or drop" and "63 / 45 min per test" in needs[1]["why"]
     assert needs[1]["command"].startswith("uv run lab exp approve E-002 --reason")
 
@@ -68,3 +68,13 @@ def test_index_carries_originals_fingerprints_and_problems(tmp_path):
     assert [x["file"] for x in ix["problems"]] == ["experiments/E-099.json"]
     assert "E-099" not in {x["id"] for x in ix["experiments"]}
     json.dumps(ix)  # plain JSON, nothing else
+
+
+def test_the_verdict_command_fits_the_test(tmp_path):
+    one = started(minimal_experiment("E-010", "Q-009"))
+    one["variants"] = one["variants"][:1]
+    full = started(minimal_experiment("E-011", "Q-009"))
+    full.update(test_kind="full_part", variants=full["variants"][:1])
+    p = make_project(tmp_path, minimal_question("Q-009", ("E-010", "E-011")), [one, full])
+    cmds = {n["id"]: n["command"] for n in page_index.build_index(p.root)["needs"]}
+    assert "--rank A " in cmds["E-010"] and "--accept yes" in cmds["E-011"]
