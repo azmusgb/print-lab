@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 
 from lab.loop import ledger
-from lab.loop.outcome import comparison_validity, prediction_outcome, sweep_finding
+from lab.loop.outcome import comparison_validity, criteria_finding, prediction_outcome, sweep_finding
 from lab.records.project import ProjectPaths, project_settings
 from lab.records.schema import load
 from lab.records.store import RecordError, now
@@ -80,6 +80,11 @@ def _photos(e: dict, root: Path) -> list[dict]:
 
 
 def _verdict_command(e: dict) -> str:
+    if e.get("criteria"):
+        own = [v for v in e.get("variants") or [] if v.get("role", "variant") == "variant"]
+        g = ";".join(f"{v.get('tab') or v['id']}=" + ",".join(f"{c['key']}:{c['choices'][0]}" for c in e["criteria"])
+                     for v in own)
+        return f'uv run lab exp verdict {e["id"]} --grade "{g}"'
     if e.get("test_kind") in ("scaled_part", "full_part"):
         return f'uv run lab exp verdict {e["id"]} --accept yes --note "what you see"'
     if len([v for v in e.get("variants") or [] if v.get("role", "variant") == "variant"]) > 1:
@@ -130,12 +135,14 @@ def _experiment(e: dict, exps: dict, root: Path, tol: float, production) -> dict
         "variants": _variants(e), "reference_variants": e.get("reference_variants") or [],
         "estimate": b.get("estimate"), "layer_time_median_s": (b.get("measured") or {}).get("layer_time_median_s"),
         "usage": _usage(e), "check": b.get("check"), "outcome": outcome, "validity": validity,
-        "verdict": {k: v.get(k) for k in ("kind", "order", "strength", "good_enough", "note", "at")} if v else None,
+        "verdict": {k: v.get(k) for k in ("kind", "order", "strength", "good_enough", "grades", "lighting", "note", "at")}
+        if v else None, "criteria": e.get("criteria"),
+        "run": (e.get("print_runs") or [{}])[-1].get("id"),
         "approval": e.get("approval"), "abandoned_reason": e.get("abandoned_reason"),
         "filament": (e.get("controlled") or {}).get("filament"),
         "runs": [{"id": r["id"], "started_at": r.get("started_at"), "baseline_missing": r.get("baseline_missing") or []}
                  for r in e.get("print_runs") or []],
-        "finding": sweep_finding(e), "photos": _photos(e, root), "ai_observations": e.get("ai_observations") or [], "needs": _needs(e)}
+        "finding": criteria_finding(e) or sweep_finding(e), "photos": _photos(e, root), "ai_observations": e.get("ai_observations") or [], "needs": _needs(e)}
 
 
 def _question(q: dict, exps: dict, tol: float) -> dict:

@@ -104,6 +104,8 @@ def record_verdict(paths: ProjectPaths, eid: str, *, rank, strength, inconclusiv
         base = {"print_runs": run_ids, "note": note, "by": "owner", "at": now()}
         if inconclusive:
             v = {"kind": "inconclusive", "reason": inconclusive, **base}
+        elif e.get("criteria"):
+            v = {"kind": "criteria", "grades": _criteria_grades(e, grades), "lighting": lighting or "diagnostic", **base}
         elif e["test_kind"] == "speed_sweep":
             v = {"kind": "sweep", "grades": _grades(e, grades), "lighting": lighting or "diagnostic", **base}
         elif accept is not None:
@@ -163,6 +165,45 @@ def _grades(e: dict, text: str | None) -> dict:
     missing = [str(v["factor_value"]) for v in own if v["id"] not in out]
     if missing:
         raise ValueError(f"Grade every strip of {e['id']}; missing {', '.join(missing)}.")
+    return out
+
+
+def _criteria_grades(e: dict, grades) -> dict:
+    """'12A=print:clean,apart:no;12B=…' (by tab or variant id), or the stored {variant id: {key: choice}} ->
+    {variant id: {key: choice}}; every strip needs every criterion."""
+    crit = {c["key"]: c for c in e["criteria"]}
+    own = [v for v in e["variants"] if v.get("role", "variant") == "variant"]
+    names = {str(k): v["id"] for v in own for k in (v["id"], v.get("tab")) if k is not None}
+    tab = {v["id"]: v.get("tab") or v["id"] for v in own}
+    example = ";".join(f"{tab[v['id']]}=" + ",".join(f"{k}:{c['choices'][0]}" for k, c in crit.items()) for v in own)
+    if isinstance(grades, dict):
+        pairs = [(str(k), dict(g or {})) for k, g in grades.items()]
+    else:
+        pairs = []
+        for part in (grades or "").split(";"):
+            if not part.strip():
+                continue
+            k, _, rest = part.partition("=")
+            pairs.append((k.strip(), {a.strip(): b.strip() for a, _, b in
+                                      (x.partition(":") for x in rest.split(",") if x.strip())}))
+    out = {}
+    for k, g in pairs:
+        if k not in names:
+            raise ValueError(f"Grade each strip as TAB=criterion:choice,…, e.g. {example}; {k!r} isn't a strip of "
+                             f"{e['id']}.")
+        for key, choice in g.items():
+            if key not in crit:
+                raise ValueError(f"{e['id']} has no criterion {key!r}; its criteria are {', '.join(crit)}.")
+            if choice not in crit[key]["choices"]:
+                raise ValueError(f"{tab[names[k]]}: {crit[key]['label']} is one of "
+                                 f"{', '.join(crit[key]['choices'])}, not {choice!r}.")
+        out[names[k]] = {key: g[key] for key in crit if key in g}
+    for v in own:
+        if v["id"] not in out:
+            raise ValueError(f"Grade every strip of {e['id']}; {tab[v['id']]} is missing (e.g. {example}).")
+        for key, c in crit.items():
+            if key not in out[v["id"]]:
+                raise ValueError(f"{tab[v['id']]}: {c['label']} isn't answered ({', '.join(c['choices'])}).")
     return out
 
 

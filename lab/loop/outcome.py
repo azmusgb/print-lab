@@ -51,6 +51,27 @@ def _sweep_outcome(exp: dict, v: dict) -> str:
     return out if exp.get("provenance") == "prospective" or out == "unresolved" else "unresolved"
 
 
+CRITERIA_WORDS = {"print": {"clean": "printed clean", "flawed": "printed flawed", "failed": "failed to print"},
+                  "apart": {"yes": "came apart", "hard": "came apart with force", "no": "didn't come apart"}}
+
+
+def criteria_finding(exp: dict) -> str | None:
+    """'12A: printed clean, didn't come apart. 12B: …', from the owner's per-strip criteria grades."""
+    v = exp.get("owner_verdict") or {}
+    if v.get("kind") != "criteria":
+        return None
+    crit, grades = exp.get("criteria") or [], v.get("grades") or {}
+    out = []
+    for var in exp.get("variants") or []:
+        g = grades.get(var["id"])
+        if g is None:
+            continue
+        words = [CRITERIA_WORDS.get(c["key"], {}).get(g.get(c["key"])) or f"{c['label'].rstrip('?')} {g.get(c['key'])}"
+                 for c in crit if c["key"] in g]
+        out.append(f"{var.get('tab') or var['id']}: {', '.join(words)}.")
+    return " ".join(out) or None
+
+
 def sweep_finding(exp: dict) -> str | None:
     """'clean up to 60, faint at 80, bands from 100 mm/s', from the owner's grades."""
     if exp.get("test_kind") != "speed_sweep":
@@ -77,8 +98,8 @@ def prediction_outcome(exp: dict, validity: dict) -> str | None:
     """supported / refuted / unresolved / inconclusive, or None with no verdict to judge (or an acceptance verdict,
     which answers 'good enough', not a prediction)."""
     v = exp.get("owner_verdict")
-    if not v or v["kind"] == "acceptance":
-        return None
+    if not v or v["kind"] in ("acceptance", "criteria"):
+        return None  # a criteria verdict is a finding (criteria_finding), not a test of a prediction
     if v["kind"] == "sweep" and not (exp.get("expect") or {}).get("bands_from"):
         return None  # a sweep without a prediction is a finding (sweep_finding), not a test of one
     if v["kind"] == "inconclusive" or _witness_spoils(v) or validity.get("status") in ("confounded", "unknown"):
