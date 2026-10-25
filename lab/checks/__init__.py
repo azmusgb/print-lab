@@ -19,13 +19,13 @@ class CheckContext:
 
 def run_checks(m: trimesh.Trimesh, *, nozzle: float, settings: dict | None = None,
                file_name: str | None = None) -> list[Finding]:
-    from lab.checks import bed_fit, feature_width, mesh_validity, nozzle_mismatch, overhang_flip
+    from lab.checks import bed_fit, feature_width, mesh_validity, nozzle_mismatch, overhang_flip, part_gap
 
     ctx = CheckContext(nozzle=nozzle, line_w=LINE_W.get(nozzle, round(nozzle * 1.05, 2)), settings=settings,
                        file_name=file_name)
     out: list[Finding] = []
     for check in (mesh_validity.check, overhang_flip.check, feature_width.check, bed_fit.check,
-                  nozzle_mismatch.check):
+                  nozzle_mismatch.check, part_gap.check):
         try:
             out += check(m, ctx)
         except Exception as e:  # a broken check must not hide the others

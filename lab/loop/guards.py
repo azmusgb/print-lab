@@ -29,7 +29,8 @@ class CheckResult:
     realization: dict | None = None
 
     def failed(self, result: str | None = None) -> list[Guard]:
-        return [g for g in self.guards if not g.ok and (result is None or g.result == result)]
+        """Guards that failed; a warning (result 'info') is shown but never counts as failing."""
+        return [g for g in self.guards if not g.ok and g.result != "info" and (result is None or g.result == result)]
 
 
 def _n(x) -> str:
@@ -43,14 +44,20 @@ def blocking_geometry(findings: list, tabbed: bool) -> list:
             and not (tabbed and f.rule == "feature-below-line-width" and f.data["z_max"] <= TAB_HEIGHT_MM)]
 
 
-def _geometry(paths: ProjectPaths, build: dict, tabbed: bool = False) -> list[str]:
-    """Stage 1A blocking findings on each built object (these can't be approved away)."""
+def _geometry(paths: ProjectPaths, build: dict, tabbed: bool = False) -> tuple[list[str], list[str]]:
+    """Stage 1A findings on each built object: (blocking, which can't be approved away; warnings, shown only)."""
     from lab.adapters.threemf import load_object
     from lab.checks import run_checks
     from lab.loop.diff import _objects
     art = paths.root / build["artifact"]
-    return [f"{name}: {f.rule}: {f.why}" for name, _ in _objects(art)
-            for f in blocking_geometry(run_checks(load_object(art, name), nozzle=0.4), tabbed)]
+    blocking, warnings = [], {}
+    for name, _ in _objects(art):
+        found = run_checks(load_object(art, name), nozzle=0.4)
+        blocking += [f"{name}: {f.rule}: {f.why}" for f in blocking_geometry(found, tabbed)]
+        for f in found:
+            if f.severity == "warning":
+                warnings.setdefault(f"{f.rule}: {f.where}. {f.fix}", []).append(name)
+    return blocking, [f"{', '.join(names)}: {w}" for w, names in warnings.items()]
 
 
 def check_experiment(paths: ProjectPaths, exp_id: str) -> CheckResult:
@@ -118,8 +125,10 @@ def check_experiment(paths: ProjectPaths, exp_id: str) -> CheckResult:
         add("undeclared_difference", not bad, "blocked",
             "; ".join(f"{d['where']} {d['key']} differs ({d['a']} vs {d['b']})" for d in bad)
             + " — declare it as a dependent adjustment or fix the plan" if bad else "only the declared factor differs")
-        geo = _geometry(paths, build, tabbed=bool((e.get("build_spec") or {}).get("tabs")))
+        geo, warn = _geometry(paths, build, tabbed=bool((e.get("build_spec") or {}).get("tabs")))
         add("geometry_blocking", not geo, "blocked", "; ".join(geo) if geo else "no blocking geometry findings")
+        for w in warn:
+            add("geometry_warning", False, "info", w)  # shown, never blocks or needs approval
         from lab.loop import realized
         real = realized.realization(paths, e, build, exps)
         if real:
@@ -176,7 +185,7 @@ def _finish(e, guards, build, q, exps, tol, est) -> CheckResult:
     if est:
         lines.append(f"  After test  {_n(s['minutes'] + est['minutes'])} / {_n(b['minutes'])} min, "
                      f"{_n(s['g'] + est['g'])} / {_n(b['g'])} g")
-    lines += ["", "Guards"] + [f"  {'✓' if x.ok else '✗'} {x.code:<22} {x.message}" for x in guards]
+    lines += ["", "Guards"] + [f"  {'✓' if x.ok else '!' if x.result == 'info' else '✗'} {x.code:<22} {x.message}" for x in guards]
     lines += ["", "Result", f"  {status.upper().replace('_', ' ')}"]
     if not covered:
         for x in blocked + rebuild + approval:

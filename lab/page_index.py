@@ -93,7 +93,7 @@ def _needs(e: dict) -> dict | None:
     if s in ("answered", "abandoned"):
         return None
     check = b.get("check") or {}
-    why = "; ".join(g["message"] for g in check.get("guards") or [] if not g["ok"])
+    why = "; ".join(g["message"] for g in check.get("guards") or [] if not g["ok"] and g["result"] != "info")
     if s == "printing" and not e.get("owner_verdict"):
         return {"id": eid, "urgency": 0, "action": "Judge the print",
                 "why": f"Look at: {e.get('judge_on') or 'the face'}. Photos help.", "command": _verdict_command(e)}

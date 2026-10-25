@@ -34,7 +34,7 @@ def edit(proj, rid, fn, folder="experiments"):
 
 
 def codes(res, result=None):
-    return [g.code for g in res.guards if not g.ok and (result is None or g.result == result)]
+    return [g.code for g in res.guards if not g.ok and g.result != "info" and (result is None or g.result == result)]
 
 
 def test_clean_build_is_ready(proj):
@@ -173,3 +173,11 @@ def test_check_result_is_kept_on_the_build_for_the_page(proj):
     b = load(proj.experiments / f"{eid}.json", "experiment")["builds"][-1]
     assert b["check"]["status"] == r.status and b["check"]["at"]
     assert {g["code"] for g in b["check"]["guards"]} == {g.code for g in r.guards}
+
+
+def test_geometry_warnings_show_in_the_check_without_blocking(proj):
+    eid = built(proj)
+    r = check_experiment(proj, eid)
+    warn = [g for g in r.guards if g.code == "geometry_warning" and "parts-too-close" in g.message]
+    assert warn and warn[0].result == "info" and "0.1 mm" in warn[0].message
+    assert r.status == "ready" and "geometry_warning" in r.text
