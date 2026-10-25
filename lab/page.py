@@ -254,6 +254,10 @@ def build(pdir: Path, colours: dict | None = None, index: dict | None = None) ->
     earlier = [x for x in ix["experiments"] if x["status"] in DONE]
     problems = "".join(f'<li><b>{_e(p["file"])}</b> {_e(p["error"])}</li>' for p in ix["problems"])
     stamp = _when(ix["generated_at"])
+    from lab.sync import status
+    st = status(pdir)
+    synced = ("" if not st else f' Local AI: synced {_e(_when(st.get("at")))}.' if st.get("ok")
+              else f' Local AI: not synced ({_e(st.get("message"))}).')
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -335,7 +339,7 @@ dl {{ margin:4px 0; }} dt {{ font-weight:600; font-size:var(--ds-fs-1); margin-t
 <body>
 <main>
 <header class="topbar"><h1>Print lab · {_e(ix["project"])}</h1>
-<p class="sub">Read-only. Built {_e(stamp)}; every <code>lab</code> command that changes a record rebuilds it.</p></header>
+<p class="sub">Read-only. Built {_e(stamp)}; every <code>lab</code> command that changes a record rebuilds it.{synced}</p></header>
 <div class="layout">
   <div class="side">
     <section class="card needs"><h2>Needs you</h2><ul>{needs}</ul></section>

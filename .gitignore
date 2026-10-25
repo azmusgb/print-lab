@@ -13,3 +13,4 @@ projects/*/photos/
 .locks/
 projects/*/page.html
 projects/*/page.json
+projects/*/sync.json
