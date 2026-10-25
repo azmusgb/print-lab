@@ -20,5 +20,11 @@
     "source": "derived",
     "derived_from": "sources/hexagon_v58_X2D_0.6nozzle.3mf",
     "change": "each tile of every pair moved 0.2 mm outward (the right tile with its back ribs): the gap between the tiles 0.1 -> 0.5 mm so they separate (owner, 25 Oct: they mount separately, face out); tile geometry unchanged"
+  },
+  {
+    "path": "sources/hex_wall_tile_mount_v17.scad",
+    "sha256": "9ef3323d821fa006aa7b047ddd07aeb86a0fc3ffb753c75e3e5e19a79036af32",
+    "source": "home_folder",
+    "note": "parametric OpenSCAD design of the hex wall tile (v17: open back, flat tape-mount pads), found in ~ on 25 Oct 2026; the v5x 3MFs came later, so check how they relate before building from it"
   }
 ]
