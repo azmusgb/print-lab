@@ -57,7 +57,8 @@ def cmd_exp_verdict(args) -> int:
     e = record_verdict(paths, args.id, rank=args.rank, strength=args.strength, inconclusive=args.inconclusive,
                        accept=accept, defects=args.defects or [], marks=args.mark or [], witness=args.witness,
                        witness_override=args.witness_override, anchors=args.anchor or [],
-                       not_about_target=args.not_about_target, note=args.note, replace=args.replace, runs=args.run)
+                       not_about_target=args.not_about_target, note=args.note, replace=args.replace, runs=args.run,
+                       lighting=args.lighting)
     print(f"{e['id']} answered: outcome {e['prediction_outcome'] or '-'}, comparison {e['comparison_validity']['status']}")
     for r in e["comparison_validity"]["reasons"]:
         print(f"  {r['code']}: {r}")
@@ -303,6 +304,8 @@ def register(sub) -> None:
     v.add_argument("--witness-override", metavar="REASON")
     v.add_argument("--anchor", action="append", help="ANCHOR=EARLIER:same|different|inconclusive[:strength]")
     v.add_argument("--not-about-target", action="store_true")
+    v.add_argument("--lighting", default="diagnostic", help="the light you judged under: diagnostic (raking, side "
+                   "by side), or e.g. room; only the diagnostic light can support or refute a prediction")
     v.add_argument("--note")
     v.add_argument("--replace", action="store_true")
     v.add_argument("--run", action="append")

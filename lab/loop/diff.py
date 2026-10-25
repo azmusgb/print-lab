@@ -106,13 +106,55 @@ def actual_differences(paths: ProjectPaths, exp: dict, build: dict, others: dict
             rexp = load(paths.experiments / f"{rexp_id}.json", "experiment")
         from lab.loop.outcome import printed_build
         rb = printed_build(rexp or {})
-        if not rb or not (paths.root / rb["artifact"]).exists():
-            continue
+        if not rb or not rb.get("artifact") or not (paths.root / rb["artifact"]).exists():
+            continue  # reported by reference_problems
         rf = variant_facts(paths.root / rb["artifact"])
+        if ref not in rf and len(rf) == 1:  # a migrated plate names its one object differently
+            rf = {ref: next(iter(rf.values()))}
         if ref in rf:
             for vid in ids:
                 diffs += _compare(ref, rf[ref], vid, facts[vid])
     return diffs
+
+
+def reference_problems(paths: ProjectPaths, exp: dict, others: dict | None = None) -> list[str]:
+    """References the one-factor check can't compare against: never skipped silently."""
+    from lab.loop.outcome import printed_build
+    from lab.records.schema import load
+    out = []
+    for ref in exp.get("reference_variants") or []:
+        rid = ref.rsplit("-", 1)[0]
+        rexp = (others or {}).get(rid)
+        if rexp is None and (paths.experiments / f"{rid}.json").exists():
+            rexp = load(paths.experiments / f"{rid}.json", "experiment")
+        rb = printed_build(rexp or {})
+        if not rb:
+            out.append(f"{ref}: {rid} has no printed build")
+        elif not rb.get("artifact") or not (paths.root / rb["artifact"]).exists():
+            out.append(f"{ref}: {rid}'s printed file ({rb.get('artifact') or 'none recorded'}) is missing")
+        else:
+            rf = variant_facts(paths.root / rb["artifact"])
+            if ref not in rf and len(rf) != 1:
+                out.append(f"{ref}: no object of that name on {rid}'s plate ({', '.join(rf)})")
+    return out
+
+
+def factor_applied(diffs: list[dict], exp: dict) -> bool | None:
+    """Does the declared factor actually differ between this plate's variants? None when this check can't say (one
+    variant, a stepped strip, a plate factor judged across plates)."""
+    own = [v for v in exp["variants"] if v.get("role", "variant") == "variant"]
+    f = _factors().get(exp["factor"]["name"], {})
+    if len(own) < 2 or (exp.get("build_spec") or {}).get("stepped") or f.get("kind") == "plate":
+        return None
+    ids = {v["id"] for v in own}
+    mine = [d for d in diffs if d["a"] in ids and d["b"] in ids and not d.get("anchor")]
+    if f.get("kind") == "setting":
+        return any(d["where"] == "settings" and d["key"] == f["settings_key"] for d in mine)
+    if f.get("kind") == "model_version":
+        return any(d["where"] == "geometry" for d in mine)
+    if f.get("kind") == "filament_profile":
+        return any(d["where"] == "settings" for d in mine)
+    return False
 
 
 def undeclared(diffs: list[dict], exp: dict) -> tuple[list[dict], list[dict]]:

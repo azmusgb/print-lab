@@ -55,7 +55,7 @@ def _geometry(paths: ProjectPaths, build: dict, tabbed: bool = False) -> list[st
 
 def check_experiment(paths: ProjectPaths, exp_id: str) -> CheckResult:
     from lab.loop.builders import input_fingerprints
-    from lab.loop.diff import actual_differences, undeclared
+    from lab.loop.diff import actual_differences, factor_applied, reference_problems, undeclared
     e = load_experiment(paths, exp_id)
     q = load_question(paths, e["question"])
     exps = all_experiments(paths)
@@ -106,7 +106,15 @@ def check_experiment(paths: ProjectPaths, exp_id: str) -> CheckResult:
         add("undeclared_difference", False, "rebuild",
             f"{build['id']}'s print file is missing, so the one-factor check can't run; rebuild it")
     else:
-        bad, bundle = undeclared(actual_differences(paths, e, build, exps), e)
+        diffs = actual_differences(paths, e, build, exps)
+        bad, bundle = undeclared(diffs, e)
+        applied = factor_applied(diffs, e)
+        add("factor_not_applied", applied is not False, "blocked",
+            f"the variants don't differ in {e['factor']['name']}; the experiment would test nothing" if applied is False
+            else "the declared factor differs between the variants")
+        refs = reference_problems(paths, e, exps)
+        add("reference_not_comparable", not refs, "blocked",
+            "; ".join(refs) + " — the one-factor check can't compare against it" if refs else "references compared")
         add("undeclared_difference", not bad, "blocked",
             "; ".join(f"{d['where']} {d['key']} differs ({d['a']} vs {d['b']})" for d in bad)
             + " — declare it as a dependent adjustment or fix the plan" if bad else "only the declared factor differs")
