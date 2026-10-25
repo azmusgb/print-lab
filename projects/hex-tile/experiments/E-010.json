@@ -381,7 +381,7 @@
       },
       "check": {
         "status": "needs_approval",
-        "at": "2026-10-25T03:38:20+00:00",
+        "at": "2026-10-25T03:55:08+00:00",
         "guards": [
           {
             "code": "owner_stopped",
@@ -448,6 +448,12 @@
             "ok": true,
             "result": "blocked",
             "message": "no blocking geometry findings"
+          },
+          {
+            "code": "geometry_warning",
+            "ok": false,
+            "result": "info",
+            "message": "E-010-A, E-010-B, E-010-C, E-010-D, E-010-E: parts-too-close: gap 0.1 mm between separate parts, Z 1\u20137 mm. If they should come apart, open the gap to at least 0.5 mm; if they should be one part, join them in the model."
           },
           {
             "code": "factor_not_realized",

@@ -2750,7 +2750,7 @@
       "error": null,
       "check": {
         "status": "needs_approval",
-        "at": "2026-10-25T02:12:19+00:00",
+        "at": "2026-10-25T03:55:07+00:00",
         "guards": [
           {
             "code": "owner_stopped",
@@ -2817,6 +2817,24 @@
             "ok": true,
             "result": "blocked",
             "message": "no blocking geometry findings"
+          },
+          {
+            "code": "geometry_warning",
+            "ok": false,
+            "result": "info",
+            "message": "E-006-A: overhang-flip-on-A: front faces at 89.75 mm (+x), 89.75 mm (-x). Lean the part back far enough that every front facet faces up, and test it on an orientation coupon first."
+          },
+          {
+            "code": "geometry_warning",
+            "ok": false,
+            "result": "info",
+            "message": "E-006-A: feature-below-line-width: 634 layers between 2.7 and 129.3 mm. Make them at least 0.9 mm wide, or check the slice preview at those heights that they print as real walls."
+          },
+          {
+            "code": "geometry_warning",
+            "ok": false,
+            "result": "info",
+            "message": "E-006-A: parts-too-close: gap 0.1 mm between separate parts, Z 1\u2013131 mm. If they should come apart, open the gap to at least 0.5 mm; if they should be one part, join them in the model."
           },
           {
             "code": "per_test_time",
