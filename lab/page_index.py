@@ -69,7 +69,8 @@ def _usage(e: dict) -> dict | None:
 
 
 def _photos(e: dict, root: Path) -> list[dict]:
-    return [{"run": r["id"], "path": p["path"], "source": p.get("source"), "captured_at": p.get("captured_at")}
+    return [{"run": r["id"], "path": p["path"], "sha256": p.get("sha256") or _sha(root / p["path"]), "source": p.get("source"),
+             "captured_at": p.get("captured_at")}
             for r in e.get("print_runs") or [] for p in r.get("photos") or []
             if p.get("path") and (root / p["path"]).is_file()]
 

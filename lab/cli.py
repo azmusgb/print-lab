@@ -234,8 +234,9 @@ def main(argv=None) -> int:
 
     from lab import cli_loop
     cli_loop.register(sub)
-    from lab import page
+    from lab import page, sync
     page.register(sub)
+    sync.register(sub)
 
     args = p.parse_args(argv)
     try:
@@ -243,6 +244,7 @@ def main(argv=None) -> int:
         if args.cmd in REFRESHES_PAGE:
             try:
                 page.refresh(project_dir(args.project))
+                sync.background(project_dir(args.project))
             except Exception as e:  # the page is a view; never fail the command over it
                 print(f"(page not rebuilt: {e})", file=sys.stderr)
         return rc
