@@ -231,6 +231,8 @@ def main(argv=None) -> int:
 
     from lab import cli_loop
     cli_loop.register(sub)
+    from lab import page
+    page.register(sub)
 
     args = p.parse_args(argv)
     try:
