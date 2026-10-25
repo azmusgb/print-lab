@@ -58,7 +58,7 @@
     "tabs": false,
     "notes": []
   },
-  "status": "needs_approval",
+  "status": "approved",
   "variants": [
     {
       "id": "E-014-A",
@@ -2876,7 +2876,19 @@
       }
     }
   ],
-  "approval": null,
+  "approval": {
+    "build_id": "BLD-014-01",
+    "artifact_sha256": "a2f8e87e12f70a9cf9e79c449564dbdca03eb34e229e2f1a593d991f3f98d84f",
+    "approved_reasons": [
+      "full_part_required",
+      "per_test_time",
+      "per_test_material",
+      "question_time"
+    ],
+    "by": "owner",
+    "at": "2026-10-25T21:19:50+00:00",
+    "reason": "6-inch pair needed by 26 Oct; Kexcelled preset chosen; cut apart with a knife"
+  },
   "print_runs": [],
   "owner_verdict": null,
   "superseded_verdicts": [],

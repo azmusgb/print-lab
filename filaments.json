@@ -19,7 +19,8 @@
     "fan_speed_min_pct": 80,
     "fan_speed_max_pct": 100,
     "pressure_advance_k": 0.026,
-    "notes": "Lot C6719062. Matte PLA shows small flow and speed changes as sheen bands. Keep outer wall at <=80 mm/s and inner walls capped to prevent melt deficit. Maintain consistent 80-100% cooling."
+    "notes": "Lot C6719062. Matte PLA shows small flow and speed changes as sheen bands. Keep outer wall at <=80 mm/s and inner walls capped to prevent melt deficit. Maintain consistent 80-100% cooling.",
+    "made_in": "China"
   },
   {
     "spool_id": 2,
@@ -40,7 +41,8 @@
     "fan_speed_min_pct": 80,
     "fan_speed_max_pct": 100,
     "pressure_advance_k": 0.026,
-    "notes": "Same formulation as Spool 1. Cap outer wall speed to <=80 mm/s to preserve matte texture and avoid sheen transitions."
+    "notes": "Same formulation as Spool 1. Cap outer wall speed to <=80 mm/s to preserve matte texture and avoid sheen transitions.",
+    "made_in": "China"
   },
   {
     "spool_id": 3,
@@ -61,7 +63,9 @@
     "fan_speed_min_pct": 80,
     "fan_speed_max_pct": 100,
     "pressure_advance_k": 0.026,
-    "notes": "Lower melting point polymer base. Keep bed at 50-55 °C max to prevent thermal softening/elephant foot. Print at 205 °C for deepest matte finish."
+    "notes": "Lower melting point polymer base. Keep bed at 50-55 °C max to prevent thermal softening/elephant foot. Print at 205 °C for deepest matte finish.",
+    "net_weight_kg": 1,
+    "lot": "none on label"
   },
   {
     "spool_id": 4,
@@ -83,7 +87,8 @@
     "fan_speed_min_pct": 100,
     "fan_speed_max_pct": 100,
     "pressure_advance_k": 0.023,
-    "notes": "Standard gloss/satin PLA. Lot 01460618Y2. Rated 200-210 °C at 50-100 mm/s; bump to 215-225 °C if running at 100-200 mm/s."
+    "notes": "Standard gloss/satin PLA. Lot 01460618Y2. Rated 200-210 °C at 50-100 mm/s; bump to 215-225 °C if running at 100-200 mm/s.",
+    "net_weight_kg": 1
   },
   {
     "spool_id": 5,
@@ -105,7 +110,8 @@
     "fan_speed_min_pct": 100,
     "fan_speed_max_pct": 100,
     "pressure_advance_k": 0.023,
-    "notes": "Standard general-purpose PLA. Lot 01660608Y. Identical resin matrix to Spool 4. Excellent for calibration cubes, test strips, and functional brackets."
+    "notes": "Standard general-purpose PLA. Lot 01660608Y. Identical resin matrix to Spool 4. Excellent for calibration cubes, test strips, and functional brackets.",
+    "net_weight_kg": 1
   },
   {
     "spool_id": 6,
@@ -127,6 +133,7 @@
     "fan_speed_min_pct": 90,
     "fan_speed_max_pct": 100,
     "pressure_advance_k": 0.024,
-    "notes": "High-speed polymer matrix blended with dark particulate flecks. Best on 0.4 mm and 0.6 mm nozzles. Capable of 150-300 mm/s printing without extrusion deficit."
+    "notes": "High-speed polymer matrix blended with dark particulate flecks. Best on 0.4 mm and 0.6 mm nozzles. Capable of 150-300 mm/s printing without extrusion deficit.",
+    "net_weight_kg": 1
   }
 ]
