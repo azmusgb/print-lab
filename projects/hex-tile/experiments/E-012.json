@@ -1,0 +1,1337 @@
+{
+  "schema": 1,
+  "record_type": "experiment",
+  "id": "E-012",
+  "project": "hex-tile",
+  "question": "Q-003",
+  "provenance": "prospective",
+  "question_text": "Rib gap sweep: which gap lets the pair brace while printing and still twist apart?",
+  "hypothesis": "The rib tip-to-partner gap sets the tack: 0.10 mm fused (E-008), 0.5 mm gave no bracing and the strip failed (E-011); the design meant 0.15 mm.",
+  "prediction": "0.15 or 0.20 mm prints as cleanly as E-008 and twists apart by hand; 0.10 mm stays fused.",
+  "why_this_test": "One plate shows the three gaps side by side at the height where E-008 printed well.",
+  "test_kind": "height_strip",
+  "factor": {
+    "name": "model_version",
+    "values": [
+      "sources/hexagon_v58_X2D_0.6nozzle.3mf",
+      "sources/hexagon_v58g015_X2D_0.6nozzle.3mf",
+      "sources/hexagon_v58g020_X2D_0.6nozzle.3mf"
+    ],
+    "unit": ""
+  },
+  "factor_scope": "bundle",
+  "dependent_adjustments": {},
+  "controlled": {},
+  "baseline": {},
+  "findings": [],
+  "judge_on": "each strip prints cleanly (no loose faces or strings), and each pair twists apart by hand without breaking",
+  "expect": null,
+  "derived_from_artifact": [],
+  "derived_from_result": [],
+  "controls": {
+    "witness_required": false,
+    "anchor": null
+  },
+  "reference_variants": [],
+  "build_spec": {
+    "kind": "height_strip",
+    "source": "sources/hexagon_v58_X2D_0.6nozzle.3mf",
+    "object": "v58_06_6in",
+    "z": [
+      80.0,
+      131.982
+    ],
+    "judged": [
+      86.0,
+      125.982
+    ],
+    "base": "sources/hexagon_v57_X2D_0.4nozzle.3mf",
+    "variants": [
+      {
+        "id": "E-012-A",
+        "tab": "12A",
+        "settings_patch": {},
+        "copies": 1,
+        "source": "sources/hexagon_v58_X2D_0.6nozzle.3mf"
+      },
+      {
+        "id": "E-012-B",
+        "tab": "12B",
+        "settings_patch": {},
+        "copies": 1,
+        "source": "sources/hexagon_v58g015_X2D_0.6nozzle.3mf"
+      },
+      {
+        "id": "E-012-C",
+        "tab": "12C",
+        "settings_patch": {},
+        "copies": 1,
+        "source": "sources/hexagon_v58g020_X2D_0.6nozzle.3mf"
+      }
+    ],
+    "witness": false,
+    "anchor": null,
+    "tabs": true,
+    "notes": []
+  },
+  "status": "needs_approval",
+  "variants": [
+    {
+      "id": "E-012-A",
+      "tab": "12A",
+      "factor_value": "sources/hexagon_v58_X2D_0.6nozzle.3mf",
+      "copies": 1
+    },
+    {
+      "id": "E-012-B",
+      "tab": "12B",
+      "factor_value": "sources/hexagon_v58g015_X2D_0.6nozzle.3mf",
+      "copies": 1
+    },
+    {
+      "id": "E-012-C",
+      "tab": "12C",
+      "factor_value": "sources/hexagon_v58g020_X2D_0.6nozzle.3mf",
+      "copies": 1
+    }
+  ],
+  "builds": [
+    {
+      "id": "BLD-012-01",
+      "ok": true,
+      "at": "2026-10-25T06:34:54+00:00",
+      "inputs": {
+        "model": {
+          "sources/hexagon_v58_X2D_0.6nozzle.3mf": "24ec2fef4762ec2094cde108a9a24b0c38b515d60612934f7fadad8f84d6705e",
+          "sources/hexagon_v58g015_X2D_0.6nozzle.3mf": "545d2789652d709efefb8b6d3cf3696a6927918f84354a88023f5f9287741f24",
+          "sources/hexagon_v58g020_X2D_0.6nozzle.3mf": "f578a8c2d18c01d3dbb1911be54a5319b766312d87c56daf83e582bcffedee9e"
+        },
+        "settings": "1d4c063e2ed94f9358dd1e496cb5cfbe1bfac507f531d4ef13a94c98ec0822b9",
+        "build_spec_sha256": "3eac3fc54ab165e3b2ebcf0da6a2129ff15660991f81bc16a28ca3bec88e4099",
+        "builder_version": "1a1.1",
+        "builder_fingerprint": "4cd1ccdc50000d43f52d4268204b7b73f4d120efab9b268ebe9b4c9948a01c06",
+        "openscad": "2026.10.11",
+        "bambu_studio": "02.08.02.61"
+      },
+      "job": "job-20261025T063454-7f6a",
+      "artifact": "prints/hex-tile_E-012_BLD-012-01.3mf",
+      "artifact_sha256": "b213f68883fad51e997cc85d6935440d702224635226269db46413d797fd8748",
+      "sliced": "prints/sliced/hex-tile_E-012_BLD-012-01.gcode.3mf",
+      "estimate": {
+        "minutes": 292.5,
+        "g": 87.57
+      },
+      "plate": {
+        "objects": [
+          "E-012-A",
+          "E-012-B",
+          "E-012-C"
+        ],
+        "placements": [
+          [
+            92.24,
+            128.0
+          ],
+          [
+            127.95,
+            128.0
+          ],
+          [
+            163.71,
+            128.0
+          ]
+        ]
+      },
+      "measured": {
+        "layer_time_median_s": 40.95,
+        "layer_time_profile": [
+          [
+            0.2,
+            475.91
+          ],
+          [
+            0.4,
+            56.01
+          ],
+          [
+            0.6,
+            56.4
+          ],
+          [
+            0.8,
+            54.46
+          ],
+          [
+            1.0,
+            54.73
+          ],
+          [
+            1.2,
+            52.06
+          ],
+          [
+            1.4,
+            51.98
+          ],
+          [
+            1.6,
+            51.89
+          ],
+          [
+            1.8,
+            50.49
+          ],
+          [
+            2.0,
+            50.38
+          ],
+          [
+            2.2,
+            50.3
+          ],
+          [
+            2.4,
+            50.21
+          ],
+          [
+            2.6,
+            50.13
+          ],
+          [
+            2.8,
+            50.05
+          ],
+          [
+            3.0,
+            49.97
+          ],
+          [
+            3.2,
+            49.89
+          ],
+          [
+            3.4,
+            49.81
+          ],
+          [
+            3.6,
+            49.72
+          ],
+          [
+            3.8,
+            49.64
+          ],
+          [
+            4.0,
+            49.56
+          ],
+          [
+            4.2,
+            49.48
+          ],
+          [
+            4.4,
+            49.39
+          ],
+          [
+            4.6,
+            49.31
+          ],
+          [
+            4.8,
+            49.23
+          ],
+          [
+            5.0,
+            49.15
+          ],
+          [
+            5.2,
+            49.07
+          ],
+          [
+            5.4,
+            48.98
+          ],
+          [
+            5.6,
+            48.9
+          ],
+          [
+            5.8,
+            48.82
+          ],
+          [
+            6.0,
+            48.74
+          ],
+          [
+            6.2,
+            48.66
+          ],
+          [
+            6.4,
+            48.57
+          ],
+          [
+            6.6,
+            48.49
+          ],
+          [
+            6.8,
+            48.41
+          ],
+          [
+            7.0,
+            48.33
+          ],
+          [
+            7.2,
+            48.25
+          ],
+          [
+            7.4,
+            48.17
+          ],
+          [
+            7.6,
+            48.09
+          ],
+          [
+            7.8,
+            48.0
+          ],
+          [
+            8.0,
+            47.92
+          ],
+          [
+            8.2,
+            47.84
+          ],
+          [
+            8.4,
+            47.76
+          ],
+          [
+            8.6,
+            47.68
+          ],
+          [
+            8.8,
+            47.59
+          ],
+          [
+            9.0,
+            47.51
+          ],
+          [
+            9.2,
+            47.43
+          ],
+          [
+            9.4,
+            47.35
+          ],
+          [
+            9.6,
+            47.27
+          ],
+          [
+            9.8,
+            47.19
+          ],
+          [
+            10.0,
+            47.1
+          ],
+          [
+            10.2,
+            47.02
+          ],
+          [
+            10.4,
+            46.94
+          ],
+          [
+            10.6,
+            46.86
+          ],
+          [
+            10.8,
+            46.78
+          ],
+          [
+            11.0,
+            46.69
+          ],
+          [
+            11.2,
+            46.61
+          ],
+          [
+            11.4,
+            46.53
+          ],
+          [
+            11.6,
+            46.45
+          ],
+          [
+            11.8,
+            46.37
+          ],
+          [
+            12.0,
+            46.28
+          ],
+          [
+            12.2,
+            46.2
+          ],
+          [
+            12.4,
+            46.12
+          ],
+          [
+            12.6,
+            46.04
+          ],
+          [
+            12.8,
+            45.96
+          ],
+          [
+            13.0,
+            45.87
+          ],
+          [
+            13.2,
+            45.79
+          ],
+          [
+            13.4,
+            45.71
+          ],
+          [
+            13.6,
+            45.63
+          ],
+          [
+            13.8,
+            45.55
+          ],
+          [
+            14.0,
+            44.97
+          ],
+          [
+            14.2,
+            44.89
+          ],
+          [
+            14.4,
+            44.81
+          ],
+          [
+            14.6,
+            44.73
+          ],
+          [
+            14.8,
+            44.65
+          ],
+          [
+            15.0,
+            44.56
+          ],
+          [
+            15.2,
+            44.49
+          ],
+          [
+            15.4,
+            44.41
+          ],
+          [
+            15.6,
+            44.32
+          ],
+          [
+            15.8,
+            44.24
+          ],
+          [
+            16.0,
+            44.16
+          ],
+          [
+            16.2,
+            44.08
+          ],
+          [
+            16.4,
+            44.0
+          ],
+          [
+            16.6,
+            43.91
+          ],
+          [
+            16.8,
+            43.83
+          ],
+          [
+            17.0,
+            43.76
+          ],
+          [
+            17.2,
+            43.67
+          ],
+          [
+            17.4,
+            43.59
+          ],
+          [
+            17.6,
+            43.51
+          ],
+          [
+            17.8,
+            43.43
+          ],
+          [
+            18.0,
+            43.35
+          ],
+          [
+            18.2,
+            43.27
+          ],
+          [
+            18.4,
+            43.19
+          ],
+          [
+            18.6,
+            43.11
+          ],
+          [
+            18.8,
+            43.03
+          ],
+          [
+            19.0,
+            42.94
+          ],
+          [
+            19.2,
+            42.86
+          ],
+          [
+            19.4,
+            42.78
+          ],
+          [
+            19.6,
+            42.7
+          ],
+          [
+            19.8,
+            42.62
+          ],
+          [
+            20.0,
+            42.54
+          ],
+          [
+            20.2,
+            42.45
+          ],
+          [
+            20.4,
+            42.37
+          ],
+          [
+            20.6,
+            42.29
+          ],
+          [
+            20.8,
+            42.21
+          ],
+          [
+            21.0,
+            42.13
+          ],
+          [
+            21.2,
+            42.05
+          ],
+          [
+            21.4,
+            41.97
+          ],
+          [
+            21.6,
+            41.89
+          ],
+          [
+            21.8,
+            41.8
+          ],
+          [
+            22.0,
+            41.73
+          ],
+          [
+            22.2,
+            41.65
+          ],
+          [
+            22.4,
+            41.56
+          ],
+          [
+            22.6,
+            41.48
+          ],
+          [
+            22.8,
+            41.4
+          ],
+          [
+            23.0,
+            41.32
+          ],
+          [
+            23.2,
+            41.24
+          ],
+          [
+            23.4,
+            41.16
+          ],
+          [
+            23.6,
+            41.07
+          ],
+          [
+            23.8,
+            41.0
+          ],
+          [
+            24.0,
+            40.91
+          ],
+          [
+            24.2,
+            40.83
+          ],
+          [
+            24.4,
+            40.75
+          ],
+          [
+            24.6,
+            40.67
+          ],
+          [
+            24.8,
+            40.59
+          ],
+          [
+            25.0,
+            40.51
+          ],
+          [
+            25.2,
+            40.43
+          ],
+          [
+            25.4,
+            40.34
+          ],
+          [
+            25.6,
+            40.26
+          ],
+          [
+            25.8,
+            40.18
+          ],
+          [
+            26.0,
+            40.1
+          ],
+          [
+            26.2,
+            40.02
+          ],
+          [
+            26.4,
+            39.94
+          ],
+          [
+            26.6,
+            39.86
+          ],
+          [
+            26.8,
+            39.78
+          ],
+          [
+            27.0,
+            39.69
+          ],
+          [
+            27.2,
+            39.62
+          ],
+          [
+            27.4,
+            39.53
+          ],
+          [
+            27.6,
+            39.45
+          ],
+          [
+            27.8,
+            39.37
+          ],
+          [
+            28.0,
+            39.29
+          ],
+          [
+            28.2,
+            39.21
+          ],
+          [
+            28.4,
+            39.13
+          ],
+          [
+            28.6,
+            39.05
+          ],
+          [
+            28.8,
+            38.96
+          ],
+          [
+            29.0,
+            38.88
+          ],
+          [
+            29.2,
+            38.8
+          ],
+          [
+            29.4,
+            38.72
+          ],
+          [
+            29.6,
+            38.64
+          ],
+          [
+            29.8,
+            38.56
+          ],
+          [
+            30.0,
+            38.48
+          ],
+          [
+            30.2,
+            38.4
+          ],
+          [
+            30.4,
+            38.32
+          ],
+          [
+            30.6,
+            38.23
+          ],
+          [
+            30.8,
+            38.15
+          ],
+          [
+            31.0,
+            38.07
+          ],
+          [
+            31.2,
+            37.99
+          ],
+          [
+            31.4,
+            37.91
+          ],
+          [
+            31.6,
+            37.83
+          ],
+          [
+            31.8,
+            37.75
+          ],
+          [
+            32.0,
+            37.67
+          ],
+          [
+            32.2,
+            37.58
+          ],
+          [
+            32.4,
+            37.51
+          ],
+          [
+            32.6,
+            37.42
+          ],
+          [
+            32.8,
+            37.34
+          ],
+          [
+            33.0,
+            37.26
+          ],
+          [
+            33.2,
+            37.18
+          ],
+          [
+            33.4,
+            37.1
+          ],
+          [
+            33.6,
+            37.02
+          ],
+          [
+            33.8,
+            36.94
+          ],
+          [
+            34.0,
+            36.85
+          ],
+          [
+            34.2,
+            36.77
+          ],
+          [
+            34.4,
+            36.69
+          ],
+          [
+            34.6,
+            36.61
+          ],
+          [
+            34.8,
+            36.53
+          ],
+          [
+            35.0,
+            36.45
+          ],
+          [
+            35.2,
+            36.37
+          ],
+          [
+            35.4,
+            36.29
+          ],
+          [
+            35.6,
+            36.21
+          ],
+          [
+            35.8,
+            36.12
+          ],
+          [
+            36.0,
+            36.04
+          ],
+          [
+            36.2,
+            35.96
+          ],
+          [
+            36.4,
+            35.88
+          ],
+          [
+            36.6,
+            35.8
+          ],
+          [
+            36.8,
+            35.72
+          ],
+          [
+            37.0,
+            35.64
+          ],
+          [
+            37.2,
+            35.56
+          ],
+          [
+            37.4,
+            35.47
+          ],
+          [
+            37.6,
+            35.39
+          ],
+          [
+            37.8,
+            35.31
+          ],
+          [
+            38.0,
+            35.23
+          ],
+          [
+            38.2,
+            35.15
+          ],
+          [
+            38.4,
+            35.07
+          ],
+          [
+            38.6,
+            34.99
+          ],
+          [
+            38.8,
+            34.91
+          ],
+          [
+            39.0,
+            34.83
+          ],
+          [
+            39.2,
+            34.74
+          ],
+          [
+            39.4,
+            34.66
+          ],
+          [
+            39.6,
+            34.58
+          ],
+          [
+            39.8,
+            34.5
+          ],
+          [
+            40.0,
+            34.42
+          ],
+          [
+            40.2,
+            34.34
+          ],
+          [
+            40.4,
+            34.26
+          ],
+          [
+            40.6,
+            34.18
+          ],
+          [
+            40.8,
+            34.09
+          ],
+          [
+            41.0,
+            34.02
+          ],
+          [
+            41.2,
+            33.93
+          ],
+          [
+            41.4,
+            33.85
+          ],
+          [
+            41.6,
+            33.77
+          ],
+          [
+            41.8,
+            33.74
+          ],
+          [
+            42.0,
+            33.66
+          ],
+          [
+            42.2,
+            33.58
+          ],
+          [
+            42.4,
+            33.5
+          ],
+          [
+            42.6,
+            33.42
+          ],
+          [
+            42.8,
+            33.34
+          ],
+          [
+            43.0,
+            33.26
+          ],
+          [
+            43.2,
+            33.18
+          ],
+          [
+            43.4,
+            33.09
+          ],
+          [
+            43.6,
+            33.01
+          ],
+          [
+            43.8,
+            32.88
+          ],
+          [
+            44.0,
+            32.8
+          ],
+          [
+            44.2,
+            32.72
+          ],
+          [
+            44.4,
+            32.64
+          ],
+          [
+            44.6,
+            32.55
+          ],
+          [
+            44.8,
+            32.48
+          ],
+          [
+            45.0,
+            32.39
+          ],
+          [
+            45.2,
+            32.31
+          ],
+          [
+            45.4,
+            32.22
+          ],
+          [
+            45.6,
+            32.15
+          ],
+          [
+            45.8,
+            32.06
+          ],
+          [
+            46.0,
+            31.98
+          ],
+          [
+            46.2,
+            31.9
+          ],
+          [
+            46.4,
+            31.81
+          ],
+          [
+            46.6,
+            31.78
+          ],
+          [
+            46.8,
+            31.7
+          ],
+          [
+            47.0,
+            31.82
+          ],
+          [
+            47.2,
+            34.21
+          ],
+          [
+            47.4,
+            42.08
+          ],
+          [
+            47.6,
+            42.5
+          ],
+          [
+            47.8,
+            42.74
+          ],
+          [
+            48.0,
+            43.84
+          ],
+          [
+            48.2,
+            44.98
+          ],
+          [
+            48.4,
+            47.08
+          ],
+          [
+            48.6,
+            47.76
+          ],
+          [
+            48.8,
+            48.11
+          ],
+          [
+            49.0,
+            49.49
+          ],
+          [
+            49.2,
+            50.23
+          ],
+          [
+            49.4,
+            52.32
+          ],
+          [
+            49.6,
+            37.98
+          ],
+          [
+            49.8,
+            29.93
+          ],
+          [
+            50.0,
+            29.98
+          ],
+          [
+            50.2,
+            29.74
+          ],
+          [
+            50.4,
+            29.81
+          ],
+          [
+            50.6,
+            34.25
+          ],
+          [
+            50.8,
+            34.1
+          ],
+          [
+            51.0,
+            34.37
+          ],
+          [
+            51.2,
+            38.57
+          ],
+          [
+            51.4,
+            35.56
+          ],
+          [
+            51.6,
+            32.76
+          ],
+          [
+            51.8,
+            31.13
+          ],
+          [
+            52.0,
+            34.22
+          ]
+        ]
+      },
+      "error": null,
+      "factor_scope": "bundle",
+      "bundle_differences": [
+        {
+          "where": "geometry",
+          "key": "mesh",
+          "a": "E-012-A",
+          "b": "E-012-B"
+        },
+        {
+          "where": "geometry",
+          "key": "mesh",
+          "a": "E-012-A",
+          "b": "E-012-C"
+        }
+      ],
+      "check": {
+        "status": "needs_approval",
+        "at": "2026-10-25T06:35:00+00:00",
+        "guards": [
+          {
+            "code": "owner_stopped",
+            "ok": true,
+            "result": "blocked",
+            "message": "question active"
+          },
+          {
+            "code": "auto_stopped",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "no automatic stop"
+          },
+          {
+            "code": "full_part_required",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "diagnostic test type"
+          },
+          {
+            "code": "autonomy_level",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "autonomy level 2"
+          },
+          {
+            "code": "refuted_dependency",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "no contradicted reasoning"
+          },
+          {
+            "code": "no_estimate",
+            "ok": true,
+            "result": "rebuild",
+            "message": "estimate present"
+          },
+          {
+            "code": "stale_build",
+            "ok": true,
+            "result": "rebuild",
+            "message": "inputs unchanged since the build"
+          },
+          {
+            "code": "factor_not_applied",
+            "ok": true,
+            "result": "blocked",
+            "message": "the declared factor differs between the variants"
+          },
+          {
+            "code": "reference_not_comparable",
+            "ok": true,
+            "result": "blocked",
+            "message": "references compared"
+          },
+          {
+            "code": "undeclared_difference",
+            "ok": true,
+            "result": "blocked",
+            "message": "only the declared factor differs"
+          },
+          {
+            "code": "geometry_blocking",
+            "ok": true,
+            "result": "blocked",
+            "message": "no blocking geometry findings"
+          },
+          {
+            "code": "geometry_warning",
+            "ok": false,
+            "result": "info",
+            "message": "E-012-A, E-012-B: parts-too-close: gap 0.1 mm between separate parts, Z 1\u201351 mm. If they should come apart, open the gap to at least 0.5 mm; if they should be one part, join them in the model."
+          },
+          {
+            "code": "geometry_warning",
+            "ok": false,
+            "result": "info",
+            "message": "E-012-C: parts-too-close: gap 0.2 mm between separate parts, Z 1\u201351 mm. If they should come apart, open the gap to at least 0.5 mm; if they should be one part, join them in the model."
+          },
+          {
+            "code": "per_test_time",
+            "ok": false,
+            "result": "needs_approval",
+            "message": "292.5 / 45 min per test"
+          },
+          {
+            "code": "per_test_material",
+            "ok": false,
+            "result": "needs_approval",
+            "message": "87.6 / 25 g per test"
+          },
+          {
+            "code": "question_time",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "60.5 + 292.5 / 360 min for Q-003"
+          },
+          {
+            "code": "question_material",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "16.8 + 87.6 / 250 g for Q-003"
+          },
+          {
+            "code": "retry_limit",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "0 / 2 failed attempts"
+          },
+          {
+            "code": "plate_mismatch",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "plate timing matches the compared plates"
+          }
+        ]
+      }
+    }
+  ],
+  "approval": null,
+  "print_runs": [],
+  "owner_verdict": null,
+  "superseded_verdicts": [],
+  "anchors": [],
+  "ai_observations": [],
+  "comparison_validity": null,
+  "prediction_outcome": null,
+  "analysis": []
+}

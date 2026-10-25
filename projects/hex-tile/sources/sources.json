@@ -31,5 +31,19 @@
     "path": "sources/scad/",
     "source": "downloads",
     "note": "the tile's OpenSCAD sources, recovered from ~/Downloads on 25 Oct 2026: hex_wall_tile v50-v57 (v57: closed back, full-height breakaway ribs that stop rib_kiss short of the partner tile so the pair only tacks and twists apart) and the earlier parametric_faceted_hex_wall_tile_mount v16-v39"
+  },
+  {
+    "path": "sources/hexagon_v58g015_X2D_0.6nozzle.3mf",
+    "sha256": "545d2789652d709efefb8b6d3cf3696a6927918f84354a88023f5f9287741f24",
+    "source": "derived",
+    "derived_from": "sources/hexagon_v58_X2D_0.6nozzle.3mf",
+    "change": "each tile moved 0.025 mm outward: rib tip to partner tile 0.10 -> 0.15 mm (rib_kiss sweep after E-011: 0.5 mm stopped the tiles bracing each other); object names kept as v58 so the same object name builds all three"
+  },
+  {
+    "path": "sources/hexagon_v58g020_X2D_0.6nozzle.3mf",
+    "sha256": "f578a8c2d18c01d3dbb1911be54a5319b766312d87c56daf83e582bcffedee9e",
+    "source": "derived",
+    "derived_from": "sources/hexagon_v58_X2D_0.6nozzle.3mf",
+    "change": "each tile moved 0.05 mm outward: rib tip to partner tile 0.10 -> 0.20 mm (rib_kiss sweep after E-011: 0.5 mm stopped the tiles bracing each other); object names kept as v58 so the same object name builds all three"
   }
 ]

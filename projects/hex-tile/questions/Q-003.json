@@ -13,7 +13,8 @@
     "max_g": 250
   },
   "experiments": [
-    "E-011"
+    "E-011",
+    "E-012"
   ],
   "plans": [],
   "stops": []
