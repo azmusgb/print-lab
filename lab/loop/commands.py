@@ -357,6 +357,29 @@ def rebuild_question(paths: ProjectPaths, qid: str) -> list[str]:
     return report
 
 
+CRITERION_RE = re.compile(r"^([a-z]{1,12})=([^:]+):([a-z]{1,12}(?:,[a-z]{1,12}){1,3})$")
+
+
+def set_criteria(paths: ProjectPaths, eid: str, specs: list[str]) -> dict:
+    """The experiment's own per-strip questions, e.g. 'print=Printed cleanly?:clean,flawed,failed'. Allowed until the
+    first verdict: after it, changing them would change what that verdict meant."""
+    out = []
+    for spec in specs:
+        m = CRITERION_RE.match(spec.strip())
+        if not m:
+            raise ValueError(f"Give each criterion as key=Label?:choice,choice (a lowercase key, 2 to 4 lowercase "
+                             f"choices), e.g. {'print=Printed cleanly?:clean,flawed,failed'!r}; {spec!r} isn't one.")
+        if m[1] in {c["key"] for c in out}:
+            raise ValueError(f"The criterion {m[1]!r} is given twice.")
+        out.append({"key": m[1], "label": m[2].strip(), "choices": m[3].split(",")})
+    with record_lock(paths.locks, eid, f"lab exp criteria {eid}"):
+        e = load_experiment(paths, eid)
+        if e.get("owner_verdict"):
+            raise ValueError(f"{eid} already has a verdict, so its criteria can't change.")
+        e["criteria"] = out
+        return save_experiment(paths, e)
+
+
 def abandon(paths: ProjectPaths, eid: str, reason: str) -> dict:
     with record_lock(paths.locks, eid, f"lab exp abandon {eid}"):
         e = load_experiment(paths, eid)

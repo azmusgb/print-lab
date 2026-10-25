@@ -8,7 +8,7 @@ STATUSES = ("planned", "built", "build_failed", "ready", "needs_approval", "appr
             "abandoned")
 PROVENANCES = ("prospective", "migrated", "post_hoc")
 STRENGTHS = ("slightly", "clearly", "a lot")
-VERDICT_KINDS = ("ranking", "inconclusive", "acceptance", "sweep")
+VERDICT_KINDS = ("ranking", "inconclusive", "acceptance", "sweep", "criteria")
 GRADES = ("clean", "faint", "banded")
 WITNESS_CONDITIONS = ("normal", "abnormal", "inconclusive")
 ANCHOR_CONDITIONS = ("same", "different", "inconclusive")
@@ -33,6 +33,7 @@ BUILD = {"id": F(S, True), "ok": F(B, True), "at": F((S, NUL)), "inputs": F(D), 
          "bundle_differences": F(L), "notes": F(L), "realization": F((D, NUL)), "check": F((D, NUL)), "legacy": F(A)}
 RUN = {"id": F(S, True), "build_id": F((S, NUL)), "started_at": F((S, NUL)), "setup": F((D, NUL)),
        "baseline_missing": F(L), "usage": F((D, NUL)), "failed": F((D, NUL)), "photos": F(L), "legacy": F(A)}
+CRITERION = {"key": F(S, True), "label": F(S, True), "choices": F(L, True)}
 MARK = {"variant": F(S, True), "mark_z_mm": F((N, NUL)), "defect_z_mm": F((N, NUL))}
 WITNESS = {"id": F(S, True), "condition": F(S, True, WITNESS_CONDITIONS), "note": F((S, NUL))}
 VERDICT = {"kind": F(S, True, VERDICT_KINDS), "print_runs": F(L), "order": F(L, each=F(L)),
@@ -62,7 +63,7 @@ EXPERIMENT = {
     "superseded_verdicts": F(L), "anchors": F(L, each=F(D, fields=ANCHOR)),
     "ai_observations": F(L, each=F(D, fields=OBSERVATION)), "comparison_validity": F((D, NUL)),
     "prediction_outcome": F((S, NUL), choices=OUTCOMES + (None,)), "analysis": F(L, each=F(D, fields=ANALYSIS)),
-    "legacy": F(A)}
+    "criteria": F(L, each=F(D, fields=CRITERION)), "legacy": F(A)}
 STOP = {"reason": F(S, True), "at": F(S, True), "resumed_at": F((S, NUL)), "resume": F((D, NUL)),
         "auto_code": F((S, NUL))}
 PLAN = {"id": F(S, True), "after": F((S, NUL)), "if": F(S, True), "next": F(S, True), "status": F(S)}

@@ -68,6 +68,14 @@ def cmd_exp_verdict(args) -> int:
     return 0
 
 
+def cmd_exp_criteria(args) -> int:
+    from lab.loop.commands import set_criteria
+    e = set_criteria(_paths(args), args.id, args.add)
+    for c in e["criteria"]:
+        print(f"{e['id']}: {c['label']} ({' / '.join(c['choices'])})")
+    return 0
+
+
 def cmd_exp_usage(args) -> int:
     from lab.loop.commands import record_usage
     pct = float(args.failed_at.rstrip("%")) if args.failed_at else None
@@ -285,6 +293,12 @@ def register(sub) -> None:
     ap.add_argument("--reason", required=True)
     ap.add_argument("--project", default="hex-tile")
     ap.set_defaults(fn=cmd_exp_approve)
+    cr = es.add_parser("criteria", help="the experiment's own per-strip questions, set before its verdict")
+    cr.add_argument("id")
+    cr.add_argument("--add", action="append", required=True,
+                    help="key=Label?:choice,choice, e.g. 'apart=Twists apart by hand?:yes,hard,no'")
+    cr.add_argument("--project", default="hex-tile")
+    cr.set_defaults(fn=cmd_exp_criteria)
     ab = es.add_parser("abandon", help="stop an experiment on purpose")
     ab.add_argument("id")
     ab.add_argument("--reason", required=True)
