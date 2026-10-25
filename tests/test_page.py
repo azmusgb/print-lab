@@ -71,3 +71,18 @@ def test_bambuddy_colours_only_accept_hex(monkeypatch):
     spools = [{"color_name": "Grey", "rgba": "9A9A9AFF"}, {"color_name": "Evil", "rgba": "red;}</style><script>"}]
     monkeypatch.setattr(urllib.request, "urlopen", lambda *a, **k: io.BytesIO(j.dumps(spools).encode()))
     assert page.bambuddy_colours(url="http://x") == {"grey": "#9A9A9A"}
+
+
+def test_current_experiment_and_wipe(tmp_path):
+    p = _project(tmp_path)
+    (p / "photos" / "PR-9-1.jpg").write_bytes(b"\xff\xd8x")
+    (p / "experiments" / "E-3.json").write_text(json.dumps({
+        "id": "E-3", "status": "printed", "question_text": "Slower walls?", "why_this_test": "The <only> difference.",
+        "reference_variants": ["E-1-A"],
+        "print_runs": [{"id": "PR-9", "photos": [{"path": "photos/PR-9-1.jpg"}]}]}))
+    q = json.loads((p / "questions" / "Q-1.json").read_text()); q["experiments"].append("E-3")
+    (p / "questions" / "Q-1.json").write_text(json.dumps(q))
+    html = page.build(p, colours={})
+    assert "Why this test?</b> The &lt;only&gt; difference." in html  # the open experiment, up front
+    assert 'class="wipe"' in html and 'src="photos/PR-1-1.jpg"' in html and 'class="after" src="photos/PR-9-1.jpg"' in html
+    assert "Record a verdict from the photos." in html

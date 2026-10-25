@@ -108,7 +108,25 @@ def _needs(exp: dict) -> str | None:
     return None
 
 
-def _experiment(exp: dict, pdir: Path, colours: dict) -> str:
+def _wipe(exp: dict, pdir: Path, others: dict) -> str:
+    """The evidence wipe: this test's first photo over its reference's, with a handle to drag between them."""
+    ref_ids = {str(v).rsplit("-", 1)[0] for v in exp.get("reference_variants") or []}  # "E-002-A" → "E-002"
+    mine = _photos(exp, pdir)
+    ref = next((_photos(others[r], pdir) for r in sorted(ref_ids) if r in others and _photos(others[r], pdir)), [])
+    if not mine or not ref:
+        return ""
+    after, before = mine[0][1], ref[0][1]
+    ref_id = next(r for r in sorted(ref_ids) if r in others and _photos(others[r], pdir))
+    return f"""<figure class="wipe" style="--cut:50%">
+  <img src="{_e(before)}" alt="{_e(ref_id)}, the reference">
+  <img class="after" src="{_e(after)}" alt="{_e(exp.get('id'))}">
+  <input type="range" min="0" max="100" value="50" aria-label="Drag between {_e(ref_id)} and {_e(exp.get('id'))}"
+         oninput="this.parentNode.style.setProperty('--cut', this.value + '%')">
+  <figcaption><span>{_e(ref_id)}</span><span>{_e(exp.get('id'))}</span></figcaption>
+</figure>"""
+
+
+def _experiment(exp: dict, pdir: Path, colours: dict, others: dict | None = None) -> str:
     label, tone = STATUS.get(exp.get("status") or "", (exp.get("status") or "Unknown", "muted"))
     colour = spool_colour(str((exp.get("controlled") or {}).get("filament") or ""), colours)
     factor = exp.get("factor") or {}
@@ -123,6 +141,7 @@ def _experiment(exp: dict, pdir: Path, colours: dict) -> str:
         gallery = '<div class="shots">' + "".join(
             f'<a href="{_e(rel)}" target="_blank" rel="noopener"><img src="{_e(rel)}" alt="{_e(exp["id"])} print {_e(run)} {_e(src)}" loading="lazy"></a>'
             for run, rel, src in shots) + "</div>"
+    wipe = _wipe(exp, pdir, others or {})
     details = "".join(f"<dt>{_e(k)}</dt><dd>{_e(v)}</dd>" for k, v in (
         ("Hypothesis", exp.get("hypothesis")), ("Prediction", exp.get("prediction")),
         ("Why this test", exp.get("why_this_test"))) if v)
@@ -138,6 +157,7 @@ def _experiment(exp: dict, pdir: Path, colours: dict) -> str:
   <h3>{_e(exp.get("question_text"))}</h3>
   <p class="meta">{meta}</p>
   {f'<p class="verdict">Your verdict: {_e(verdict.get("note") or verdict.get("kind"))} <span class="when">{_e(_when(verdict.get("at")))}</span></p>' if verdict else ""}
+  {wipe}
   {gallery}
   <details><summary>Details</summary><dl>{details}</dl>{f"<h4>Kept the same</h4><dl>{controlled}</dl>" if controlled else ""}{ai}</details>
 </article>"""
@@ -159,17 +179,26 @@ def build(pdir: Path, colours: dict | None = None) -> str:
         done = sum(1 for i in ids if (exps.get(i) or {}).get("status") == "answered")
         plans = "".join(f'<li>After {_e(p.get("after"))}, if {_e(p.get("if"))}: {_e(p.get("next"))}</li>' for p in q.get("plans") or [])
         budget = q.get("budget") or {}
+        current = next((exps[i] for i in reversed(ids) if i in exps and exps[i].get("status") not in ("answered", "stopped", "superseded")), None)
+        now_html = ""
+        if current:
+            label, tone = STATUS.get(current.get("status") or "", (current.get("status") or "", "muted"))
+            now_html = (f'<div class="now"><p class="qid"><a href="#{_e(current["id"])}">{_e(current["id"])}</a> {_pill(label, tone)}</p>'
+                        f'<p class="now-q">{_e(current.get("question_text"))}</p>'
+                        + (f'<p class="why"><b>Why this test?</b> {_e(current.get("why_this_test"))}</p>' if current.get("why_this_test") else "")
+                        + "</div>")
         q_html += f"""
 <section class="question">
   <p class="qid">{_e(q.get("id"))} · {done} of {len(ids)} experiments answered · budget {_e(budget.get("max_minutes"))} min, {_e(budget.get("max_g"))} g</p>
   <h2>{_e(q.get("question"))}</h2>
+  {now_html}
   {f'<h4>Plans</h4><ul class="plans">{plans}</ul>' if plans else ""}
 </section>"""
     if not q_html:
         q_html = '<section class="question"><h2>No open question.</h2><p>Ask the lab what to test next.</p></section>'
 
     order = sorted(exps.values(), key=lambda e: e.get("id") or "", reverse=True)
-    notebook = "".join(f'<div id="{_e(e.get("id"))}">{_experiment(e, pdir, colours)}</div>' for e in order)
+    notebook = "".join(f'<div id="{_e(e.get("id"))}">{_experiment(e, pdir, colours, exps)}</div>' for e in order)
     stamp = datetime.now().astimezone().strftime("%-d %b %Y %H:%M")
     return f"""<!doctype html>
 <html lang="en">
@@ -210,6 +239,15 @@ h4 {{ margin:.75rem 0 .25rem; font-size:.85rem; text-transform:uppercase; letter
 .shots img {{ width:100%; aspect-ratio:1; object-fit:cover; border-radius:8px; border:1px solid var(--line); display:block; }}
 details {{ margin-top:.5rem; }} summary {{ cursor:pointer; color:var(--info); }}
 dl {{ margin:.25rem 0; }} dt {{ font-weight:600; font-size:.85rem; margin-top:.4rem; }} dd {{ margin:0; color:var(--muted); }}
+.now {{ border-top:1px solid var(--line); margin-top:.75rem; padding-top:.6rem; }}
+.now-q {{ margin:.2rem 0; font-weight:600; }}
+.why {{ margin:.3rem 0 0; color:var(--muted); font-size:.95rem; }} .why b {{ color:var(--ink); }}
+.wipe {{ position:relative; margin:.6rem 0 0; border-radius:10px; overflow:hidden; border:1px solid var(--line); }}
+.wipe img {{ display:block; width:100%; aspect-ratio:4/3; object-fit:cover; }}
+.wipe .after {{ position:absolute; inset:0; height:100%; clip-path:inset(0 0 0 var(--cut)); }}
+.wipe input {{ position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:ew-resize; margin:0; }}
+.wipe::after {{ content:""; position:absolute; top:0; bottom:0; left:var(--cut); width:3px; margin-left:-1px; background:#fff; box-shadow:0 0 4px #0008; pointer-events:none; }}
+.wipe figcaption {{ position:absolute; left:0; right:0; bottom:0; display:flex; justify-content:space-between; padding:.3rem .6rem; font-size:.8rem; color:#fff; text-shadow:0 1px 3px #000; pointer-events:none; }}
 .ai {{ font-size:.9rem; color:var(--muted); border-left:3px solid var(--line); padding-left:.6rem; }}
 @media (min-width: 900px) {{ .layout {{ display:grid; grid-template-columns: 360px 1fr; gap:24px; align-items:start; }} .side {{ position:sticky; top:16px; }} }}
 </style>
