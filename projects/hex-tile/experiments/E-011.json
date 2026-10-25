@@ -58,7 +58,7 @@
     "tabs": false,
     "notes": []
   },
-  "status": "needs_approval",
+  "status": "approved",
   "variants": [
     {
       "id": "E-011-A",
@@ -870,7 +870,16 @@
       }
     }
   ],
-  "approval": null,
+  "approval": {
+    "build_id": "BLD-011-01",
+    "artifact_sha256": "3e4ee2f94b3755c7650ab215b3aaa800389c4a24f10c6f3f4c37153af5f5706d",
+    "approved_reasons": [
+      "per_test_time"
+    ],
+    "by": "owner",
+    "at": "2026-10-25T04:06:15+00:00",
+    "reason": "v59 top strip: separation and top strings"
+  },
   "print_runs": [],
   "owner_verdict": null,
   "superseded_verdicts": [],
