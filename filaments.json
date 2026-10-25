@@ -1,8 +1,69 @@
 [
-  {"brand": "Kexcelled", "line": "K5 PLA M", "finish": "matte", "color": "Light Matte Terracotta", "diameter_mm": "1.75 ± 0.03", "lot": "C6719062"},
-  {"brand": "Kexcelled", "line": "K5 PLA M", "finish": "matte", "color": "pastel orange (label blurred in photo)", "diameter_mm": "1.75"},
-  {"brand": "PlastKyro", "line": "PLA Matte", "finish": "matte", "color": "Dusty Rose", "nozzle_c": "190-230", "bed_c": "50-55", "diameter_mm": "1.75 ± 0.02"},
-  {"brand": "", "line": "PLA", "finish": "standard", "color": "Peach Pink", "lot": "01460618Y2", "label": "200-210 °C at 50-100 mm/s; 210-240 °C at 100-200 mm/s; bed 50-60 °C"},
-  {"brand": "", "line": "PLA", "finish": "standard", "color": "Grey", "lot": "01660608Y", "label": "200-210 °C at 50-100 mm/s; 210-240 °C at 100-200 mm/s; bed 50-60 °C"},
-  {"brand": "", "line": "High Speed PLA Marble", "finish": "marble", "color": "Shadow Storm Marble", "lot": "03960821Z", "label": "190-210 °C at 50-150 mm/s; 210-230 °C at 150-300 mm/s; 230-260 °C at 300-600 mm/s; bed 50-60 °C"}
+  {
+    "brand": "Kexcelled",
+    "line": "K5 PLA M",
+    "finish": "matte",
+    "color": "Light Matte Terracotta",
+    "lot": "C6719062",
+    "diameter_mm": "1.75 ± 0.03",
+    "density_g_cm3": 1.25,
+    "nozzle_c": "205-225",
+    "optimal_nozzle_c": 210,
+    "first_layer_nozzle_c": 215,
+    "bed_c": "50-60",
+    "optimal_bed_c": 55,
+    "first_layer_bed_c": 60,
+    "flow_ratio": 0.96,
+    "max_volumetric_speed_mm3_s": 12.0,
+    "fan_speed_min_pct": 80,
+    "fan_speed_max_pct": 100,
+    "pressure_advance_k": 0.026,
+    "notes": "Lot C6719062. Matte PLA shows small flow and speed changes as sheen bands. Keep outer wall at <=80 mm/s and inner walls capped to prevent melt deficit. Maintain consistent 80-100% cooling."
+  },
+  {
+    "brand": "Kexcelled",
+    "line": "K5 PLA M",
+    "finish": "matte",
+    "color": "pastel orange (label blurred in photo)",
+    "diameter_mm": "1.75",
+    "density_g_cm3": 1.25,
+    "nozzle_c": "205-225",
+    "optimal_nozzle_c": 210,
+    "bed_c": "50-60",
+    "flow_ratio": 0.96,
+    "max_volumetric_speed_mm3_s": 12.0
+  },
+  {
+    "brand": "PlastKyro",
+    "line": "PLA Matte",
+    "finish": "matte",
+    "color": "Dusty Rose",
+    "nozzle_c": "190-230",
+    "bed_c": "50-55",
+    "diameter_mm": "1.75 ± 0.02"
+  },
+  {
+    "brand": "",
+    "line": "PLA",
+    "finish": "standard",
+    "color": "Peach Pink",
+    "lot": "01460618Y2",
+    "label": "200-210 °C at 50-100 mm/s; 210-240 °C at 100-200 mm/s; bed 50-60 °C"
+  },
+  {
+    "brand": "",
+    "line": "PLA",
+    "finish": "standard",
+    "color": "Grey",
+    "lot": "01660608Y",
+    "label": "200-210 °C at 50-100 mm/s; 210-240 °C at 100-200 mm/s; bed 50-60 °C"
+  },
+  {
+    "brand": "",
+    "line": "High Speed PLA Marble",
+    "finish": "marble",
+    "color": "Shadow Storm Marble",
+    "lot": "03960821Z",
+    "label": "190-210 °C at 50-150 mm/s; 210-230 °C at 150-300 mm/s; 230-260 °C at 300-600 mm/s; bed 50-60 °C"
+  }
 ]
