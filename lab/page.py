@@ -10,6 +10,7 @@ matched against each spool's colour name. LAB_BAMBUDDY_URL changes the address; 
 """
 import html
 import json
+import re
 import os
 import urllib.request
 from datetime import datetime
@@ -53,7 +54,7 @@ def bambuddy_colours(url=None, timeout=2.0) -> dict:
     out = {}
     for s in spools if isinstance(spools, list) else []:
         name, rgba = (s.get("color_name") or "").strip().lower(), s.get("rgba") or ""
-        if name and len(rgba) >= 6:
+        if name and re.fullmatch(r"[0-9a-fA-F]{6}([0-9a-fA-F]{2})?", rgba):  # never anything else into a style
             out[name] = "#" + rgba[:6]
     return out
 
@@ -130,7 +131,7 @@ def _experiment(exp: dict, pdir: Path, colours: dict) -> str:
     ai = "".join(f'<p class="ai">AI reading ({_e(round((o.get("confidence") or 0) * 100))}% sure{", unconfirmed" if not o.get("confirmed") else ""}): '
                  f'{_e(o.get("assessment"))}</p>' for o in exp.get("ai_observations") or [])
     return f"""
-<article class="exp" style="--spine:{colour}">
+<article class="exp" style="--spine:{_e(colour)}">
   <header>
     <span class="id">{_e(exp.get("id"))}</span>{_pill(label, tone)}{_pill(*outcome) if outcome else ""}
   </header>

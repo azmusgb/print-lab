@@ -64,3 +64,10 @@ def test_factor_values_read_as_words():
     assert page._value(["250", "250", "200"]) == "250/200"
     assert page._value("sources/hexagon_v58.3mf") == "hexagon_v58.3mf"
     assert page._value(2) == "2"
+
+
+def test_bambuddy_colours_only_accept_hex(monkeypatch):
+    import io, json as j, urllib.request
+    spools = [{"color_name": "Grey", "rgba": "9A9A9AFF"}, {"color_name": "Evil", "rgba": "red;}</style><script>"}]
+    monkeypatch.setattr(urllib.request, "urlopen", lambda *a, **k: io.BytesIO(j.dumps(spools).encode()))
+    assert page.bambuddy_colours(url="http://x") == {"grey": "#9A9A9A"}
