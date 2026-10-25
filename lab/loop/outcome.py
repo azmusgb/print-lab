@@ -39,8 +39,8 @@ def prediction_outcome(exp: dict, validity: dict) -> str | None:
         return "inconclusive"
     expect, order = exp.get("expect") or {}, v["order"]
     strength = STRENGTH_RANK[v.get("strength")]
-    if v.get("about_target") is not True:
-        out = "unresolved"
+    if v.get("about_target") is not True or v.get("lighting") not in (None, "diagnostic"):
+        out = "unresolved"  # off target, or not judged under the diagnostic light
     elif "better" in expect:
         b, a = _place(order, expect["better"]), _place(order, expect["than"])
         if b < a:

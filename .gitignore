@@ -11,3 +11,4 @@ projects/*/jobs/
 projects/*/.locks/
 projects/*/photos/
 .locks/
+projects/*/page.html

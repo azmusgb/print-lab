@@ -84,7 +84,7 @@ def parse_rank(e: dict, rank: str) -> list[list[str]]:
 
 
 def record_verdict(paths: ProjectPaths, eid: str, *, rank, strength, inconclusive, accept, defects, marks, witness,
-                   witness_override, anchors, not_about_target, note, replace, runs) -> dict:
+                   witness_override, anchors, not_about_target, note, replace, runs, lighting="diagnostic") -> dict:
     with record_lock(paths.locks, eid, f"lab exp verdict {eid}"):
         e = load_experiment(paths, eid)
         if not e.get("print_runs"):
@@ -95,6 +95,11 @@ def record_verdict(paths: ProjectPaths, eid: str, *, rank, strength, inconclusiv
         for r in run_ids:
             if r not in {x["id"] for x in e["print_runs"]}:
                 raise ValueError(f"{r} isn't a print run of {eid}: {', '.join(x['id'] for x in e['print_runs'])}")
+        failed = {x["id"] for x in e["print_runs"] if x.get("failed")}
+        if not inconclusive and all(r in failed for r in run_ids):
+            raise ValueError(f"{', '.join(run_ids)} failed before finishing, so the judged region may never have "
+                             f"printed. Record it as --inconclusive, or print it again.")
+        judged_anchors = [_anchor(a, e) for a in anchors]
         base = {"print_runs": run_ids, "note": note, "by": "owner", "at": now()}
         if inconclusive:
             v = {"kind": "inconclusive", "reason": inconclusive, **base}
@@ -122,23 +127,33 @@ def record_verdict(paths: ProjectPaths, eid: str, *, rank, strength, inconclusiv
                 mz = float(mm)
                 mk.append({"variant": resolve_variant(e, tok), "mark_z_mm": mz,
                            "defect_z_mm": round(z0 + mz, 2) if z0 is not None else None})
+            if (ctrl.get("anchor") and not judged_anchors and not e.get("anchors")):
+                a = next(x for x in e["variants"] if x.get("role") == "anchor")
+                raise ValueError(f"{eid} reprinted {a['same_as']} as {a['id']}; say how it compares: "
+                                 f"--anchor {a['id']}={a['same_as']}:same, different or inconclusive.")
             v = {"kind": "ranking", "order": order, "strength": strength if len(order) > 1 else None,
-                 "about_target": not not_about_target, "lighting": "diagnostic", "marks": mk,
+                 "about_target": not not_about_target, "lighting": lighting or "diagnostic", "marks": mk,
                  "witness": {"id": "WITNESS-01", "condition": witness, "note": None} if witness else None,
                  "witness_override": witness_override, **base}
         if e.get("owner_verdict"):
             e.setdefault("superseded_verdicts", []).append(e["owner_verdict"])
         e["owner_verdict"] = v
-        e["anchors"] = [_anchor(a) for a in anchors] or e.get("anchors", [])
+        e["anchors"] = judged_anchors or e.get("anchors", [])
         e["status"] = "answered"
         return save_experiment(paths, refresh_derived(paths, e))
 
 
-def _anchor(text: str) -> dict:
-    """'E-005-ANCHOR=E-002-A:same[:clearly]'"""
+def _anchor(text: str, e: dict) -> dict:
+    """'E-005-ANCHOR=E-002-A:same[:clearly]', naming this experiment's anchor and what it reprinted."""
     ids, _, rest = text.partition(":")
     aid, _, to = ids.partition("=")
     cond, _, strength = rest.partition(":")
+    mine = {v["id"]: v.get("same_as") for v in e.get("variants") or [] if v.get("role") == "anchor"}
+    if not mine:
+        raise ValueError(f"{e['id']} has no anchor on its plate, so there's nothing to judge with --anchor.")
+    if mine.get(aid) is None or mine[aid] != to:
+        raise ValueError(f"--anchor must be {', '.join(f'{k}={v}' for k, v in mine.items())}:same|different|"
+                         f"inconclusive, not {ids}.")
     return {"id": aid, "compared_to": to, "condition": cond, "strength": strength or None, "note": None}
 
 
@@ -293,14 +308,17 @@ def rebuild_question(paths: ProjectPaths, qid: str) -> list[str]:
         return [f"{qid} rebuild: {len(problems)} problem(s)", *problems, "No derived state updated."]
     report = [f"{qid} rebuild"]
     for eid in q["experiments"]:
-        e = exps[eid]
-        if not e.get("print_runs") and not e.get("owner_verdict"):
-            report.append(f"{eid}: unchanged (not printed yet)")  # step by step, derived state starts at `start`
-            continue
-        before = (e.get("prediction_outcome"), e.get("comparison_validity"))
-        refresh_derived(paths, e, exps)
-        if (e["prediction_outcome"], e["comparison_validity"]) != before:
-            save_experiment(paths, e)
+        with record_lock(paths.locks, eid, f"lab question rebuild {qid}"):
+            e = exps[eid] = load_experiment(paths, eid)  # what a command finished since the check above
+            if not e.get("print_runs") and not e.get("owner_verdict"):
+                report.append(f"{eid}: unchanged (not printed yet)")  # step by step, derived state starts at `start`
+                continue
+            before = (e.get("prediction_outcome"), e.get("comparison_validity"))
+            refresh_derived(paths, e, exps)
+            changed = (e["prediction_outcome"], e["comparison_validity"]) != before
+            if changed:
+                save_experiment(paths, e)
+        if changed:
             report.append(f"{eid}: outcome {e['prediction_outcome'] or '-'}, comparison "
                           f"{e['comparison_validity']['status']} (updated)")
         else:
