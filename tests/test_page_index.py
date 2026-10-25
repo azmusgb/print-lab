@@ -78,3 +78,13 @@ def test_the_verdict_command_fits_the_test(tmp_path):
     p = make_project(tmp_path, minimal_question("Q-009", ("E-010", "E-011")), [one, full])
     cmds = {n["id"]: n["command"] for n in page_index.build_index(p.root)["needs"]}
     assert "--rank A " in cmds["E-010"] and "--accept yes" in cmds["E-011"]
+
+
+def test_an_abandoned_experiment_needs_nothing_even_if_its_last_check_blocked(tmp_path):
+    e = minimal_experiment("E-012", "Q-009")
+    e.update(status="abandoned", builds=[{"id": "BLD-012-01", "ok": True, "estimate": {"minutes": 9, "g": 1},
+                                          "check": {"status": "blocked", "at": "2026-10-25T01:00:00+00:00",
+                                                    "guards": [{"code": "geometry_blocking", "ok": False,
+                                                                "result": "blocked", "message": "3 pieces"}]}}])
+    p = make_project(tmp_path, minimal_question("Q-009", ("E-012",)), [e])
+    assert page_index.build_index(p.root)["needs"] == []

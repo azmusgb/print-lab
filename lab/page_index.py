@@ -90,6 +90,8 @@ def _verdict_command(e: dict) -> str:
 def _needs(e: dict) -> dict | None:
     """What the owner has to do next for this experiment, or None. Urgency: lower first."""
     s, eid, b = e["status"], e["id"], _last_build(e) or {}
+    if s in ("answered", "abandoned"):
+        return None
     check = b.get("check") or {}
     why = "; ".join(g["message"] for g in check.get("guards") or [] if not g["ok"])
     if s == "printing" and not e.get("owner_verdict"):
