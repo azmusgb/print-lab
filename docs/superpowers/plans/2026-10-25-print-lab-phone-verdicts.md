@@ -230,7 +230,7 @@ Add `"tab"` to photo entries: `add_photos(paths, run_id, files, tabs: list[str |
   where `by` is the device id. Incoming photos go in `DATA_DIR/print-lab/<project>/incoming/`; each is deleted when
   its request is applied.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```js
 test('a paired phone sends a request; the Mac sees it pending and posts the result', ...)
@@ -243,13 +243,13 @@ test('incoming photo: JPEG only, sha must match, 8 MB cap; applied request remov
 test('the existing sync and photo routes still need the Mac key', ...)   // device cookie on POST sync -> 401
 ```
 
-- [ ] **Step 2: Run** `node --test tests/print-lab-requests.test.cjs`. Expected: FAIL.
-- [ ] **Step 3: Implement.** Extend the route regex with `requests` and `incoming`. Authorization moves from the
+- [x] **Step 2: Run** `node --test tests/print-lab-requests.test.cjs`. Expected: FAIL.
+- [x] **Step 3: Implement.** Extend the route regex with `requests` and `incoming`. Authorization moves from the
   blanket write check to per route: `sync`, `photos` PUT and `result` need the Mac key; `requests` POST and
   `incoming` PUT need `deviceFor(req)`. `/api/lab/` stays in `GUARDED_WRITES` (`app/signin.js`), with no change
   there. Request ids match `/^rq-[0-9a-f]{16}$/`; experiment and run match `/^[A-Z]{1,4}-\d{1,6}(-\d{2})?$/`.
-- [ ] **Step 4: Run** `npm test`. Expected: all pass.
-- [ ] **Step 5: Commit** `feat(print-lab): requests and incoming photos from a paired phone`.
+- [x] **Step 4: Run** `npm test`. Expected: all pass.
+- [x] **Step 5: Commit** `feat(print-lab): requests and incoming photos from a paired phone`.
 
 ### Task 6: Add photos and Record verdict on the page
 
@@ -264,7 +264,7 @@ test('the existing sync and photo routes still need the Mac key', ...)   // devi
   verdict**, plus a request list under them showing each request's status. A card without `criteria` shows only Add
   photos in this release.
 
-- [ ] **Step 1: Write the failing browser tests**
+- [x] **Step 1: Write the failing browser tests**
   - Selecting two images shows two thumbnails, each with tab chips 12A/12B/12C. **Send photos** PUTs two JPEGs and
     then POSTs one `photos` request with their tabs.
   - The verdict sheet has one row per tab and one chip group per criterion. **Send to the Mac** stays disabled until
@@ -278,14 +278,14 @@ test('the existing sync and photo routes still need the Mac key', ...)   // devi
     `replace: true` under a new request id.
   - An unsent draft survives a reload (localStorage key `printLab:draft:<experiment>`, in try/catch).
   - The page passes axe.
-- [ ] **Step 2: Run** `npm run test:browser -- print-lab-ui`. Expected: FAIL.
-- [ ] **Step 3: Implement.** Convert photos to JPEG with `createImageBitmap` → canvas (longest side 2400 px) →
+- [x] **Step 2: Run** `npm run test:browser -- print-lab-ui`. Expected: FAIL.
+- [x] **Step 3: Implement.** Convert photos to JPEG with `createImageBitmap` → canvas (longest side 2400 px) →
   `toBlob('image/jpeg', 0.9)`, and get each sha256 with `crypto.subtle.digest`. Request ids are `rq-` plus 16 hex
   characters from `crypto.getRandomValues`, made once per send and reused on retry. The light choices are
   diagnostic, room and installed, as the CLI has them.
-- [ ] **Step 4: Run** `npm run ci -- --no-pr` (or the repo's local CI). Expected: green, with size budgets met;
+- [x] **Step 4: Run** `npm run ci -- --no-pr` (or the repo's local CI). Expected: green, with size budgets met;
   update baselines only for the lab views.
-- [ ] **Step 5: Commit** `feat(print-lab): photos and verdicts from the phone`.
+- [x] **Step 5: Commit** `feat(print-lab): photos and verdicts from the phone`.
 
 ## Part C: Rollout (owner and Claude)
 
