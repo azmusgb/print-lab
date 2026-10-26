@@ -58,7 +58,7 @@
     "tabs": false,
     "notes": []
   },
-  "status": "needs_approval",
+  "status": "printing",
   "variants": [
     {
       "id": "E-023-A",
@@ -2882,13 +2882,51 @@
       }
     }
   ],
-  "approval": null,
-  "print_runs": [],
+  "approval": {
+    "build_id": "BLD-023-01",
+    "artifact_sha256": "da4b9b539f79955bee7723be5afa912a973cf53d46455eafede61bfb76eec141",
+    "approved_reasons": [
+      "full_part_required",
+      "per_test_time",
+      "per_test_material"
+    ],
+    "by": "owner",
+    "at": "2026-10-26T22:27:51+00:00",
+    "reason": "reproduce v51 as it was"
+  },
+  "print_runs": [
+    {
+      "id": "PR-023-01",
+      "build_id": "BLD-023-01",
+      "started_at": "2026-10-26T22:28:41+00:00",
+      "setup": {
+        "filament_dried": {
+          "id": "SET-00001",
+          "at": "2026-10-25T01:40:55+00:00",
+          "fields": {}
+        },
+        "vibration_calibration": {
+          "id": "SET-00002",
+          "at": "2026-10-25T12:38:01+00:00",
+          "fields": {}
+        }
+      },
+      "baseline_missing": [
+        "nozzle_changed"
+      ],
+      "usage": null,
+      "failed": null,
+      "photos": []
+    }
+  ],
   "owner_verdict": null,
   "superseded_verdicts": [],
   "anchors": [],
   "ai_observations": [],
-  "comparison_validity": null,
+  "comparison_validity": {
+    "status": "valid",
+    "reasons": []
+  },
   "prediction_outcome": null,
   "analysis": [],
   "criteria": [
