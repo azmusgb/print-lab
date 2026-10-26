@@ -50,12 +50,25 @@ def evaluate_confidence(exps: list[dict]) -> tuple[str, int]:
     """The level counting alone can justify: 'supported' once any answered experiment is cited. Counting can't say
     whether the verdicts agree with the finding, are independent, or contradict each other, so anything higher comes
     only from the owner's review (review_case)."""
-    answered = [e for e in exps if e.get("status") == "answered" and e.get("owner_verdict")]
-    return ("supported", 2) if answered else ("candidate", 1)
+    informative = [e for e in exps if e.get("status") == "answered" and e.get("owner_verdict")
+                   and e["owner_verdict"].get("kind") != "inconclusive"
+                   and e.get("prediction_outcome") not in ("unresolved", "inconclusive")]
+    return ("supported", 2) if informative else ("candidate", 1)
 
 
-def review_case(paths: ProjectPaths, case_id: str, *, level: str, reason: str) -> dict:
-    """The owner's judgement of how far the evidence goes. It survives regeneration (sync_cases)."""
+def _evidence_marks(exps: dict, ids: list[str]) -> dict:
+    """Which verdicts a review was given against: experiment id -> the verdict's time."""
+    return {i: ((exps.get(i) or {}).get("owner_verdict") or {}).get("at") for i in ids}
+
+
+def review_case(paths: ProjectPaths, case_id: str | None, *, level: str, reason: str) -> dict:
+    """The owner's judgement of how far the evidence goes, recorded with the verdicts it was given against. It
+    survives regeneration (sync_cases) until those verdicts change."""
+    from lab.records.store import record_lock
+    if not case_id:
+        raise ValueError("Give the case to review, e.g. `lab case review CASE-001 --level reproduced --reason …`.")
+    if not re.fullmatch(r"CASE-\d+", case_id):
+        raise ValueError(f"'{case_id}' isn't a case id; they look like CASE-001.")
     if level not in LADDER_STEPS:
         raise ValueError(f"Level must be one of: {', '.join(LADDER_STEPS)}.")
     if not (reason or "").strip():
@@ -63,12 +76,16 @@ def review_case(paths: ProjectPaths, case_id: str, *, level: str, reason: str) -
     cdir = cases_dir(paths)
     f = cdir / f"{case_id}.json"
     if not f.exists():
+        sync_cases(paths)
+    if not f.exists():
         raise ValueError(f"Case {case_id} not found in {paths.name}.")
-    c = json.loads(f.read_text())
-    c["review"] = {"by": "owner", "level": level, "reason": reason.strip(), "at": now()}
-    c["confidence"], c["ladder_step"] = level, LADDER_STEPS[level]
-    c["updated_at"] = now()
-    atomic_write_json(f, c)
+    with record_lock(paths.locks, "cases", f"lab case review {case_id}"):
+        c = json.loads(f.read_text())
+        c["review"] = {"by": "owner", "level": level, "reason": reason.strip(), "at": now(),
+                       "evidence": _evidence_marks(all_experiments(paths), c.get("experiments") or [])}
+        c["confidence"], c["ladder_step"] = level, LADDER_STEPS[level]
+        c["updated_at"] = now()
+        atomic_write_json(f, c)
     return c
 
 
@@ -78,12 +95,23 @@ def cases_dir(paths: ProjectPaths) -> Path:
     return d
 
 
+def _effective(c: dict) -> dict:
+    """A case as it may be shown: without a current owner review, never above 'supported', whatever the file says."""
+    review = c.get("review") or {}
+    reviewed = bool(review) and not review.get("stale")
+    c["reviewed"] = reviewed
+    if not reviewed and c.get("ladder_step", 1) > LADDER_STEPS["supported"]:
+        c["recorded_confidence"] = c.get("confidence")
+        c["confidence"], c["ladder_step"] = "supported", LADDER_STEPS["supported"]
+    return c
+
+
 def load_cases(paths: ProjectPaths) -> list[dict]:
     cdir = cases_dir(paths)
     out = []
     for f in sorted(cdir.glob("CASE-*.json")):
         try:
-            out.append(json.loads(f.read_text()))
+            out.append(_effective(json.loads(f.read_text())))
         except Exception:
             pass
     return out
@@ -162,6 +190,7 @@ def sync_cases(paths: ProjectPaths) -> list[dict]:
     """Regenerate the cases from the experiments, keeping the owner's review and any promotion."""
     cdir = cases_dir(paths)
     cases = generate_cases_from_experiments(paths)
+    exps = all_experiments(paths)
     for c in cases:
         f = cdir / f"{c['id']}.json"
         old = json.loads(f.read_text()) if f.exists() else {}
@@ -169,10 +198,20 @@ def sync_cases(paths: ProjectPaths) -> list[dict]:
         for k in KEEP_ON_REGENERATE:
             if k in old:
                 c[k] = old[k]
-        if c.get("review"):
-            c["confidence"], c["ladder_step"] = c["review"]["level"], LADDER_STEPS[c["review"]["level"]]
+        review = c.get("review")
+        if review:
+            if review.get("evidence") is not None and review["evidence"] != _evidence_marks(exps, c["experiments"]):
+                review["stale"] = True  # the verdicts it was given against have changed
+            if not review.get("stale"):
+                c["confidence"], c["ladder_step"] = review["level"], LADDER_STEPS[review["level"]]
         atomic_write_json(f, c)
-    return cases
+    made = {c["id"] for c in cases}
+    for f in cdir.glob("CASE-*.json"):
+        old = json.loads(f.read_text())
+        if old.get("id") not in made and not old.get("orphaned"):
+            old["orphaned"] = True  # no longer generated from the experiments: kept, but marked
+            atomic_write_json(f, old)
+    return [_effective(c) for c in cases]
 
 
 def check_rule_against_history(paths: ProjectPaths, case_id: str) -> dict:
@@ -183,7 +222,9 @@ def check_rule_against_history(paths: ProjectPaths, case_id: str) -> dict:
 
     rev_file = paths.root / "history" / "revisions.json"
     if not rev_file.exists():
-        return {"case_id": case_id, "revisions_checked": 0, "flagged": 0, "note": "No history/revisions.json"}
+        return {"case_id": case_id, "rule_name": (c.get("rule_proposal") or {}).get("rule_name"),
+                "revisions_checked": 0, "flagged_count": 0, "flagged_versions": [],
+                "coverage_note": "No history/revisions.json, so nothing to check against."}
 
     revs = json.loads(rev_file.read_text())
     flagged = []
@@ -273,7 +314,12 @@ def format_cases_list(cases: list[dict]) -> str:
 
 
 def _review_flag(c: dict) -> str | None:
-    if c.get("review"):
+    review = c.get("review")
+    if review and review.get("stale"):
+        return "Review out of date: the verdicts it was given against have changed. Review it again."
+    if review:
+        if c.get("status") == "promoted" and LADDER_STEPS.get(review.get("level"), 0) < 3:
+            return "Promoted, but your latest review puts it below 'reproduced'."
         return None
     if c.get("status") == "promoted":
         return "Promoted before reviews were required; not reviewed. Its level came from counting verdicts."

@@ -69,7 +69,14 @@ def criteria_finding(exp: dict) -> str | None:
         words = [CRITERIA_WORDS.get(c["key"], {}).get(g.get(c["key"])) or f"{c['label'].rstrip('?')} {g.get(c['key'])}"
                  for c in crit if g.get(c["key"]) is not None]
         out.append(f"{var.get('tab') or var['id']}: {', '.join(words)}.")
-    return " ".join(out) or None
+    return (" ".join(out) + _light_note(v)) if out else None
+
+
+def _light_note(v: dict) -> str:
+    light = v.get("lighting")
+    if light == "diagnostic":
+        return ""
+    return " (light not recorded)" if light is None else f" (judged under {light} light)"
 
 
 def sweep_finding(exp: dict) -> str | None:
@@ -91,7 +98,7 @@ def sweep_finding(exp: dict) -> str | None:
     if banded:
         parts.append(f"bands from {n(min(banded))}")
     unit = (exp.get("factor") or {}).get("unit") or ""
-    return ", ".join(parts) + (f" {unit}" if unit else "")
+    return ", ".join(parts) + (f" {unit}" if unit else "") + _light_note(exp.get("owner_verdict") or {})
 
 
 def prediction_outcome(exp: dict, validity: dict) -> str | None:

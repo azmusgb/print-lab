@@ -19,7 +19,7 @@ def check(m, ctx):
         return []
     zs, narrowest = [z for z, _ in gaps], min(g for _, g in gaps)
     wide = 1.0 if ctx.nozzle >= 0.6 else round(ctx.line_w + 0.08, 1)
-    rule_note = " (proven by CASE-001: gaps <= 0.75 mm fuse on 0.6 nozzle)" if ctx.nozzle >= 0.6 else ""
+    rule_note = " (from CASE-001, a lesson under review: gaps <= 0.75 mm fused on the 0.6-nozzle variant)" if ctx.nozzle >= 0.6 else ""
     return [Finding(rule="parts-too-close", severity="warning",
                     where=f"gap {narrowest:.1f} mm between separate parts, Z {min(zs):g}–{max(zs):g} mm",
                     why=f"A gap narrower than {wide} mm{rule_note} can't stay open, so the parts fuse along it.",

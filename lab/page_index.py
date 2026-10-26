@@ -136,12 +136,13 @@ def _verdict_command(e: dict) -> str:
         # Every answer is a list of the choices, which the command refuses: copied unedited it records nothing.
         g = ";".join(f"{v.get('tab') or v['id']}=" + ",".join(f"{c['key']}:{'|'.join(c['choices'])}"
                                                             for c in e["criteria"]) for v in own)
-        return f'uv run lab exp verdict {e["id"]} --grade "{g}"'
+        return f'uv run lab exp verdict {e["id"]} --grade "{g}" --lighting "diagnostic|room"'
     if e.get("test_kind") in ("scaled_part", "full_part"):
         return f'uv run lab exp verdict {e["id"]} --accept "yes|no" --note "what you see"'
     if len([v for v in e.get("variants") or [] if v.get("role", "variant") == "variant"]) > 1:
-        return f'uv run lab exp verdict {e["id"]} --rank "B>A|A>B|A=B" --strength "slightly|clearly|a lot"'
-    return f'uv run lab exp verdict {e["id"]} --rank A --note "what you see"'
+        return (f'uv run lab exp verdict {e["id"]} --rank "B>A|A>B|A=B" --strength "slightly|clearly|a lot" '
+                '--lighting "diagnostic|room"')
+    return f'uv run lab exp verdict {e["id"]} --rank A --note "what you see" --lighting "diagnostic|room"'
 
 
 def _clock(iso: str) -> str:

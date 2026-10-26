@@ -61,6 +61,10 @@ def cmd_exp_verdict(args) -> int:
                        not_about_target=args.not_about_target, note=args.note, replace=args.replace, runs=args.run,
                        lighting=args.lighting, grades=args.grade)
     print(f"{e['id']} answered: outcome {e['prediction_outcome'] or '-'}, comparison {e['comparison_validity']['status']}")
+    if args.lighting is None and (args.rank or args.grade) and accept is None:
+        print("Note: no light given (--lighting diagnostic or room), so this verdict can't support or refute the "
+              "prediction. Record it again with --replace --lighting … if you judged under the diagnostic light.",
+              file=sys.stderr)
     from lab.loop.outcome import criteria_finding, sweep_finding
     if finding := criteria_finding(e) or sweep_finding(e):
         print(f"  finding: {finding}")
