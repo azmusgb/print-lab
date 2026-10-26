@@ -266,7 +266,8 @@ def question_status(paths: ProjectPaths, qid: str) -> str:
              f"  Material   {_n(s['g'])} / {_n(b['g'])} g"]
     nxt = next((exps[x] for x in q["experiments"] if x in exps and exps[x]["status"] in
                 ("built", "ready", "needs_approval", "approved")), None)
-    if nxt and nxt.get("builds") and (est := nxt["builds"][-1].get("estimate")):
+    good = [x for x in (nxt or {}).get("builds") or [] if x.get("ok")]
+    if good and (est := good[-1].get("estimate")):
         lines.append(f"  After {nxt['id']}  {_n(s['minutes'] + est['minutes'])} min, {_n(s['g'] + est['g'])} g")
     lines += ["", "Experiments"]
     counts = {"informative": 0, "uninformative": 0}

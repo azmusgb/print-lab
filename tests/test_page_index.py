@@ -152,3 +152,46 @@ def test_usage_says_which_figures_were_observed_and_which_are_estimates(tmp_path
     p = make_project(tmp_path, minimal_question(), [e])
     u = page_index.build_index(p.root)["experiments"][0]["usage"]
     assert u == {"minutes": 51.0, "g": 20.0, "minutes_source": "observed", "g_source": "estimate"}
+
+
+def test_after_a_failed_run_and_a_rebuild_the_card_shows_the_build_awaiting_approval(tmp_path):
+    e = started(minimal_experiment("E-009"), minutes=60.0, g=20.0)
+    e["print_runs"][0]["failed"] = {"at_fraction": 0.2, "note": None}
+    e["status"] = "needs_approval"
+    e["builds"].append({"id": "BLD-009-02", "ok": True, "estimate": {"minutes": 90.0, "g": 30.0},
+                        "check": {"status": "needs_approval", "at": "t", "guards": []}})
+    p = make_project(tmp_path, minimal_question(), [e])
+    x = page_index.build_index(p.root)["experiments"][0]
+    assert x["shown_build"] == "BLD-009-02" and x["estimate"] == {"minutes": 90.0, "g": 30.0}
+
+
+def test_a_run_whose_build_is_gone_shows_no_build_rather_than_another(tmp_path):
+    e = started(minimal_experiment("E-009"))
+    e["print_runs"][0]["build_id"] = "BLD-009-77"
+    p = make_project(tmp_path, minimal_question(), [e])
+    x = page_index.build_index(p.root)["experiments"][0]
+    assert x["shown_build"] is None and x["estimate"] is None
+
+
+def test_usage_labels_scaled_estimates_and_runs_without_a_build(tmp_path):
+    e = started(minimal_experiment("E-009"), minutes=60.0, g=20.0)
+    e["print_runs"][0]["failed"] = {"at_fraction": 0.5, "note": None}
+    e["status"] = "built"
+    p = make_project(tmp_path, minimal_question(), [e])
+    u = page_index.build_index(p.root)["experiments"][0]["usage"]
+    assert u["minutes_source"] == "scaled_estimate" and u["minutes"] == 30.0
+
+
+def test_the_question_says_how_much_of_spent_is_reserved(tmp_path):
+    p = _rebuilt_while_printing(tmp_path)
+    q = page_index.build_index(p.root)["questions"][0]
+    assert q["reserved"] == {"minutes": 60.0, "g": 20.0}  # already inside q["spent"]
+
+
+def test_question_status_estimates_from_the_last_good_build(tmp_path):
+    from lab.loop.commands import question_status
+    e = minimal_experiment("E-009")
+    e.update(status="built", builds=[{"id": "BLD-009-01", "ok": True, "estimate": {"minutes": 40.0, "g": 12.0}},
+                                     {"id": "BLD-009-02", "ok": False, "error": "slicer failed", "estimate": None}])
+    p = make_project(tmp_path, minimal_question(), [e])
+    assert "40" in question_status(p, "Q-009")

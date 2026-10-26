@@ -42,14 +42,16 @@ def _last_build(e: dict) -> dict | None:
     return ok[-1] if ok else None
 
 
+RUN_BOUND = ("printing", "answered")
+
+
 def _shown_build(e: dict) -> dict | None:
-    """The build the page describes: the one the latest print run printed, else the newest good build. A rebuild
-    after a print started doesn't change what that print was."""
+    """The build the page describes. While a print is on the printer or has been judged, that print's own build: a
+    rebuild doesn't change what it was (and if that build is gone, none, rather than another one). Otherwise, as
+    after a failed run and a rebuild, the newest good build, which is the one waiting for a check or approval."""
     runs = e.get("print_runs") or []
-    if runs and runs[-1].get("build_id"):
-        b = next((b for b in e.get("builds") or [] if b["id"] == runs[-1]["build_id"]), None)
-        if b:
-            return b
+    if e.get("status") in RUN_BOUND and runs and runs[-1].get("build_id"):
+        return next((b for b in e.get("builds") or [] if b["id"] == runs[-1]["build_id"]), None)
     return _last_build(e)
 
 
@@ -97,7 +99,8 @@ def _source(sources: set[str]) -> str:
 
 def _usage(e: dict) -> dict | None:
     """What the finished runs used, each total labelled: 'observed' when every run's figure was measured or given,
-    'estimate' when every one fell back to the slicer's estimate, else 'mixed'."""
+    'estimate' when it fell back to the slicer's estimate, 'scaled_estimate' for a failed run's estimate times how
+    far it got, 'none' for a run whose build is gone (counted as 0), and 'mixed' when the runs differ."""
     running = _running(e)
     runs = [r for r in e.get("print_runs") or [] if r is not running]  # an estimate isn't usage until the print ends
     if not runs:
@@ -110,13 +113,16 @@ def _usage(e: dict) -> dict | None:
         m, g = m + rm, g + rg
         u = r.get("usage") or {}
         seen = u.get("usage_source") in OBSERVED
-        m_src.add("observed" if seen and u.get("actual_minutes") is not None else "estimate")
-        g_src.add("observed" if seen and u.get("actual_g") is not None else "estimate")
+        fallback = ("none" if r.get("build_id") not in builds else
+                    "scaled_estimate" if (r.get("failed") or {}).get("at_fraction") is not None else "estimate")
+        m_src.add("observed" if seen and u.get("actual_minutes") is not None else fallback)
+        g_src.add("observed" if seen and u.get("actual_g") is not None else fallback)
     return {"minutes": round(m, 1), "g": round(g, 1), "minutes_source": _source(m_src), "g_source": _source(g_src)}
 
 
 def _reserved(e: dict) -> dict | None:
-    """The running print's estimate: spoken for in the budget, not used yet."""
+    """The running print's estimate: spoken for in the budget, not used yet. The question's `spent` already includes
+    it (the ledger counts a started run at its estimate), so `reserved` says how much of `spent` that is."""
     r = _running(e)
     b = next((b for b in e.get("builds") or [] if r and b["id"] == r.get("build_id")), None)
     est = (b or {}).get("estimate") or {}
@@ -221,8 +227,13 @@ def _question(q: dict, exps: dict, tol: float) -> dict:
         if e.get("owner_verdict") and e["provenance"] == "prospective":
             o = prediction_outcome(e, comparison_validity(e, exps, tol))
             counts["informative" if o in ("supported", "refuted") else "uninformative"] += 1
+    rm = rg = 0.0
+    for e in mine.values():
+        r = _reserved(e) or {}
+        rm, rg = rm + float(r.get("minutes") or 0), rg + float(r.get("g") or 0)
     return {"id": q["id"], "question": q["question"], "status": q["status"], "budget": b,
             "spent": {"minutes": round(s["minutes"], 1), "g": round(s["g"], 1)},
+            "reserved": {"minutes": round(rm, 1), "g": round(rg, 1)},  # the part of `spent` still printing
             "next": {"id": nxt["id"], "minutes": est["minutes"], "g": est["g"]} if est else None,
             "stop": stop, "streak": ledger.streak(q, exps, tol), "evidence": counts,
             "experiments": q["experiments"], "plans": q.get("plans") or [],
