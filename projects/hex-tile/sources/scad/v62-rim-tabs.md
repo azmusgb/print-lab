@@ -66,6 +66,18 @@ The real-source pytest generates a temporary v62r from the tracked v60b125 3MF a
 6. Record a new **prospective** experiment before any physical print.
 7. Use the smallest representative breakaway test only if it can stand reliably. E-011/E-019 showed that tall lightly joined strips can detach; a full pair may therefore be the representative geometry, but still requires normal full-part/budget approval.
 
+## Prospective experiment after validation
+
+Do **not** create this record until the generated source exists and the real Bambu slice has passed the checks above. The intended next experiment is under Q-003 and should preserve the prediction before printing:
+
+- factor: `model_version` bundle (`v62r`)
+- test kind: `full_part` if a strip is rejected as non-representative because of the E-011/E-019 strip failures
+- hypothesis: **v40-style rim tabs restore reliable supported landings and breakaway separation; layer-staggering avoids v41's synchronized face line while the 1.25 mm backs survive separation**
+- prediction: **the pair remains upright to completion, both fronts are good enough from 60 cm, and the two tiles separate by hand without cracking either back**
+- judge on: **print completion/stability, both visible faces, and separation/back integrity**
+
+Because Q-003 is already beyond its normal autonomous time envelope and a full pair is a full-part test, the normal `lab exp check`/explicit approval path must remain in force. Do not enlarge the question budget merely to hide that exception.
+
 ## Intended verdict
 
 A successful result requires all three:
