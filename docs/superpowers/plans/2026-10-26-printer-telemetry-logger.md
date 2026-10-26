@@ -26,6 +26,8 @@ records those fans today: Bambuddy keeps only job start/end/state, and `lab exp 
 
 The logger reads the printer's serial and access code from `~/.config/print-lab/printer.env` (mode 600), which the
 owner creates. Claude never reads or writes that file. The code never goes into the repo, logs or records.
+The printer's certificate is self-signed, so the file also pins its SHA-256 (`BAMBU_CERT_SHA256`); the logger checks it
+before sending the code and refuses on a mismatch or when nothing is pinned (the first run prints the value to pin).
 
 ## Also fixed in the same change
 

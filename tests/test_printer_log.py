@@ -96,7 +96,7 @@ def test_printer_env_is_read_from_a_private_file(tmp_path):
     with pytest.raises(PermissionError, match="600"):
         load_printer_env(p)
     p.chmod(0o600)
-    assert load_printer_env(p) == {"host": "10.0.0.136", "serial": "S1", "code": "abc"}
+    assert load_printer_env(p) == {"host": "10.0.0.136", "serial": "S1", "code": "abc", "cert_sha256": None}
 
 
 def test_a_missing_printer_env_says_what_to_create(tmp_path):
@@ -141,3 +141,22 @@ def test_log_command_refuses_a_run_that_already_has_a_log(tmp_path):
     paths = make_project(tmp_path, minimal_question(), [e])
     with pytest.raises(ValueError, match="already has a printer log"):
         run_log.log_run(paths, "E-009", env={}, listen=lambda *a, **k: None, heights={})
+
+
+def test_the_printer_certificate_must_match_the_pinned_fingerprint():
+    from lab.printer.mqtt import check_certificate
+    der = b"printer-cert-bytes"
+    import hashlib
+    fp = hashlib.sha256(der).hexdigest()
+    check_certificate({"cert_sha256": fp.upper()}, lambda: der)  # case-insensitive match passes
+    with pytest.raises(ConnectionError, match="doesn't match"):
+        check_certificate({"cert_sha256": "00" * 32}, lambda: der)
+    with pytest.raises(ConnectionError, match=f"BAMBU_CERT_SHA256={fp}"):
+        check_certificate({}, lambda: der)  # nothing pinned yet: refuse, and say what to pin
+
+
+def test_printer_env_reads_the_pinned_fingerprint(tmp_path):
+    p = tmp_path / "printer.env"
+    p.write_text("PRINTER_HOST=h\nBAMBU_SERIAL=S1\nBAMBU_TOKEN=abc\nBAMBU_CERT_SHA256=AB:CD\n")
+    p.chmod(0o600)
+    assert load_printer_env(p)["cert_sha256"] == "abcd"

@@ -27,7 +27,8 @@ def load_printer_env(path: Path = DEFAULT_ENV) -> dict:
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(f"Create {path} (chmod 600) with three lines: PRINTER_HOST=…, BAMBU_SERIAL=… and "
-                                "BAMBU_TOKEN=<the access code from the printer's screen>.")
+                                "BAMBU_TOKEN=<the access code from the printer's screen>. The first run tells you a "
+                                "fourth line to add, BAMBU_CERT_SHA256=…, which pins the printer's certificate.")
     if stat.S_IMODE(path.stat().st_mode) & 0o077:
         raise PermissionError(f"{path} must be readable by you only: chmod 600 {path}")
     vals = {}
@@ -39,7 +40,33 @@ def load_printer_env(path: Path = DEFAULT_ENV) -> dict:
     missing = [k for k in ("PRINTER_HOST", "BAMBU_SERIAL", "BAMBU_TOKEN") if not vals.get(k)]
     if missing:
         raise ValueError(f"{path} is missing {', '.join(missing)}.")
-    return {"host": vals["PRINTER_HOST"], "serial": vals["BAMBU_SERIAL"], "code": vals["BAMBU_TOKEN"]}
+    pin = vals.get("BAMBU_CERT_SHA256", "").replace(":", "").strip().lower() or None
+    return {"host": vals["PRINTER_HOST"], "serial": vals["BAMBU_SERIAL"], "code": vals["BAMBU_TOKEN"],
+            "cert_sha256": pin}
+
+
+def _peer_certificate(host: str, port: int = 8883, timeout: float = 10.0) -> bytes:
+    """The printer's TLS certificate (DER), fetched without sending any credentials."""
+    import socket
+    import ssl
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    ctx.check_hostname, ctx.verify_mode = False, ssl.CERT_NONE
+    with socket.create_connection((host, port), timeout=timeout) as raw, ctx.wrap_socket(raw) as tls:
+        return tls.getpeercert(binary_form=True)
+
+
+def check_certificate(env: dict, fetch) -> None:
+    """Refuse to send the access code unless the printer presents the certificate pinned in printer.env. The
+    printer's certificate is self-signed, so the pin stands in for normal certificate checking."""
+    import hashlib
+    got = hashlib.sha256(fetch()).hexdigest()
+    pin = (env.get("cert_sha256") or "").replace(":", "").lower()
+    if not pin:
+        raise ConnectionError("No printer certificate is pinned. If you're on your own network and the address is "
+                              f"the printer's, add this line to printer.env: BAMBU_CERT_SHA256={got}")
+    if got != pin:
+        raise ConnectionError(f"The certificate at this address doesn't match the pinned printer (got {got}). "
+                              "Nothing was sent. If the printer was reset or replaced, check it and update the pin.")
 
 
 def listen(env: dict, on_report, *, should_stop, connect_timeout_s: float = 20.0) -> None:
@@ -49,9 +76,13 @@ def listen(env: dict, on_report, *, should_stop, connect_timeout_s: float = 20.0
 
     import paho.mqtt.client as mqtt
 
+    check_certificate(env, lambda: _peer_certificate(env["host"]))
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"print-lab-log-{os.getpid()}")
     client.username_pw_set("bblp", env["code"])
-    client.tls_set(cert_reqs=ssl.CERT_NONE)  # the printer's certificate is self-signed
+    # The printer's certificate is self-signed, so normal checking can't pass; check_certificate above pinned it.
+    # The pin is checked on a separate connection just before this one; an attacker would have to swap devices
+    # in that moment.
+    client.tls_set(cert_reqs=ssl.CERT_NONE)
     client.tls_insecure_set(True)
     pub = ReadOnlyPublisher(lambda t, p: client.publish(t, p), serial=env["serial"])
     state = {"connected": False, "error": None}
