@@ -38,7 +38,7 @@ FastAPI/vanilla JS (Pi Hub).
 **Files:** Modify `lab/pull.py`, `lab/loop/guards.py` (`start(..., started_at=None)`); Test `tests/test_pull.py`.
 
 **Interfaces:** Produces request kinds — `start {experiment, run_seen?: str|null, payload: {tapped_at: ISO}}`,
-`approve {experiment, payload: {reason: str}}`, `abandon {experiment, payload: {reason: str}}`.
+`approve {experiment, payload: {reason: str (required), build_seen: str, reasons_seen: [str]}}` (must match the current check, or refused), `abandon {experiment, payload: {reason: str}}`.
 `guards.start(paths, exp_id, started_at: str | None = None)`.
 
 - [ ] Tests: `test_start_request_opens_a_run_at_the_tap_time`, `test_start_twice_is_not_two_runs`,

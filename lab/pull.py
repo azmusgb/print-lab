@@ -13,7 +13,12 @@ from pathlib import Path
 from datetime import datetime, timedelta, timezone
 
 from lab.loop.commands import abandon, add_photos, load_experiment, record_verdict
-from lab.loop.guards import approve, start
+import re
+
+from lab.loop.guards import approve, check_experiment, start
+
+EXP_ID = re.compile(r"E-\d{3,}")  # a request's ids name record files: nothing else gets near the disk
+RUN_ID = re.compile(r"PR-\d{3,}-\d{2,}")
 from lab.records.project import ProjectPaths
 from lab.records.store import now
 from lab.sync import BASE, _call, _context, _key
@@ -48,7 +53,19 @@ def _act(paths: ProjectPaths, kind: str, eid: str, run_seen, payload: dict) -> s
         return " ".join([f"{eid} printing as {run['id']}", *warn]) if not warn or "already" not in warn[0] else warn[0]
     reason = str(payload.get("reason") or "").strip()
     if kind == "approve":
-        e = approve(paths, eid, reason or "approved from the page")
+        # The approval binds to what the page showed: the same build and the same guards, as the CLI's approval binds
+        # to the build the check passed. Anything different means the owner approved something else.
+        if not reason:
+            raise ValueError(f"Approving {eid} needs a reason.")
+        r = check_experiment(paths, eid)
+        if r.status != "needs_approval":
+            approve(paths, eid, reason)  # raises the CLI's own words: blocked, owner stopped, nothing to approve
+        now_reasons = sorted(x.code for x in r.failed("needs_approval"))
+        build_now = (r.build or {}).get("id")
+        if payload.get("build_seen") != build_now or sorted(payload.get("reasons_seen") or []) != now_reasons:
+            raise ValueError(f"{eid} changed since the page was loaded (build {build_now or 'none'}, "
+                             f"to approve: {', '.join(now_reasons) or 'nothing'}); reload and look again.")
+        e = approve(paths, eid, reason)
         return f"Approved {e['approval']['build_id']} for: {', '.join(e['approval']['approved_reasons'])}."
     if not reason:
         raise ValueError(f"Dropping {eid} needs a reason.")
@@ -111,7 +128,11 @@ def apply_pending(pdir: Path, base: str, key: str, timeout: float = 10) -> list[
             run_id = req.get("run")
             payload = req.get("payload") or {}
 
-            if kind == "verdict":
+            bad = (kind in ("verdict", "start", "approve", "abandon") and not (isinstance(eid, str) and EXP_ID.fullmatch(eid))) \
+                or (run_id is not None and not (isinstance(run_id, str) and RUN_ID.fullmatch(run_id)))
+            if bad:
+                status, message = "refused", f"Not an experiment id or run id: {str(eid)[:40]!r}, {str(run_id)[:40]!r}."
+            elif kind == "verdict":
                 try:
                     record_verdict(
                         paths,
