@@ -752,7 +752,7 @@
     {
       "id": "PR-019-01",
       "build_id": "BLD-019-01",
-      "started_at": "2026-10-26T02:10:00+00:00",
+      "started_at": "2026-10-26T02:07:00+00:00",
       "setup": {
         "filament_dried": {
           "id": "SET-00001",
@@ -769,8 +769,8 @@
         "nozzle_changed"
       ],
       "usage": {
-        "actual_minutes": 12.0,
-        "actual_g": 3.6,
+        "actual_minutes": 19.0,
+        "actual_g": 5.7,
         "usage_source": "manual",
         "completion_fraction": 0.24
       },

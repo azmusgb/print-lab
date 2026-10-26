@@ -2910,7 +2910,7 @@
         "nozzle_changed"
       ],
       "usage": {
-        "actual_minutes": 251.0,
+        "actual_minutes": 258.0,
         "actual_g": 75.4,
         "usage_source": "manual",
         "completion_fraction": null

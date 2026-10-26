@@ -884,7 +884,7 @@
     {
       "id": "PR-011-01",
       "build_id": "BLD-011-01",
-      "started_at": "2026-10-25T04:30:08+00:00",
+      "started_at": "2026-10-25T04:29:00+00:00",
       "setup": {
         "filament_dried": {
           "id": "SET-00001",
@@ -896,7 +896,12 @@
         "vibration_calibration",
         "nozzle_changed"
       ],
-      "usage": null,
+      "usage": {
+        "actual_minutes": 66.0,
+        "actual_g": null,
+        "usage_source": "manual",
+        "completion_fraction": null
+      },
       "failed": null,
       "photos": [
         {

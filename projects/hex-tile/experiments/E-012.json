@@ -1340,7 +1340,7 @@
     {
       "id": "PR-012-01",
       "build_id": "BLD-012-01",
-      "started_at": "2026-10-25T12:31:01+00:00",
+      "started_at": "2026-10-25T17:21:00+00:00",
       "setup": {
         "filament_dried": {
           "id": "SET-00001",
@@ -1352,7 +1352,12 @@
         "vibration_calibration",
         "nozzle_changed"
       ],
-      "usage": null,
+      "usage": {
+        "actual_minutes": 204.0,
+        "actual_g": null,
+        "usage_source": "manual",
+        "completion_fraction": null
+      },
       "failed": null,
       "photos": [
         {
