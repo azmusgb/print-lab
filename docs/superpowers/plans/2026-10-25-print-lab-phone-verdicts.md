@@ -291,9 +291,9 @@ test('the existing sync and photo routes still need the Mac key', ...)   // devi
 
 ### Task 7: First real use on E-012
 
-- [ ] Open the PR for Part B. CI must be green. **The owner runs `npm run ship -- <PR>`** (it's blocked for Claude).
-- [ ] Merge Part A to print-lab main and push.
-- [ ] On the Mac, run `uv run lab exp criteria E-012 --add "print=Printed cleanly?:clean,flawed,failed" --add "apart=Twists apart by hand?:yes,hard,no"`, then `uv run lab pull --install`.
-- [ ] Check: the page shows E-012 with **Add photos** and **Record verdict**; `launchctl print gui/$(id -u)/com.printlab.pull` reports it loaded.
-- [ ] After E-012 prints, the owner sends photos and the verdict from the phone. Done when `E-012.json` holds the
+- [x] Open the PR for Part B. CI must be green. **The owner runs `npm run ship -- <PR>`** (it's blocked for Claude).
+- [x] Merge Part A to print-lab main and push.
+- [x] On the Mac, run `uv run lab exp criteria E-012 --add "print=Printed cleanly?:clean,flawed,failed" --add "apart=Twists apart by hand?:yes,hard,no"`, then `uv run lab pull --install`.
+- [x] Check: the page shows E-012 with **Add photos** and **Record verdict**; `launchctl print gui/$(id -u)/com.printlab.pull` reports it loaded.
+- [x] After E-012 prints, the owner sends photos and the verdict from the phone. Done when `E-012.json` holds the
   `criteria` verdict and the photos carry tabs.
