@@ -56,7 +56,7 @@ v62r tabs=42 (7/side) gap=0.40mm tab=0.60mm actual_pitch<=10.89mm contact/tile=1
 
 The real-source pytest generates a temporary v62r from the tracked v60b125 3MF and verifies the archive, linked mesh objects, watertight output, tab count/pitch, and layer-event guard.
 
-**Current handoff status:** the generator, documentation, and real-source regression test are committed on `feat/v62-rim-tabs`. The generated binary is intentionally **not** committed yet because this ChatGPT execution environment cannot materialize the private tracked 3MF, and the repository's GitHub Actions runner is unavailable (jobs fail before any step starts). The first Mac command above is therefore still the authoritative execution gate.
+**Current handoff status:** the generator, documentation, and real-source regression test are committed on `feat/v62-rim-tabs`. The generated binary is intentionally **not** committed yet because this ChatGPT execution environment cannot materialize the private tracked 3MF, and the repository's GitHub Actions runner is unavailable (jobs fail before any step starts). The first Mac command above is therefore still the authoritative execution gate. Do not merge the branch merely because the Python/model-level checks look sound; the exact Bambu slice is part of acceptance.
 
 ## Required validation before printing
 
