@@ -58,7 +58,7 @@
     "tabs": false,
     "notes": []
   },
-  "status": "approved",
+  "status": "printing",
   "variants": [
     {
       "id": "E-014-A",
@@ -2889,12 +2889,75 @@
     "at": "2026-10-25T21:19:50+00:00",
     "reason": "6-inch pair needed by 26 Oct; Kexcelled preset chosen; cut apart with a knife"
   },
-  "print_runs": [],
+  "print_runs": [
+    {
+      "id": "PR-014-01",
+      "build_id": "BLD-014-01",
+      "started_at": "2026-10-25T21:20:00+00:00",
+      "setup": {
+        "filament_dried": {
+          "id": "SET-00001",
+          "at": "2026-10-25T01:40:55+00:00",
+          "fields": {}
+        },
+        "vibration_calibration": {
+          "id": "SET-00002",
+          "at": "2026-10-25T12:38:01+00:00",
+          "fields": {}
+        }
+      },
+      "baseline_missing": [
+        "nozzle_changed"
+      ],
+      "usage": {
+        "actual_minutes": 251.0,
+        "actual_g": 75.4,
+        "usage_source": "manual",
+        "completion_fraction": null
+      },
+      "failed": null,
+      "photos": [
+        {
+          "path": "photos/PR-014-01-1.jpg",
+          "sha256": "ddd8da66ecaab25362965974f034d44d0f06d1f68347e4d13a4697fea089416b",
+          "captured_at": "2026-10-26T01:42:27+00:00",
+          "source": "remote-1792978947303487000-3c0276c5133d4c7f9e99e22571dccc04.jpg"
+        },
+        {
+          "path": "photos/PR-014-01-2.jpg",
+          "sha256": "7b5130104e4748bc4490880af9bc6475b26e362c48f10b35cbb3524071ec7e4f",
+          "captured_at": "2026-10-26T01:42:27+00:00",
+          "source": "remote-1792978947907185000-115b2e1752714c44b41f1cf4bfb68e43.jpg"
+        },
+        {
+          "path": "photos/PR-014-01-3.jpg",
+          "sha256": "52d6db9c1eb8943d9e764c90045aa6cbdb34270303556534034248ee0ad00143",
+          "captured_at": "2026-10-26T01:42:28+00:00",
+          "source": "remote-1792978948357471000-b6a9db9efc26455aa51ae2994d4033a2.jpg"
+        },
+        {
+          "path": "photos/PR-014-01-4.jpg",
+          "sha256": "d358fa271e1e71884d73b07c2b3dd10a308aeeee60c5e35bf98c71d8766a29fa",
+          "captured_at": "2026-10-26T01:42:28+00:00",
+          "source": "remote-1792978948934577000-faf26c6a36be4a2ba3f29a0490c1c342.jpg"
+        },
+        {
+          "path": "photos/PR-014-01-5.jpg",
+          "sha256": "04d6c1e4567770c0e336181e2bb52c07d9465d41ad0a98786e8cd774dfddd3d6",
+          "captured_at": "2026-10-26T01:42:29+00:00",
+          "source": "remote-1792978949349858000-2cff8b213b8943c6b391fd5a65bbc3ca.jpg"
+        }
+      ]
+    }
+  ],
   "owner_verdict": null,
   "superseded_verdicts": [],
   "anchors": [],
   "ai_observations": [],
-  "comparison_validity": null,
+  "comparison_validity": {
+    "status": "valid",
+    "reasons": []
+  },
   "prediction_outcome": null,
   "analysis": []
 }
