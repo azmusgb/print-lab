@@ -42,8 +42,19 @@ def _last_build(e: dict) -> dict | None:
     return ok[-1] if ok else None
 
 
+def _shown_build(e: dict) -> dict | None:
+    """The build the page describes: the one the latest print run printed, else the newest good build. A rebuild
+    after a print started doesn't change what that print was."""
+    runs = e.get("print_runs") or []
+    if runs and runs[-1].get("build_id"):
+        b = next((b for b in e.get("builds") or [] if b["id"] == runs[-1]["build_id"]), None)
+        if b:
+            return b
+    return _last_build(e)
+
+
 def _variants(e: dict) -> list[dict]:
-    b = _last_build(e) or {}
+    b = _shown_build(e) or {}
     real = ((b.get("realization") or {}).get("variants")) or {}
     unit = (e.get("factor") or {}).get("unit") or ""
     grades = (e.get("owner_verdict") or {}).get("grades") or {}
@@ -71,23 +82,45 @@ def _running(e: dict) -> dict | None:
 def _due_at(e: dict) -> str | None:
     """When the running print should be done: its start plus the build's estimate."""
     r = _running(e)
-    est = ((_last_build(e) or {}).get("estimate") or {}).get("minutes")
+    est = ((_shown_build(e) or {}).get("estimate") or {}).get("minutes")
     if not r or not r.get("started_at") or not est:
         return None
     return (datetime.fromisoformat(r["started_at"]) + timedelta(minutes=float(est))).isoformat(timespec="seconds")
 
 
+OBSERVED = ("telemetry", "manual", "printer_log")
+
+
+def _source(sources: set[str]) -> str:
+    return sources.pop() if len(sources) == 1 else "mixed"
+
+
 def _usage(e: dict) -> dict | None:
+    """What the finished runs used, each total labelled: 'observed' when every run's figure was measured or given,
+    'estimate' when every one fell back to the slicer's estimate, else 'mixed'."""
     running = _running(e)
     runs = [r for r in e.get("print_runs") or [] if r is not running]  # an estimate isn't usage until the print ends
     if not runs:
         return None
     builds = {b["id"]: b for b in e.get("builds") or []}
     m = g = 0.0
+    m_src, g_src = set(), set()
     for r in runs:
         rm, rg = ledger.run_usage(r, builds.get(r.get("build_id")))
         m, g = m + rm, g + rg
-    return {"minutes": round(m, 1), "g": round(g, 1)}
+        u = r.get("usage") or {}
+        seen = u.get("usage_source") in OBSERVED
+        m_src.add("observed" if seen and u.get("actual_minutes") is not None else "estimate")
+        g_src.add("observed" if seen and u.get("actual_g") is not None else "estimate")
+    return {"minutes": round(m, 1), "g": round(g, 1), "minutes_source": _source(m_src), "g_source": _source(g_src)}
+
+
+def _reserved(e: dict) -> dict | None:
+    """The running print's estimate: spoken for in the budget, not used yet."""
+    r = _running(e)
+    b = next((b for b in e.get("builds") or [] if r and b["id"] == r.get("build_id")), None)
+    est = (b or {}).get("estimate") or {}
+    return {"minutes": est.get("minutes"), "g": est.get("g")} if r and est else None
 
 
 def _photos(e: dict, root: Path) -> list[dict]:
@@ -151,7 +184,7 @@ def _experiment(e: dict, exps: dict, root: Path, tol: float, production, at: str
     if e.get("owner_verdict") or e.get("print_runs"):
         validity = comparison_validity(e, exps, tol, production)
         outcome = prediction_outcome(e, validity) if e.get("owner_verdict") else None
-    b = _last_build(e) or {}
+    b = _shown_build(e) or {}
     v = e.get("owner_verdict")
     return {
         "id": e["id"], "question": e["question"], "status": e["status"], "provenance": e["provenance"],
@@ -160,7 +193,7 @@ def _experiment(e: dict, exps: dict, root: Path, tol: float, production, at: str
         "factor": {k: (e.get("factor") or {}).get(k) for k in ("name", "unit", "values")},
         "variants": _variants(e), "reference_variants": e.get("reference_variants") or [],
         "estimate": b.get("estimate"), "layer_time_median_s": (b.get("measured") or {}).get("layer_time_median_s"),
-        "usage": _usage(e), "check": b.get("check"), "outcome": outcome, "validity": validity,
+        "usage": _usage(e), "reserved": _reserved(e), "shown_build": b.get("id"), "check": b.get("check"), "outcome": outcome, "validity": validity,
         "verdict": {**{k: v.get(k) for k in ("kind", "order", "strength", "good_enough", "grades", "lighting", "note",
                                              "at")}, "defects": v.get("blocking_defects") or []} if v else None, "criteria": e.get("criteria"),
         "run": (e.get("print_runs") or [{}])[-1].get("id"),

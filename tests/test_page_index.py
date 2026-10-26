@@ -48,7 +48,7 @@ def test_experiment_outcome_validity_and_requested_vs_realized(tmp_path):
     assert e["outcome"] == "supported" and e["validity"]["status"] == "valid"
     assert e["variants"][0] == {"id": "E-001-A", "tab": "1A", "requested": 250.0, "realized": 147.0,
                                 "as_asked": False, "unit": "mm/s", "grade": None}
-    assert e["usage"] == {"minutes": 40, "g": 12}
+    assert e["usage"] == {"minutes": 40, "g": 12, "minutes_source": "estimate", "g_source": "estimate"}
 
 
 def test_needs_you_lists_actions_with_commands_most_urgent_first(tmp_path):
@@ -116,3 +116,39 @@ def test_an_acceptance_verdict_carries_its_defects(tmp_path):
     p = make_project(tmp_path, minimal_question("Q-009", ("E-011",)), [full])
     v = page_index.build_index(p.root)["experiments"][0]["verdict"]
     assert v["good_enough"] is True and v["defects"] == ["hard to separate"]
+
+
+# ---- run-bound figures and labelled usage (blueprint R-11, R-16, R-17; F-07, F-08) -----------------------------
+
+def _rebuilt_while_printing(tmp_path):
+    e = started(minimal_experiment("E-009"), minutes=60.0, g=20.0)
+    e["builds"][0]["realization"] = {"variants": {"E-009-A": {"requested": 250, "realized": 250}}}
+    e["builds"].append({"id": "BLD-009-02", "ok": True, "estimate": {"minutes": 90.0, "g": 30.0},
+                        "realization": {"variants": {"E-009-A": {"requested": 250, "realized": 999}}}})
+    e["print_runs"][0]["started_at"] = "2026-10-25T09:00:00+00:00"
+    return make_project(tmp_path, minimal_question(), [e])
+
+
+def test_a_running_print_shows_its_own_builds_figures_after_a_rebuild(tmp_path):
+    p = _rebuilt_while_printing(tmp_path)
+    x = page_index.build_index(p.root)["experiments"][0]
+    assert x["due_at"] == "2026-10-25T10:00:00+00:00"  # 60 min from BLD-009-01, not 90 from BLD-009-02
+    assert x["estimate"] == {"minutes": 60.0, "g": 20.0}
+    assert x["variants"][0]["realized"] == 250
+    assert x["shown_build"] == "BLD-009-01"
+
+
+def test_a_running_print_is_reserved_not_used(tmp_path):
+    p = _rebuilt_while_printing(tmp_path)
+    x = page_index.build_index(p.root)["experiments"][0]
+    assert x["usage"] is None
+    assert x["reserved"] == {"minutes": 60.0, "g": 20.0}
+
+
+def test_usage_says_which_figures_were_observed_and_which_are_estimates(tmp_path):
+    e = started(minimal_experiment("E-009"), minutes=60.0, g=20.0)
+    e["print_runs"][0]["usage"] = {"actual_minutes": 51.0, "actual_g": None, "usage_source": "printer_log",
+                                   "completion_fraction": None}
+    p = make_project(tmp_path, minimal_question(), [e])
+    u = page_index.build_index(p.root)["experiments"][0]["usage"]
+    assert u == {"minutes": 51.0, "g": 20.0, "minutes_source": "observed", "g_source": "estimate"}
