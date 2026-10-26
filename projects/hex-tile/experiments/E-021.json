@@ -936,7 +936,12 @@
       "baseline_missing": [
         "nozzle_changed"
       ],
-      "usage": null,
+      "usage": {
+        "actual_minutes": 87.0,
+        "actual_g": null,
+        "usage_source": "manual",
+        "completion_fraction": null
+      },
       "failed": null,
       "photos": []
     }
@@ -944,7 +949,16 @@
   "owner_verdict": null,
   "superseded_verdicts": [],
   "anchors": [],
-  "ai_observations": [],
+  "ai_observations": [
+    {
+      "type": "provenance",
+      "variant": null,
+      "assessment": "Printer record (Bambuddy #13): started 10:08, ended 11:35 EDT, 1 h 27 min of a 1 h 46 min estimate, state FAILED with HMS 0500-0200-0003-000A (the same code appears on every stop, so probably a stop or cancel near the end, not a print fault). An earlier telemetry fill of 118.2 min was elapsed time, not print time; replaced with the printer's 87 min. Grams not reported. Whether the strips reached full height is unknown; ask the owner.",
+      "confidence": 0.8,
+      "confirmed": false,
+      "at": "2026-10-26T19:58:18+00:00"
+    }
+  ],
   "comparison_validity": {
     "status": "valid",
     "reasons": []

@@ -890,7 +890,12 @@
       "baseline_missing": [
         "nozzle_changed"
       ],
-      "usage": null,
+      "usage": {
+        "actual_minutes": 111.0,
+        "actual_g": null,
+        "usage_source": "manual",
+        "completion_fraction": null
+      },
       "failed": null,
       "photos": []
     }
@@ -906,6 +911,14 @@
       "confidence": 0.4,
       "confirmed": false,
       "at": "2026-10-26T16:37:11+00:00"
+    },
+    {
+      "type": "provenance",
+      "variant": null,
+      "assessment": "Printer record (Bambuddy #14): started 12:36, completed 14:27 EDT, 1 h 51 min. Grams not reported.",
+      "confidence": 0.9,
+      "confirmed": false,
+      "at": "2026-10-26T19:58:18+00:00"
     }
   ],
   "comparison_validity": {

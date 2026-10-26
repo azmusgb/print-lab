@@ -9,29 +9,31 @@ description: Use when working on print-lab's hex-tile project (faceted hexagonal
 
 Every design choice on this tile trades three things: **bracing** (the tall, thin pair must hold itself still up to the top), **separation** (the two tiles must come apart whole), and **a clean face** (no feature may change one layer more than another, or touch the skin).
 
-More than 60 versions have explored this already. Read `design-ledger.md` in this folder before proposing any model change, and cite the versions that already tried something like it.
+More than 60 versions have explored this already. Read `design-ledger.md` in this folder before proposing any model change, and cite the versions that already tried something like it, with the ledger's evidence labels (owner, AI-photo, inferred).
 
-## Proven facts (don't re-test these)
+## What the record supports
 
-| Fact | Evidence |
-|---|---|
-| Any continuous join between the backs fuses, even with a 0.10–0.20 mm gap in the model | v42–v48, E-008, E-012, E-014 (gap bridged on 657/660 layers) |
-| No join at all lets the top wobble loose | E-011 (v59, 0.5 mm) |
-| Small discrete tabs separate; tabs at the same heights leave lines across the face | v40 came apart; v41 lines |
-| v58's face geometry prints clean | E-002, E-008, E-012, E-014 |
-| Upright is the right orientation; flat or leaned makes contour rings | facets 2–12° |
-| 0.65 mm backs crack when a fused join is cut | E-014 |
+Nothing below is proven. Each line says how far the evidence goes; don't present it more strongly.
+
+| Lesson | Status | Evidence and limits |
+|---|---|---|
+| Continuous or full-height contact between the backs welds the pair | observation, repeated | owner: v46–v48 "cant separate", "almost welded", "almost fused"; v58 ribs E-012 "cant even pull them apart". Gaps 0.10–0.20 mm only; contact area alone doesn't predict force |
+| No join at all lets the top wobble loose | one result | E-011 (v59, 0.5 mm), a high strip, not a full tile |
+| Pairs came apart before the ribs | AI-photo only | v41 tabs, v49 and v51 edge-only kiss seams seen apart in photos; how easy is not recorded |
+| Features at a few fixed heights leave face lines | hypothesis | v41 tab lines, v49/v50 pad-end lines; positions matched, never tested alone |
+| v58's face prints clean | owner, several prints | E-002, E-008, E-012, E-014 (lab filament, 0.4 nozzle settings) |
+| Filament affects the face | untested | yellow → grey → pink → white → terracotta across versions; every cross-version comparison is confounded |
 
 ## Current state
 
-- **v61s** = v58 faces + 1.25 mm backs + 207 staggered tacks, one per 0.6 mm band. Built by `sources/scad/make_v61_tacks.py`.
-- **E-019** is the top strip: failed once, came off the plate. **E-020** is the full pair: built, not printed.
-- **Nozzle:** the geometry is the 0.6-nozzle variant (`*_0.6nozzle.3mf`, objects `*_06_6in`), printed on the **0.4 nozzle**. It's only slightly thicker inside, and the face is identical.
-- **Settings** come from `sources/hexagon_v57_X2D_0.4nozzle_kexcelled.3mf` (the Kexcelled preset, 0.4 nozzle). That base already has a 10 mm outer brim and a 60/55 °C textured PEI plate. Don't suggest "add a brim".
-- **Printed so far:** the only full pair printed is E-014.
-- **Strips:** "the strip" means a `height_strip` experiment. Check its `build_spec.z`: 106–132 is a high strip; 0–n starts at the bed.
-- **Reading a record:** a failed run shows in `print_runs[].failed` and `usage`. The experiment's `status` stays `approved`, so it can be retried; it doesn't mean the run never happened.
-- The filament is spool #1, Kexcelled Light Matte Terracotta, lot C6719062. The other five spools are in `filaments.json`; their numbers beyond the labels are untested guesses.
+- **E-020 (v61s):** accepted for the 26 Oct deadline *with defects* (separation "SUPER hard", one back torn).
+- **E-021/E-022 (v61s + v62k strips):** ridged faces, cause unresolved (Q-004). E-021 stopped at 1 h 27 min on the printer.
+- **Next: E-023**, v51 reprinted as it was (owner said yes, 26 Oct): the last design seen apart with a mostly clean face. Then the same in Kexcelled terracotta, to separate filament from design.
+- **Nozzle:** every file, including `*_0.6nozzle`, is set up for 0.4/0.4. Ask the owner what is fitted before relying on it.
+- **Settings** for v57 onward come from `sources/hexagon_v57_X2D_0.4nozzle_kexcelled.3mf`. v51 carries its own settings in its 3MF.
+- **Reading a record:** a failed run shows in `print_runs[].failed` and `usage`; `status` stays open for a retry.
+- **Quotes:** owner words come from experiment verdicts or `history/hex-tile/chat/owner-notes.md`. Never turn an AI-photo reading into a quote.
+- The lab's filament is spool #1, Kexcelled Light Matte Terracotta, lot C6719062. Numbers beyond the labels on the other spools are untested guesses.
 
 ## Before proposing a model change
 
@@ -71,7 +73,7 @@ More than 60 versions have explored this already. Read `design-ledger.md` in thi
 
 | Mistake | Instead |
 |---|---|
-| Sweeping the rib or seam gap again | It fused at 0.10, 0.15 and 0.20 mm and wobbled loose at 0.5 mm. Change the kind of join, not the gap. |
+| Sweeping the rib gap again | Full-height ribs fused at 0.10–0.20 mm and wobbled loose at 0.5 mm (strip). Change the kind or amount of contact first. |
 | Trusting a high strip for a lightly joined pair | Strips cut from 100 mm and up failed twice (E-011, E-019). Prefer strips that start at the bed, or go to the full part. |
 | Stating spool settings as facts | Only the label is known. Mark anything else as untested. |
 | Calling a cause proven from photos | Say "likely" until a single-factor test confirms it. |
