@@ -23,16 +23,21 @@ Each "Needs you" item gets its action as a button. The `uv run lab …` command 
 | Needs you item | Button(s) on the page | Request kind | Mac applies it with |
 | --- | --- | --- | --- |
 | Judge the print | **Judge it** opens the existing verdict sheet (#393), plus **Add photos** | `verdict`, `photos` (exist) | `record_verdict`, `add_photos` |
-| Send it to the printer (approved, not started) | **I've sent it** (after sending from Bambu Connect or Handy) | `start` (new) | the code behind `lab exp start` (`cmd_exp_start`) |
+| Send it to the printer (approved, not started) | **It's printing now** (after sending from Bambu Connect or Handy) | `start` (new) | the code behind `lab exp start` (`cmd_exp_start`) |
 | Approve or drop | **Approve** with an optional reason, **Drop** with a required reason | `approve`, `abandon` (new) | `guards.approve`, `commands.abandon` |
 | Fix the plan, Run the next step | No button: these need the Mac. The command stays as now | — | — |
 
 - New kinds take `{experiment, reason?}`; `start` also takes the run id the page saw, so a stale tap can't start the
-  wrong run. Unknown or refused requests come back with the CLI's own error text, as `verdict` does today.
+  wrong run, and the **tap time** (the phone's clock), which the Mac records as the start instead of the pickup time.
+  The button reads **It's printing now** with the hint "only once it's actually printing": an early start once put
+  E-012's start hours off, and start times have been fixed from Bambu Handy's history since.
+- **Approve** calls `lab.loop.guards.approve()` unchanged, so the approval binds to the current build id and artifact
+  sha, and an owner stop still can't be approved away. The sheet lists the guards being approved (e.g. "full part",
+  "about 85 min over Q-003's time budget") and has a free-text reason, as the Mac's approvals are worded. Unknown or refused requests come back with the CLI's own error text, as `verdict` does today.
 - The verdict sheet accepts "–" (not judged) per criterion (already accepted by the Mac as null), e.g. "apart" on a
   strip that failed to print.
 - After a tap the item shows "Waiting for the Mac", then "Done" or the refusal, exactly like the verdict sheet.
-- **Decision (recommended):** no confirmation on Approve or I've sent it (the Mac refuses anything out of order);
+- **Decision (recommended):** no extra confirmation on It's printing now (its hint says when), and Approve is its own sheet (the Mac refuses anything out of order);
   **Drop** asks for a reason and confirms, because it closes the experiment.
 
 ## 2. The print as it happens
@@ -47,8 +52,10 @@ is printing.
   about 3:30 AM"), and the printer's own state word when it isn't printing (Paused, Stopped with an error 0700_8010).
 - **Camera:** a snapshot on the printing item, refreshed every 10 s while the page is visible. Local AI's server
   fetches `http://10.0.0.30:8091/x2d/frame.jpg` (the Pi's camera bridge, which stays open for the Workshop display
-  after the lock) and serves it as `GET /api/lab/camera.jpg` (paired device). No picture → "No picture from the
-  printer right now" (today: the X2D's LAN Only Liveview is off).
+  after the lock) and serves it as `GET /api/lab/camera.jpg` (paired device). **Plan for no camera:** it needs LAN Only
+  Liveview on at the printer (off on 25 Oct), and the Mac backup bridge fails (IOTC -90) until Bambu Studio's live
+  view is opened. The Pi's `/api/camera` reason (`liveview_off`, `printer_unreachable`) becomes the words under an
+  empty frame ("No picture: LAN Only Liveview is off on the X2D"), and nothing else on the item depends on it.
 - **When the printer finishes:** the item's main button becomes **Judge it** straight away, before the Mac has synced,
   and Home's Needs you lists "Judge the print · E-0nn". (The Mac's record still changes only through a request.)
 - **Pi Hub:** the printer card on Home and Workshop gets a "Print lab: E-020 ↗" link to Local AI's Print lab when a lab
