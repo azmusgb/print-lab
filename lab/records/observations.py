@@ -205,7 +205,8 @@ def _session_hits(paths: ProjectPaths, request_id: str | None, keys: list) -> li
     out = []
     for r in all_observations(paths):
         first = r["revisions"][0].get("submitted") or {}
-        if (request_id and first.get("request_id") == request_id) or (r.get("import_key") and r["import_key"] in keys):
+        imported = first.get("channel") == "import" and r.get("import_key")
+        if (request_id and first.get("request_id") == request_id) or (imported and r["import_key"] in keys):
             out.append(r)
     return out
 
@@ -229,6 +230,9 @@ def record_session(paths: ProjectPaths, snapshots: list[dict], *, submitted: dic
     for s in snapshots:
         _validate(s)
         _check_attribution(s, submitted)
+    is_import = submitted.get("channel") == "import" and submitted.get("actor") == "import"
+    if not is_import and any(s.get("import_key") for s in snapshots):
+        raise ValueError("Only the import of existing verdicts sets an import_key.")
     sha = _payload_sha(snapshots)
     request_id = submitted.get("request_id")
     keys = [s.get("import_key") for s in snapshots if s.get("import_key")]
@@ -361,7 +365,8 @@ def _light(v: dict) -> tuple[str, str | None]:
 
 def _plan_imports(paths: ProjectPaths) -> list[tuple[str, dict]]:
     from lab.loop.commands import all_experiments
-    have = {r.get("import_key") for r in all_observations(paths)}
+    have = {r.get("import_key") for r in all_observations(paths)
+            if (r["revisions"][0].get("submitted") or {}).get("channel") == "import"}
     out = []
     for eid, e in sorted(all_experiments(paths).items()):
         v = e.get("owner_verdict") or {}
@@ -413,7 +418,7 @@ def import_skipped(paths: ProjectPaths) -> list[str]:
     imported = {}
     for r in all_observations(paths):
         k = r.get("import_key") or ""
-        if k.startswith("verdict:"):
+        if (r["revisions"][0].get("submitted") or {}).get("channel") == "import" and k.startswith("verdict:"):
             _, eid, rest = k.split(":", 2)
             imported.setdefault(eid, set()).add(rest.rsplit(":", 1)[0])
     out = []

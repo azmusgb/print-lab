@@ -362,3 +362,15 @@ def test_findings_merge_observed_and_legacy_variants(tmp_path):
     x = page_index.build_index(p.root)["experiments"][0]
     assert x["finding_source"] == "mixed"
     assert "12A: face flawed" in x["finding"] and "12B" in x["finding"]
+
+
+def test_only_the_import_channel_can_use_an_import_key(tmp_path):
+    p = _with_criteria_verdict(tmp_path)
+    key = "verdict:E-012:2026-10-26T02:43:41+00:00:E-012-A"
+    s = snap("strip", {"face": assessed("failed")}, experiment="E-012", run="PR-012-01", build=None,
+             variant="E-012-A", label="12A")
+    s["import_key"] = key
+    with pytest.raises(ValueError, match="import_key"):
+        obs.record_session(p, [s], submitted={**PHONE, "request_id": "rq-spoof"})
+    made = obs.import_verdicts(p, apply=True)  # the real import isn't blocked
+    assert sum(len(m["ids"]) for m in made) == 2
