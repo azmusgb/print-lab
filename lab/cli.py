@@ -125,12 +125,26 @@ def cmd_slice(args) -> int:
 
 def cmd_gcode(args) -> int:
     from lab.adapters.bambu import extract_gcode
-    from lab.analysis.gcode import events_near, read_layers
-    layers = read_layers(extract_gcode(Path(args.file), args.plate))
-    times = [l.est_time_s for l in layers]
-    print(f"{len(layers)} layers, z {layers[0].z:g}–{layers[-1].z:g} mm, layer time {min(times):.1f}–{max(times):.1f} s")
+    from lab.analysis.gcode import diff_layers, events_near, format_gcode_diff, read_layers
+    path_a = Path(args.file)
+    layers_a = read_layers(extract_gcode(path_a, args.plate))
+
+    if getattr(args, "diff", None):
+        path_b = Path(args.diff)
+        plate_b = getattr(args, "plate2", args.plate)
+        layers_b = read_layers(extract_gcode(path_b, plate_b))
+        diff = diff_layers(layers_a, layers_b, near=args.near)
+        if getattr(args, "json", False):
+            print(json.dumps(diff, indent=2))
+        else:
+            print(format_gcode_diff(diff, name_a=path_a.name, name_b=path_b.name,
+                                    show_layers=getattr(args, "layers", False) or args.near is not None))
+        return 0
+
+    times = [l.est_time_s for l in layers_a]
+    print(f"{len(layers_a)} layers, z {layers_a[0].z:g}–{layers_a[-1].z:g} mm, layer time {min(times):.1f}–{max(times):.1f} s")
     if args.near is not None:
-        ev = events_near(layers, args.near)
+        ev = events_near(layers_a, args.near)
         print(f"Within 5 mm of {args.near:g} mm: outer-wall speed change {ev['speed_change_z'] or 'none'}, fan change "
               f"{ev['fan_change_z'] or 'none'}, layer-time jump {ev['layer_time_jump_z'] or 'none'}")
     return 0
@@ -222,8 +236,12 @@ def main(argv=None) -> int:
     s = sub.add_parser("slice", help="slice a 3MF plate with Bambu Studio")
     s.add_argument("file"); s.add_argument("--plate", type=int, default=1); s.add_argument("--out-dir")
     s.set_defaults(fn=cmd_slice)
-    s = sub.add_parser("gcode", help="read a sliced plate's G-code")
+    s = sub.add_parser("gcode", help="read a sliced plate's G-code, or diff two sliced plates")
     s.add_argument("file"); s.add_argument("--plate", type=int, default=1); s.add_argument("--near", type=float)
+    s.add_argument("--diff", help="compare with another sliced 3MF or G-code file")
+    s.add_argument("--plate2", type=int, default=1, help="plate number for the diff file (default 1)")
+    s.add_argument("--layers", action="store_true", help="show layer-by-layer diff table")
+    s.add_argument("--json", action="store_true")
     s.set_defaults(fn=cmd_gcode)
     s = sub.add_parser("plan", help="check an experiment against the version before it")
     s.add_argument("experiment"); s.add_argument("--before", required=True); s.add_argument("--after", required=True)

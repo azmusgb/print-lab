@@ -150,16 +150,66 @@ def apply_pending(pdir: Path, base: str, key: str, timeout: float = 10) -> list[
         lock_fd.close()
 
 
+def notify_desktop(message: str, title: str = "Print Lab", subtitle: str = "") -> None:
+    """Send a native macOS user notification via AppleScript."""
+    try:
+        sub_clause = f' subtitle "{subtitle}"' if subtitle else ""
+        script = f'display notification "{message}" with title "{title}"{sub_clause}'
+        subprocess.run(["osascript", "-e", script], timeout=2.0, capture_output=True)
+    except Exception:
+        pass
+
+
+def check_active_print(paths: ProjectPaths, base: str | None = None, timeout: float = 5.0) -> dict | None:
+    """Check if an active in-flight print has finished, and auto-record telemetry usage."""
+    from lab.loop.commands import all_experiments
+    from lab.loop.telemetry import apply_telemetry
+
+    exps = all_experiments(paths)
+    printing = next((e for e in exps.values() if e.get("status") == "printing"), None)
+    if not printing:
+        return None
+
+    runs = printing.get("print_runs") or []
+    if not runs:
+        return None
+
+    last_run = runs[-1]
+    usage = last_run.get("usage")
+    if usage and usage.get("usage_source") in ("telemetry", "manual"):
+        return None
+
+    try:
+        e, t = apply_telemetry(paths, printing["id"], run_id=last_run["id"], base=base)
+        notify_desktop(f"Print {t['run_id']} finished! Ready for verdict.", "Print Lab", f"{printing['id']}")
+        return {
+            "action": "telemetry_applied",
+            "experiment": printing["id"],
+            "run": t["run_id"],
+            "elapsed_minutes": t["elapsed_minutes"],
+            "grams": t["estimate_g"],
+        }
+    except ValueError:
+        return None
+
+
 def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]:
     pdir = Path(pdir)
     base = (base or os.environ.get("LAB_LOCALAI_URL") or BASE).rstrip("/")
     key = _key()
     applied = apply_pending(pdir, base, key, timeout)
-    if any(r.get("status") == "applied" for r in applied):
+    event = check_active_print(ProjectPaths(pdir), base, timeout)
+    if any(r.get("status") == "applied" for r in applied) or event:
         from lab.page import refresh
         refresh(pdir)
         from lab.sync import sync
         sync(pdir, base, timeout)
+    if event:
+        applied.append({
+            "id": f"event-{event['run']}",
+            "status": "applied",
+            "message": f"Print {event['run']} finished; telemetry usage auto-recorded ({event['elapsed_minutes']} min, {event['grams']} g)",
+        })
     return applied
 
 

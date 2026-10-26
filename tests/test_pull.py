@@ -374,3 +374,47 @@ def test_install_fails_if_uv_missing(tmp_path, monkeypatch):
     monkeypatch.setattr(pull.shutil, "which", lambda cmd: None)
     with pytest.raises(ValueError, match="uv isn't on PATH."):
         pull.install(repo=tmp_path, uv=None, agent_dir=tmp_path)
+
+
+def test_check_active_print_still_printing(project):
+    mock_ws = {
+        "online": True,
+        "printer": {
+            "state": "printing",
+            "progress": 50,
+            "minutesLeft": 20,
+            "seenAt": "2026-10-25T09:20:00+00:00",
+        }
+    }
+    with pull.patch("lab.sync.fetch_workshop_status", return_value=mock_ws) if hasattr(pull, "patch") else \
+            pytest.MonkeyPatch.context() as mp:
+        from unittest.mock import patch
+        with patch("lab.sync.fetch_workshop_status", return_value=mock_ws):
+            res = pull.check_active_print(project)
+            assert res is None
+
+
+def test_check_active_print_records_completion_and_notifies(project):
+    from unittest.mock import patch
+    mock_ws = {
+        "online": True,
+        "printer": {
+            "state": "finish",
+            "progress": 100,
+            "minutesLeft": 0,
+            "seenAt": "2026-10-25T09:40:00+00:00",
+        }
+    }
+    with patch("lab.sync.fetch_workshop_status", return_value=mock_ws), \
+         patch("lab.pull.notify_desktop") as mock_notify:
+        res = pull.check_active_print(project)
+        assert res is not None
+        assert res["action"] == "telemetry_applied"
+        assert res["experiment"] == "E-009"
+        assert res["run"] == "PR-009-01"
+        assert res["elapsed_minutes"] == 40.0
+        mock_notify.assert_called_once()
+
+        # Re-check should now be no-op because usage was recorded
+        res2 = pull.check_active_print(project)
+        assert res2 is None
