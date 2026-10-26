@@ -2938,6 +2938,14 @@
       "confidence": 0.7,
       "confirmed": false,
       "at": "2026-10-26T22:56:19+00:00"
+    },
+    {
+      "type": "provenance",
+      "variant": null,
+      "assessment": "Correction to the previous note: the owner stopped the print at layer 150 because it was looking bad (owner, 26 Oct: 'I stopped it. Was looking bad'). It was not a printer fault. HMS 0500-0200-0003-000A is therefore consistent with a user stop, as on E-021. The layer-150 coincidence with the strip height is moot.",
+      "confidence": 0.9,
+      "confirmed": false,
+      "at": "2026-10-26T23:10:50+00:00"
     }
   ],
   "comparison_validity": {
