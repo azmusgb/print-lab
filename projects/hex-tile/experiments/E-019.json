@@ -58,7 +58,7 @@
     "tabs": true,
     "notes": []
   },
-  "status": "approved",
+  "status": "abandoned",
   "variants": [
     {
       "id": "E-019-A",
@@ -773,7 +773,7 @@
         "actual_g": 5.7,
         "usage_source": "manual",
         "completion_fraction": 0.24,
-        "source_note": "minutes from Bambu Handy's print history (shown to 0.1 h, so ±3 min), entered by hand; not printer telemetry; cancelled after 19 min. Grams are an estimate, not measured: slicer 14.83 g x 19/49.8 min"
+        "source_note": "minutes from Bambu Handy's print history (shown to 0.1 h, so \u00b13 min), entered by hand; not printer telemetry; cancelled after 19 min. Grams are an estimate, not measured: slicer 14.83 g x 19/49.8 min"
       },
       "failed": {
         "at_fraction": 0.24,
@@ -791,5 +791,6 @@
     "reasons": []
   },
   "prediction_outcome": null,
-  "analysis": []
+  "analysis": [],
+  "abandoned_reason": "Superseded: E-020 printed the full v61s pair; E-021 tests kiss tacks from the bed"
 }
