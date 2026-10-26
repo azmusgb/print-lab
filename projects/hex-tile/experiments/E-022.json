@@ -66,7 +66,7 @@
     "tabs": true,
     "notes": []
   },
-  "status": "needs_approval",
+  "status": "printing",
   "variants": [
     {
       "id": "E-022-A",
@@ -859,13 +859,59 @@
       }
     }
   ],
-  "approval": null,
-  "print_runs": [],
+  "approval": {
+    "build_id": "BLD-022-01",
+    "artifact_sha256": "cae480638be32b02c1b3f8f9c014f4f90c8f5977aad84e60e954bb2c2978a208",
+    "approved_reasons": [
+      "per_test_time",
+      "per_test_material"
+    ],
+    "by": "owner",
+    "at": "2026-10-26T16:35:16+00:00",
+    "reason": "Exact repeat of E-021's plate to tell run events from the model or printer; 106 min, 34 g over the per-test limits."
+  },
+  "print_runs": [
+    {
+      "id": "PR-022-01",
+      "build_id": "BLD-022-01",
+      "started_at": "2026-10-26T16:37:06+00:00",
+      "setup": {
+        "filament_dried": {
+          "id": "SET-00001",
+          "at": "2026-10-25T01:40:55+00:00",
+          "fields": {}
+        },
+        "vibration_calibration": {
+          "id": "SET-00002",
+          "at": "2026-10-25T12:38:01+00:00",
+          "fields": {}
+        }
+      },
+      "baseline_missing": [
+        "nozzle_changed"
+      ],
+      "usage": null,
+      "failed": null,
+      "photos": []
+    }
+  ],
   "owner_verdict": null,
   "superseded_verdicts": [],
   "anchors": [],
-  "ai_observations": [],
-  "comparison_validity": null,
+  "ai_observations": [
+    {
+      "type": "process",
+      "variant": null,
+      "assessment": "Printer showed 'Cooling chamber' before layer 1 (chamber 27 C, bed heating to 60) because E-022 started straight after E-021. Possible ridge cause to watch: if the X2D regulates chamber temperature for PLA during a print (exhaust/aux fan switching on and off), those moments would disturb whole layers at uneven heights. Not seen in E-020, which printed overnight from a cold chamber.",
+      "confidence": 0.4,
+      "confirmed": false,
+      "at": "2026-10-26T16:37:11+00:00"
+    }
+  ],
+  "comparison_validity": {
+    "status": "valid",
+    "reasons": []
+  },
   "prediction_outcome": null,
   "analysis": [],
   "criteria": [
