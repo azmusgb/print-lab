@@ -174,6 +174,16 @@ def cmd_exp_start(args) -> int:
     return 0
 
 
+def cmd_exp_send(args) -> int:
+    from lab.loop import send as sending
+    r = sending.send(_paths(args), args.id, app=args.app,
+                     opener=(lambda app, path: None) if args.dry_run else sending._open)
+    print(f"{'Would open' if args.dry_run else 'Opened'} {r['file']} in {r['app']} ({r['build']}, the build the check "
+          f"passed).\nIn {r['app']}: pick the X2D, set filament 1 to the right AMS tray, press Print. Don't slice it "
+          f"again: that prints different G-code.\nOnce it's printing: uv run lab exp start {args.id}")
+    return 0
+
+
 def cmd_exp_abandon(args) -> int:
     from lab.loop.commands import abandon
     abandon(_paths(args), args.id, args.reason)
@@ -299,6 +309,12 @@ def register(sub) -> None:
                     help="key=Label?:choice,choice, e.g. 'apart=Twists apart by hand?:yes,hard,no'")
     cr.add_argument("--project", default="hex-tile")
     cr.set_defaults(fn=cmd_exp_criteria)
+    se = es.add_parser("send", help="open the checked build's sliced file in Bambu Connect, to print it unchanged")
+    se.add_argument("id")
+    se.add_argument("--app", default="Bambu Connect", help="the app to open it in (default: Bambu Connect)")
+    se.add_argument("--dry-run", action="store_true", help="say which file it would open, and open nothing")
+    se.add_argument("--project", default="hex-tile")
+    se.set_defaults(fn=cmd_exp_send)
     ab = es.add_parser("abandon", help="stop an experiment on purpose")
     ab.add_argument("id")
     ab.add_argument("--reason", required=True)
