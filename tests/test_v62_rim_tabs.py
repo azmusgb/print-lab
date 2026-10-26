@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import math
 import zipfile
 from pathlib import Path
 
@@ -20,7 +21,13 @@ def test_default_layout_keeps_v40_pitch_without_v41_event_burst():
     assert len(centers) == 42
     assert {side for *_rest, side, _slot in centers} == set(range(6))
     assert all(sum(1 for c in centers if c[3] == side) == 7 for side in range(6))
-    assert v62.R / 7 <= 12.0
+
+    # Check the actual generated center-to-center spacing, including the varying
+    # top/bottom insets—not just the idealized outer-hex R / n value.
+    for side in range(6):
+        pts = [(c[0], c[1]) for c in centers if c[3] == side]
+        for a, b in zip(pts, pts[1:]):
+            assert math.dist(a, b) <= 12.0
 
     events = v62._event_counts(centers, 0.6, 0.2)
     assert max(events.values()) <= 2
