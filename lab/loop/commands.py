@@ -232,7 +232,8 @@ def find_run(paths: ProjectPaths, run_id: str) -> tuple[dict, dict]:
     raise ValueError(f"{run_id} isn't a print run in {paths.name}. Print runs: {', '.join(runs) or 'none yet'}")
 
 
-def record_usage(paths: ProjectPaths, run_id: str, *, failed_at_pct, minutes, grams) -> dict:
+def record_usage(paths: ProjectPaths, run_id: str, *, failed_at_pct=None, minutes=None, grams=None,
+                 usage_source="manual") -> dict:
     if failed_at_pct is not None and not 1 <= failed_at_pct <= 99:
         raise ValueError("--failed-at is how far a failed print got, 1–99 %. For a print that finished, give "
                          "--minutes and --grams.")
@@ -246,7 +247,7 @@ def record_usage(paths: ProjectPaths, run_id: str, *, failed_at_pct, minutes, gr
                 e["status"] = "built"  # the next attempt is checked again
         if minutes is not None or grams is not None:
             run["usage"] = {"actual_minutes": float(minutes) if minutes is not None else None,
-                            "actual_g": float(grams) if grams is not None else None, "usage_source": "manual",
+                            "actual_g": float(grams) if grams is not None else None, "usage_source": usage_source,
                             "completion_fraction": run.get("failed", {}).get("at_fraction") if run.get("failed") else None}
         return save_experiment(paths, e)
 

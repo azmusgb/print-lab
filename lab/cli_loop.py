@@ -1,4 +1,5 @@
 """The Stage 1A.1 experiment loop commands: migrate, question, exp, setup, photos (spec: Commands)."""
+import argparse
 import json
 import sys
 
@@ -81,6 +82,39 @@ def cmd_exp_usage(args) -> int:
     pct = float(args.failed_at.rstrip("%")) if args.failed_at else None
     e = record_usage(_paths(args), args.run_id, failed_at_pct=pct, minutes=args.minutes, grams=args.grams)
     print(f"Recorded usage for {args.run_id} ({e['id']}, now {e['status']})")
+    return 0
+
+
+def cmd_exp_verify(args) -> int:
+    from lab.loop.verify import format_verify_text, verify_artifact
+    paths = _paths(args)
+    res = verify_artifact(paths, args.id, args.file, build_id=args.build)
+    if args.json:
+        print(json.dumps(res, indent=2))
+    else:
+        print(format_verify_text(res))
+    return 0 if res["ok"] else 1
+
+
+def cmd_exp_telemetry(args) -> int:
+    from lab.loop.telemetry import apply_telemetry, format_telemetry_text, get_run_telemetry
+    paths = _paths(args)
+    pct = float(args.failed_at.rstrip("%")) if args.failed_at else None
+    if args.apply:
+        e, t = apply_telemetry(paths, args.id, run_id=args.run, failed_at_pct=pct, force=args.force)
+        if args.json:
+            print(json.dumps({"experiment": e["id"], "run": t["run_id"], "telemetry": t, "status": e["status"]}, indent=2))
+        else:
+            print(format_telemetry_text(t))
+            print(f"Recorded telemetry usage for {t['run_id']} ({e['id']}, now {e['status']})")
+    else:
+        t = get_run_telemetry(paths, args.id, run_id=args.run)
+        if args.json:
+            print(json.dumps(t, indent=2))
+        else:
+            print(format_telemetry_text(t))
+            if not t.get("is_finished"):
+                print("Tip: Run `lab exp telemetry <eid> --apply` after the print completes (or `--force` for partial).")
     return 0
 
 
@@ -341,3 +375,19 @@ def register(sub) -> None:
     u.add_argument("--grams", type=float)
     u.add_argument("--project", default="hex-tile")
     u.set_defaults(fn=cmd_exp_usage)
+    vf = es.add_parser("verify", help="verify a candidate 3MF file matches the approved build artifact before printing")
+    vf.add_argument("id", help="experiment ID")
+    vf.add_argument("file", help="candidate 3MF or G-code file")
+    vf.add_argument("--build", help="specific build ID to verify against")
+    vf.add_argument("--json", action="store_true")
+    vf.add_argument("--project", default=argparse.SUPPRESS)
+    vf.set_defaults(fn=cmd_exp_verify)
+    tl = es.add_parser("telemetry", help="live printer telemetry and usage auto-fill for a print run")
+    tl.add_argument("id", help="experiment ID")
+    tl.add_argument("--run", help="specific run ID (defaults to latest)")
+    tl.add_argument("--apply", action="store_true", help="record telemetry usage to the experiment run")
+    tl.add_argument("--force", action="store_true", help="allow applying partial usage while still printing")
+    tl.add_argument("--failed-at", metavar="PCT", help="record failure at this percentage (1-99)")
+    tl.add_argument("--json", action="store_true")
+    tl.add_argument("--project", default=argparse.SUPPRESS)
+    tl.set_defaults(fn=cmd_exp_telemetry)

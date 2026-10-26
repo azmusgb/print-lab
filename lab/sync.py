@@ -92,6 +92,19 @@ def status(pdir: Path) -> dict | None:
         return None
 
 
+def fetch_workshop_status(base: str | None = None, timeout: float = 2.0) -> dict | None:
+    """Fetch live printer/workshop status from Local AI. Returns None on network error or missing key."""
+    base = (base or os.environ.get("LAB_LOCALAI_URL") or BASE).rstrip("/")
+    try:
+        key = _key()
+        st, data = _call(base, "GET", "/api/workshop/status", key, timeout)
+        if st == 200 and isinstance(data, dict):
+            return data
+    except Exception:
+        pass
+    return None
+
+
 def background(pdir: Path) -> None:
     """Start a sync that outlives the command and never slows or fails it."""
     if os.environ.get("LAB_SYNC", "on") == "off":
