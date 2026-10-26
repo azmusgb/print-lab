@@ -58,7 +58,7 @@
     "tabs": false,
     "notes": []
   },
-  "status": "printing",
+  "status": "answered",
   "variants": [
     {
       "id": "E-014-A",
@@ -2950,7 +2950,21 @@
       ]
     }
   ],
-  "owner_verdict": null,
+  "owner_verdict": {
+    "kind": "acceptance",
+    "good_enough": false,
+    "blocking_defects": [
+      "pair cracks when separated (ribs welded to backs)",
+      "bottom fused to plate; bottom side detached from the tile"
+    ],
+    "lighting": "installed",
+    "print_runs": [
+      "PR-014-01"
+    ],
+    "note": "Owner, 25 Oct: faces are pretty good; can't separate them without cracking; bottom fused with the plate so the bottom side detached from the tile.",
+    "by": "owner",
+    "at": "2026-10-26T01:47:07+00:00"
+  },
   "superseded_verdicts": [],
   "anchors": [],
   "ai_observations": [],
