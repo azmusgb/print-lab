@@ -9,44 +9,62 @@ Keep the current v60b125 tile geometry and 1.25 mm backs, but replace the failed
 - Base: `hexagon_v60b125_X2D_0.6nozzle.3mf`
 - Pair gap: **0.4 mm** (v40 proven value)
 - Breakaway tab cross-section: **0.6 × 0.6 mm**
-- Maximum tab pitch along each rim side: **12 mm**
+- Maximum nominal tab pitch along each rim side: **12 mm**
+- Default 6-inch placement: **7 tabs/side, 42 total**
+- Actual adjacent-center spacing on the default layout: about **10.5–10.9 mm**
 - Tab overlap into each back: **0.3 mm**
-- 6-inch tile: **7 tabs/side, 42 total**
 - Approximate contact per tile: **15.1 mm²**
 - Back thickness: unchanged at **1.25 mm**
 - Front/body geometry: unchanged from v60b125
 - Slicer settings: unchanged by the generator
 
-## What is different from v40
+## What is different from v40/v41
 
-v40 proved that rim tabs could hold a 6-inch pair and still let it come apart. v41 then exposed the face-line failure mode when many tabs occurred at the same Z heights.
+v40 proved that rim tabs could hold a 6-inch pair and still let it come apart. v41 then exposed the face-line failure mode when many tabs began or ended at the same Z heights.
 
-v62 keeps v40's rim-tab topology but varies each tab's inset within the 2 mm rim. On the horizontal top/bottom rim segments, changing inset also changes Z, so the tabs are spread over several layer bands instead of creating one synchronized horizontal event.
+v62r keeps the v40 mechanical topology but makes the placement **layer-aware** for the current 0.20 mm layer height:
+
+- opposite slanted sides are shifted out of phase along the rim;
+- top and bottom tabs use deliberately different insets inside the 2 mm solid rim, moving their Z centers onto different layer bands;
+- the generator measures tab start/stop events and refuses the layout if more than **two** occur on one 0.20 mm layer.
+
+That does not prove the face will be perfect—the real Bambu slice remains authoritative—but it removes the obvious v41-style synchronized row from the model geometry before slicing.
 
 ## What is different from v61s / E-020
 
 v61s cut a 1.0 mm central gap and placed 207 isolated tack posts in the interior back field, intentionally staying 4 mm away from the solid rim. E-020 showed loose extrusions consistent with that interior bridge/tack topology failing to land reliably.
 
-v62 removes that topology entirely. The connection is made only at the solid rim, where v40 proved the mechanical concept.
+v62r removes that topology entirely. The connection is made only at the solid rim, where v40 proved the mechanical concept.
 
-## Generate
+## Generate and test on the Mac
+
+From `~/dev/print-lab` on branch `feat/v62-rim-tabs`:
 
 ```bash
+uv run pytest -q tests/test_v62_rim_tabs.py
+
 uv run python projects/hex-tile/sources/scad/make_v62_rim_tabs.py \
   projects/hex-tile/sources/hexagon_v60b125_X2D_0.6nozzle.3mf \
   projects/hex-tile/sources/hexagon_v62r_X2D_0.6nozzle.3mf
 ```
 
-The generator refuses oversized tabs and verifies the resulting mesh is watertight.
+Expected default generator summary includes:
+
+```text
+v62r tabs=42 (7/side) gap=0.40mm tab=0.60mm actual_pitch<=10.89mm contact/tile=15.1mm2 max_events/layer<=2 watertight=True
+```
+
+The real-source pytest generates a temporary v62r from the tracked v60b125 3MF and verifies the archive, linked mesh objects, watertight output, tab count/pitch, and layer-event guard.
 
 ## Required validation before printing
 
-1. Inspect the generated 3MF with the normal Print Lab geometry checks.
-2. Slice with the exact installed Bambu Studio version.
-3. Confirm the G-code contains the rim tabs and that no old continuous ribs/seams still bridge the pair gap.
-4. Inspect layer-time / toolpath events around the tab elevations; the tab staggering should avoid a single repeated line event like v41.
-5. Run the smallest representative breakaway test first unless the deadline requires an explicitly approved full-part print.
-6. Record the model as a new prospective experiment before the physical print.
+1. Run the real-source test above.
+2. Inspect the generated 3MF with the normal Print Lab geometry checks.
+3. Slice with the exact installed Bambu Studio version (`02.08.02.61` for the current project record).
+4. Confirm the G-code contains the rim tabs and that no old continuous ribs/seams still bridge the pair gap.
+5. Inspect layer-time/toolpath events around tab elevations; model-level staggering is not a substitute for G-code evidence.
+6. Record a new **prospective** experiment before any physical print.
+7. Use the smallest representative breakaway test only if it can stand reliably. E-011/E-019 showed that tall lightly joined strips can detach; a full pair may therefore be the representative geometry, but still requires normal full-part/budget approval.
 
 ## Intended verdict
 
