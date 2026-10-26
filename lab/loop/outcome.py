@@ -38,7 +38,7 @@ def _sweep_strips(exp: dict) -> list[tuple[float, str | None]]:
 
 def _sweep_outcome(exp: dict, v: dict) -> str:
     """'bands>=X': supported when every strip at or over X is banded and every one under it clean."""
-    if v.get("lighting") not in (None, "diagnostic"):
+    if v.get("lighting") != "diagnostic":  # an unknown light is not the diagnostic light
         return "unresolved"
     x = float(exp["expect"]["bands_from"])
     strips = _sweep_strips(exp)
@@ -108,8 +108,8 @@ def prediction_outcome(exp: dict, validity: dict) -> str | None:
         return _sweep_outcome(exp, v)
     expect, order = exp.get("expect") or {}, v["order"]
     strength = STRENGTH_RANK[v.get("strength")]
-    if v.get("about_target") is not True or v.get("lighting") not in (None, "diagnostic"):
-        out = "unresolved"  # off target, or not judged under the diagnostic light
+    if v.get("about_target") is not True or v.get("lighting") != "diagnostic":
+        out = "unresolved"  # off target, or not judged under the diagnostic light (or the light isn't known)
     elif "better" in expect:
         b, a = _place(order, expect["better"]), _place(order, expect["than"])
         if b < a:

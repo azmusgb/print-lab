@@ -190,11 +190,16 @@ def cmd_case(args) -> int:
             print(f"Rule evaluation for {args.id} ({res.get('rule_name')}):")
             print(f"  Revisions checked: {res['revisions_checked']}")
             print(f"  Flagged:           {res['flagged_count']} ({', '.join(res['flagged_versions'])})")
-            print(f"  Impact:            {res['precision_note']}")
+            print(f"  Note:              {res['coverage_note']}")
+        return 0
+    if args.action == "review":
+        from lab.loop.cases import review_case
+        c = review_case(paths, args.id, level=args.level or "", reason=args.reason or "")
+        print(f"{c['id']}: your review sets it to {c['confidence']} (Level {c['ladder_step']} of 5).")
         return 0
     if args.action == "promote":
         from lab.loop.cases import promote_case_to_rule
-        res = promote_case_to_rule(paths, args.id)
+        res = promote_case_to_rule(paths, args.id, reason=args.reason or "")
         if args.json:
             print(json.dumps(res, indent=2))
         else:
@@ -202,7 +207,7 @@ def cmd_case(args) -> int:
             print(f"  Confidence: {res['confidence']} (Level {res['ladder_step']} of 5)")
             print(f"  Condition:  {res['condition']}")
             print(f"  Rule File:  {res['rule_file']}")
-            print("  Effect:     Active in `lab inspect`, `lab checks`, and `lab plan`")
+            print("  Effect:     records your endorsement; the checker runs in `lab inspect` either way")
         return 0
     return 0
 
@@ -466,7 +471,7 @@ def register(sub) -> None:
     v.add_argument("--grade", help="for a speed sweep: each strip by its speed, e.g. 40=clean,60=faint,100=banded; "
                    "for an experiment with criteria: each strip by its tab, e.g. '12A=print:clean,apart:no;12B=…' "
                    "(- for a criterion that can't be judged)")
-    v.add_argument("--lighting", default="diagnostic", help="the light you judged under: diagnostic (raking, side "
+    v.add_argument("--lighting", default=None, help="the light you judged under: diagnostic (raking, side "
                    "by side), or e.g. room; only the diagnostic light can support or refute a prediction")
     v.add_argument("--note")
     v.add_argument("--replace", action="store_true")
@@ -508,8 +513,10 @@ def register(sub) -> None:
     lg.set_defaults(fn=cmd_exp_log)
 
     cs = sub.add_parser("case", help="Stage 3: case library, confidence ladder, and rule evaluation")
-    cs.add_argument("action", choices=["list", "show", "export", "check-rule", "promote"])
+    cs.add_argument("action", choices=["list", "show", "export", "check-rule", "review", "promote"])
     cs.add_argument("id", nargs="?", help="case ID, e.g. CASE-001")
+    cs.add_argument("--level", help="for review: candidate, supported, reproduced, proven_for_part or generalisable")
+    cs.add_argument("--reason", help="for review and promote: your reason, citing the verdicts")
     cs.add_argument("--json", action="store_true")
     cs.add_argument("--project", default=argparse.SUPPRESS)
     cs.set_defaults(fn=cmd_case)

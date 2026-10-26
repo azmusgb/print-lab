@@ -8,6 +8,7 @@ from loop_fixtures import make_project, minimal_experiment, minimal_question, st
 def _verdict(order, strength="clearly"):
     return {"kind": "ranking", "print_runs": [], "order": order, "strength": strength, "about_target": True,
             "marks": [], "witness": None, "witness_override": None, "note": "B is smoother", "by": "owner",
+            "lighting": "diagnostic",
             "at": "2026-10-25T10:00:00+00:00", "confirmed": True}
 
 

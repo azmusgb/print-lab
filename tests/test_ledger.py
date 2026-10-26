@@ -24,6 +24,7 @@ def answered(n, outcome_strength, at, provenance="prospective", failed_run=False
              print_runs=[{"id": f"PR-0{n:02d}-01", "build_id": f"BLD-0{n:02d}-01",
                           **({"failed": {"at_fraction": 0.5, "note": None}} if failed_run else {})}],
              owner_verdict={"kind": "ranking", "order": order, "about_target": True, "by": "owner", "at": at,
+                            "lighting": "diagnostic",
                             "strength": "clearly" if outcome_strength == "refuted" else outcome_strength})
     return e
 

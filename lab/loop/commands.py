@@ -84,7 +84,7 @@ def parse_rank(e: dict, rank: str) -> list[list[str]]:
 
 
 def record_verdict(paths: ProjectPaths, eid: str, *, rank, strength, inconclusive, accept, defects, marks, witness,
-                   witness_override, anchors, not_about_target, note, replace, runs, lighting="diagnostic",
+                   witness_override, anchors, not_about_target, note, replace, runs, lighting=None,
                    grades=None) -> dict:
     with record_lock(paths.locks, eid, f"lab exp verdict {eid}"):
         e = load_experiment(paths, eid)
@@ -105,9 +105,9 @@ def record_verdict(paths: ProjectPaths, eid: str, *, rank, strength, inconclusiv
         if inconclusive:
             v = {"kind": "inconclusive", "reason": inconclusive, **base}
         elif e.get("criteria"):
-            v = {"kind": "criteria", "grades": _criteria_grades(e, grades), "lighting": lighting or "diagnostic", **base}
+            v = {"kind": "criteria", "grades": _criteria_grades(e, grades), "lighting": lighting, **base}
         elif e["test_kind"] == "speed_sweep":
-            v = {"kind": "sweep", "grades": _grades(e, grades), "lighting": lighting or "diagnostic", **base}
+            v = {"kind": "sweep", "grades": _grades(e, grades), "lighting": lighting, **base}
         elif accept is not None:
             if e["test_kind"] not in ("scaled_part", "full_part"):
                 raise ValueError(f"{eid} is a {e['test_kind']}; the good-enough verdict is for full or scaled parts. "
@@ -137,7 +137,7 @@ def record_verdict(paths: ProjectPaths, eid: str, *, rank, strength, inconclusiv
                 raise ValueError(f"{eid} reprinted {a['same_as']} as {a['id']}; say how it compares: "
                                  f"--anchor {a['id']}={a['same_as']}:same, different or inconclusive.")
             v = {"kind": "ranking", "order": order, "strength": strength if len(order) > 1 else None,
-                 "about_target": not not_about_target, "lighting": lighting or "diagnostic", "marks": mk,
+                 "about_target": not not_about_target, "lighting": lighting, "marks": mk,
                  "witness": {"id": "WITNESS-01", "condition": witness, "note": None} if witness else None,
                  "witness_override": witness_override, **base}
         if e.get("owner_verdict"):

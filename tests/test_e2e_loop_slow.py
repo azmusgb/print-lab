@@ -51,7 +51,7 @@ def test_end_to_end_loop(lab):
     run = _exp(p, e1)["print_runs"][-1]
     assert run["id"] in out and run["setup"] is not None
 
-    out = lab("exp", "verdict", e1, "--rank", "B>A", "--strength", "clearly")
+    out = lab("exp", "verdict", e1, "--rank", "B>A", "--strength", "clearly", "--lighting", "diagnostic")
     assert "outcome supported, comparison valid" in out
     est1 = _exp(p, e1)["builds"][-1]["estimate"]
 

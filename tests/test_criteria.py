@@ -19,7 +19,8 @@ def proj(tmp_path):
 
 def V(proj, eid="E-009", **kw):
     args = dict(rank=None, strength=None, inconclusive=None, accept=None, defects=[], marks=[], witness=None,
-                witness_override=None, anchors=[], not_about_target=False, note=None, replace=False, runs=None)
+                witness_override=None, anchors=[], not_about_target=False, note=None, replace=False, runs=None,
+                lighting="diagnostic")  # judged under the diagnostic light unless a test says otherwise
     args.update(kw)
     return record_verdict(proj, eid, **args)
 

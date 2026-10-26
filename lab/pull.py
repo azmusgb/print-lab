@@ -18,6 +18,11 @@ from lab.sync import BASE, _call, _context, _key
 ROOT = Path(__file__).resolve().parent.parent
 
 
+def verdict_lighting(payload: dict) -> str | None:
+    """The light the owner judged under, as sent; None when the phone didn't say (never assumed diagnostic)."""
+    return payload.get("lighting") or None
+
+
 def apply_pending(pdir: Path, base: str, key: str, timeout: float = 10) -> list[dict]:
     pdir = Path(pdir)
     lock_file = pdir / ".pull.lock"
@@ -91,7 +96,7 @@ def apply_pending(pdir: Path, base: str, key: str, timeout: float = 10) -> list[
                         note=payload.get("note"),
                         replace=bool(payload.get("replace", False)),
                         runs=[run_id] if run_id else None,
-                        lighting=payload.get("lighting") or "diagnostic",
+                        lighting=verdict_lighting(payload),
                         grades=payload.get("grades"),
                     )
                     status = "applied"

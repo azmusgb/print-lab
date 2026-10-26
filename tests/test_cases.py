@@ -21,16 +21,13 @@ def test_evaluate_confidence():
     e1["owner_verdict"] = {"kind": "ranking", "order": [["E-001-A"]]}
     assert evaluate_confidence([e1]) == ("supported", 2)
 
-    # 2 answered -> reproduced
+    # More answered experiments, a full part, the diagnostic light: counting still stops at supported; anything
+    # higher is the owner's review (blueprint R-05)
     e2 = minimal_experiment("E-002")
     e2["status"] = "answered"
-    e2["owner_verdict"] = {"kind": "ranking", "order": [["E-002-A"]]}
-    assert evaluate_confidence([e1, e2]) == ("reproduced", 3)
-
-    # 2 answered with full_part and diagnostic lighting -> proven_for_part
+    e2["owner_verdict"] = {"kind": "ranking", "order": [["E-002-A"]], "lighting": "diagnostic"}
     e2["test_kind"] = "full_part"
-    e2["owner_verdict"]["lighting"] = "diagnostic"
-    assert evaluate_confidence([e1, e2]) == ("proven_for_part", 4)
+    assert evaluate_confidence([e1, e2]) == ("supported", 2)
 
 
 def test_generate_cases(tmp_path):
@@ -72,7 +69,13 @@ def test_cases_cli(capsys, real_project_copy):
     assert "Rule evaluation for CASE-001" in out
     assert "Revisions checked:" in out
 
-    rc = main(["case", "promote", "CASE-001"])
+    rc = main(["case", "promote", "CASE-001", "--reason", "x"])
+    assert rc == 1  # not reviewed yet
+    capsys.readouterr()
+    rc = main(["case", "review", "CASE-001", "--level", "reproduced", "--reason", "E-008 and E-012 fused"])
+    assert rc == 0
+    capsys.readouterr()
+    rc = main(["case", "promote", "CASE-001", "--reason", "owner endorses"])
     assert rc == 0
     out = capsys.readouterr().out
     assert "✓ Promoted CASE-001 to active rule" in out
@@ -93,5 +96,5 @@ def test_promote_refuses_candidate(tmp_path):
     }
     atomic_write_json(cases_dir(paths) / "CASE-999.json", c)
 
-    with pytest.raises(ValueError, match="Only cases at Level >= 3"):
-        promote_case_to_rule(paths, "CASE-999")
+    with pytest.raises(ValueError, match="needs your review"):
+        promote_case_to_rule(paths, "CASE-999", reason="x")

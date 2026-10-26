@@ -14,7 +14,7 @@ def judged(order, strength, about=True, expect=None, **verdict):
         e["expect"] = expect
     e["owner_verdict"] = {"kind": "ranking", "order": [[f"E-009-{x}" for x in g] for g in order],
                           "strength": strength, "about_target": about, "by": "owner", "at": "2026-10-25T10:00:00+00:00",
-                          **verdict}
+                          "lighting": "diagnostic", **verdict}
     return e
 
 

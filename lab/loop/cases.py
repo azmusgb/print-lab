@@ -47,21 +47,29 @@ class Case:
 
 
 def evaluate_confidence(exps: list[dict]) -> tuple[str, int]:
-    """Determine confidence level and ladder step from supporting evidence."""
+    """The level counting alone can justify: 'supported' once any answered experiment is cited. Counting can't say
+    whether the verdicts agree with the finding, are independent, or contradict each other, so anything higher comes
+    only from the owner's review (review_case)."""
     answered = [e for e in exps if e.get("status") == "answered" and e.get("owner_verdict")]
-    if not answered:
-        return "candidate", 1
+    return ("supported", 2) if answered else ("candidate", 1)
 
-    has_full_part = any(e.get("test_kind") in ("full_part", "scaled_part") for e in answered)
-    diagnostic_light = any((e.get("owner_verdict") or {}).get("lighting") == "diagnostic" for e in answered)
 
-    if len(answered) >= 2 and has_full_part and diagnostic_light:
-        return "proven_for_part", 4
-    if len(answered) >= 2:
-        return "reproduced", 3
-    if len(answered) == 1:
-        return "supported", 2
-    return "candidate", 1
+def review_case(paths: ProjectPaths, case_id: str, *, level: str, reason: str) -> dict:
+    """The owner's judgement of how far the evidence goes. It survives regeneration (sync_cases)."""
+    if level not in LADDER_STEPS:
+        raise ValueError(f"Level must be one of: {', '.join(LADDER_STEPS)}.")
+    if not (reason or "").strip():
+        raise ValueError("Give the reason for this level: which verdicts support it, and any that don't.")
+    cdir = cases_dir(paths)
+    f = cdir / f"{case_id}.json"
+    if not f.exists():
+        raise ValueError(f"Case {case_id} not found in {paths.name}.")
+    c = json.loads(f.read_text())
+    c["review"] = {"by": "owner", "level": level, "reason": reason.strip(), "at": now()}
+    c["confidence"], c["ladder_step"] = level, LADDER_STEPS[level]
+    c["updated_at"] = now()
+    atomic_write_json(f, c)
+    return c
 
 
 def cases_dir(paths: ProjectPaths) -> Path:
@@ -146,11 +154,24 @@ def generate_cases_from_experiments(paths: ProjectPaths) -> list[dict]:
     return cases
 
 
+KEEP_ON_REGENERATE = ("review", "status", "promoted_at", "promoted_rule", "target_file", "promotion_reason",
+                      "created_at")
+
+
 def sync_cases(paths: ProjectPaths) -> list[dict]:
+    """Regenerate the cases from the experiments, keeping the owner's review and any promotion."""
     cdir = cases_dir(paths)
     cases = generate_cases_from_experiments(paths)
     for c in cases:
-        atomic_write_json(cdir / f"{c['id']}.json", c)
+        f = cdir / f"{c['id']}.json"
+        old = json.loads(f.read_text()) if f.exists() else {}
+        c["origin"] = "generated"
+        for k in KEEP_ON_REGENERATE:
+            if k in old:
+                c[k] = old[k]
+        if c.get("review"):
+            c["confidence"], c["ladder_step"] = c["review"]["level"], LADDER_STEPS[c["review"]["level"]]
+        atomic_write_json(f, c)
     return cases
 
 
@@ -183,19 +204,25 @@ def check_rule_against_history(paths: ProjectPaths, case_id: str) -> dict:
         "revisions_checked": len(revs),
         "flagged_count": len(flagged),
         "flagged_versions": flagged[:10],
-        "precision_note": f"Rule would have prevented {len(flagged)} revisions that suffered from back fusion.",
+        "coverage_note": (f"The rule flags {len(flagged)} of {len(revs)} revisions. This is coverage, not a measured "
+                          "precision: the revisions aren't labelled with whether they actually fused."),
     }
 
 
-def promote_case_to_rule(paths: ProjectPaths, case_id: str) -> dict:
+def promote_case_to_rule(paths: ProjectPaths, case_id: str, *, reason: str) -> dict:
+    """Record the owner's endorsement of a case's rule. It needs the owner's review at 'reproduced' or above, a
+    reason, and a checker that actually exists; the checker runs in `lab inspect` whether or not a case endorses it."""
     cases = load_cases(paths) or sync_cases(paths)
     c = next((x for x in cases if x["id"] == case_id), None)
     if not c:
         raise ValueError(f"Case {case_id} not found in {paths.name}.")
 
-    if c.get("ladder_step", 1) < 3:
-        raise ValueError(f"Case {case_id} has confidence '{c['confidence']}' (Level {c['ladder_step']}). "
-                         "Only cases at Level >= 3 (reproduced) can be promoted to active rules.")
+    review = c.get("review")
+    if not review or LADDER_STEPS.get(review.get("level"), 0) < 3:
+        raise ValueError(f"Case {case_id} needs your review at 'reproduced' or above before it can be promoted: "
+                         f"`lab case review {case_id} --level reproduced --reason …`.")
+    if not (reason or "").strip():
+        raise ValueError("Give the reason for promoting this rule.")
 
     prop = c.get("rule_proposal")
     if not prop:
@@ -205,9 +232,13 @@ def promote_case_to_rule(paths: ProjectPaths, case_id: str) -> dict:
         "minimum_back_gap": "lab/checks/part_gap.py",
         "wall_speed_ratio": "lab/checks/wall_speed.py",
     }
-    target_file = rule_files.get(prop["rule_name"], "lab/checks/")
+    target_file = rule_files.get(prop["rule_name"])
+    repo = Path(__file__).resolve().parent.parent.parent
+    if not target_file or not (repo / target_file).exists():
+        raise ValueError(f"No checker exists for the rule '{prop['rule_name']}'; write and test it before promoting.")
 
     c["status"] = "promoted"
+    c["promotion_reason"] = reason.strip()
     c["promoted_at"] = now()
     c["promoted_rule"] = prop["rule_name"]
     c["target_file"] = target_file
@@ -234,14 +265,26 @@ def format_cases_list(cases: list[dict]) -> str:
         step = c.get("ladder_step", 1)
         ladder_vis = "●" * step + "○" * (5 - step)
         lines.append(f"  {c['id']:<10} [{ladder_vis} {c['confidence']:<15}] {c['title']}")
+        if (flag := _review_flag(c)):
+            lines.append(f"             {flag}")
         lines.append(f"             Finding: {c['finding'][:70]}...")
         lines.append(f"             Evidence: {', '.join(c.get('experiments', []))}")
     return "\n".join(lines)
 
 
+def _review_flag(c: dict) -> str | None:
+    if c.get("review"):
+        return None
+    if c.get("status") == "promoted":
+        return "Promoted before reviews were required; not reviewed. Its level came from counting verdicts."
+    return "Not reviewed: its level comes from counting verdicts, not from what they say."
+
+
 def format_case_detail(c: dict) -> str:
     lines = []
     lines.append(f"{c['id']}: {c['title']}")
+    if (flag := _review_flag(c)):
+        lines.append(flag)
     step = c.get("ladder_step", 1)
     ladder_vis = "●" * step + "○" * (5 - step)
     lines.append(f"Confidence:  {ladder_vis} {c['confidence']} (Level {step} of 5)")

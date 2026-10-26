@@ -85,7 +85,7 @@ def test_refuted_dependency(proj):
     first = built(proj)
     edit(proj, first, lambda e: e.update(status="answered", owner_verdict={
         "kind": "ranking", "order": [[f"{first}-A"], [f"{first}-B"]], "strength": "clearly", "about_target": True,
-        "by": "owner", "at": "t"}, print_runs=[{"id": "PR-001-01", "build_id": "BLD-001-01"}]))
+        "lighting": "diagnostic", "by": "owner", "at": "t"}, print_runs=[{"id": "PR-001-01", "build_id": "BLD-001-01"}]))
     eid = built(proj, lambda e: e.update(derived_from_result=[first]))
     assert "refuted_dependency" in codes(check_experiment(proj, eid), "needs_approval")
 
