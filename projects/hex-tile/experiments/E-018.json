@@ -58,7 +58,7 @@
     "tabs": true,
     "notes": []
   },
-  "status": "built",
+  "status": "abandoned",
   "variants": [
     {
       "id": "E-018-A",
@@ -638,5 +638,6 @@
   "ai_observations": [],
   "comparison_validity": null,
   "prediction_outcome": null,
-  "analysis": []
+  "analysis": [],
+  "abandoned_reason": "replaced by the v61s staggered-tack version (one tack per layer band, avoids v41's tab lines)"
 }

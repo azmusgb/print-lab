@@ -66,5 +66,12 @@
     "source": "derived",
     "derived_from": "sources/hexagon_v60b125_X2D_0.6nozzle.3mf",
     "change": "the full-height ribs and edge seams in the 1.0 mm gap between the backs (1697 mm2 of contact that fused in E-008/E-012/E-014) replaced by 124 tack posts (1.0 x 0.6 mm, 1.6 mm deep, fused into both 1.25 mm backs): on the four old rib lines and 2.5 mm inside the outline, every 8 mm; 74 mm2 of contact (4%). Faces, backs and outline unchanged. Made with sources/scad/make_v61_tacks.py (args: src out 8 1.0 0.6)"
+  },
+  {
+    "path": "sources/hexagon_v61s_X2D_0.6nozzle.3mf",
+    "sha256": "9f46a35e64bb70124b3481a499a0cbbc33f5deb9546db6f78fa99b259bebe9df",
+    "source": "derived",
+    "derived_from": "sources/hexagon_v60b125_X2D_0.6nozzle.3mf",
+    "change": "v61t's tacks re-laid so every 0.6 mm band of height has exactly one tack (207 tacks, 1.0 x 0.6 mm, golden-ratio spread across the width, 5-10 mm apart, 4 mm inside the outline, off the rim): the v39/v40 tab idea that separated, without v41's lines across the face from tabs at the same few heights. 124 mm2 of contact (7% of v58's 1697). Made with sources/scad/make_v61_tacks.py (args: src out 8 1.0 0.6)"
   }
 ]
