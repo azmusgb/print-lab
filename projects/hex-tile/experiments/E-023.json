@@ -58,7 +58,7 @@
     "tabs": false,
     "notes": []
   },
-  "status": "printing",
+  "status": "built",
   "variants": [
     {
       "id": "E-023-A",
@@ -2914,15 +2914,32 @@
       "baseline_missing": [
         "nozzle_changed"
       ],
-      "usage": null,
-      "failed": null,
+      "usage": {
+        "actual_minutes": 24.0,
+        "actual_g": null,
+        "usage_source": "manual",
+        "completion_fraction": 0.23
+      },
+      "failed": {
+        "at_fraction": 0.23,
+        "note": null
+      },
       "photos": []
     }
   ],
   "owner_verdict": null,
   "superseded_verdicts": [],
   "anchors": [],
-  "ai_observations": [],
+  "ai_observations": [
+    {
+      "type": "provenance",
+      "variant": null,
+      "assessment": "Printer record (Bambuddy #15): started 22:28 UTC, failed 22:52 UTC at layer 150 of 660 (30.0 mm), print_error 0, HMS 0500-0200-0003-000A (that HMS entry is timestamped 25 Oct, so it may be stale). Layer 150 is exactly the height of the E-021/E-022 strips (150 layers); cause not established. Grams not reported. Owner photo: strings, ridged faces, printer Idle.",
+      "confidence": 0.7,
+      "confirmed": false,
+      "at": "2026-10-26T22:56:19+00:00"
+    }
+  ],
   "comparison_validity": {
     "status": "valid",
     "reasons": []
