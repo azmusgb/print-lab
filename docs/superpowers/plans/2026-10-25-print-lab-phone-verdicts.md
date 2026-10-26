@@ -70,7 +70,7 @@ recommended answers: 60 s pickup; E-012 words clean / flawed / failed and yes / 
   `"key=Label?:choice1,choice2,choice3"`. Stored as `e["criteria"] = [{"key", "label", "choices": [...]}]`.
 - Produces: CLI `lab exp criteria E-012 --add "print=Printed cleanly?:clean,flawed,failed" --add "apart=Twists apart by hand?:yes,hard,no"`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 def test_criteria_are_saved_in_order(project):          # loop_fixtures.make_project with a printing experiment
@@ -84,12 +84,12 @@ def test_criteria_keys_are_unique(...):                # two "print=" specs rais
 def test_schema_accepts_criteria_and_rejects_bad_shape(...)  # criteria item without "choices" fails load()
 ```
 
-- [ ] **Step 2: Run** `uv run pytest tests/test_criteria.py -q`. Expected: FAIL (no `set_criteria`).
-- [ ] **Step 3: Implement** `set_criteria` under `record_lock`, the schema field (`F(L, each=F(D, fields=CRITERION))`
+- [x] **Step 2: Run** `uv run pytest tests/test_criteria.py -q`. Expected: FAIL (no `set_criteria`).
+- [x] **Step 3: Implement** `set_criteria` under `record_lock`, the schema field (`F(L, each=F(D, fields=CRITERION))`
   with `CRITERION = {"key": F(S, True), "label": F(S, True), "choices": F(L, True)}`), key pattern `[a-z]{1,12}`,
   2–4 choices of `[a-z]{1,12}`, and the CLI subcommand. Add `"criteria"` to `VERDICT_KINDS`.
-- [ ] **Step 4: Run** the same command. Expected: PASS. Then `uv run pytest -q -m "not slow"`. Expected: all pass.
-- [ ] **Step 5: Commit** `feat: per-experiment criteria (lab exp criteria)`.
+- [x] **Step 4: Run** the same command. Expected: PASS. Then `uv run pytest -q -m "not slow"`. Expected: all pass.
+- [x] **Step 5: Commit** `feat: per-experiment criteria (lab exp criteria)`.
 
 ### Task 2: The criteria verdict, finding and page index
 
@@ -108,7 +108,7 @@ def test_schema_accepts_criteria_and_rejects_bad_shape(...)  # criteria item wit
 - Produces: `criteria_finding(exp) -> str | None`.
 - Produces: index experiment fields `criteria: list | None` and `run: str | None` (the latest print run id).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 def test_criteria_verdict_by_tab(e012_like):           # three variants with tabs 12A..12C, criteria from Task 1
@@ -132,11 +132,11 @@ Finding words per choice: `print`: clean → "printed clean", flawed → "printe
 `apart`: yes → "came apart", hard → "came apart with force", no → "didn't come apart". Any other criterion falls
 back to "<label> <choice>".
 
-- [ ] **Step 2: Run** `uv run pytest tests/test_criteria.py tests/test_page_index.py -q`. Expected: the new tests FAIL.
-- [ ] **Step 3: Implement.** Branch order in `record_verdict`: inconclusive, then `e.get("criteria")`, then
+- [x] **Step 2: Run** `uv run pytest tests/test_criteria.py tests/test_page_index.py -q`. Expected: the new tests FAIL.
+- [x] **Step 3: Implement.** Branch order in `record_verdict`: inconclusive, then `e.get("criteria")`, then
   speed_sweep, as today. `lighting` defaults to `"diagnostic"` as for rankings.
-- [ ] **Step 4: Run** the same command, then `uv run pytest -q -m "not slow"`. Expected: all pass.
-- [ ] **Step 5: Commit** `feat: criteria verdicts, finding sentence and page index fields`.
+- [x] **Step 4: Run** the same command, then `uv run pytest -q -m "not slow"`. Expected: all pass.
+- [x] **Step 5: Commit** `feat: criteria verdicts, finding sentence and page index fields`.
 
 ### Task 3: `lab pull`
 
@@ -156,7 +156,7 @@ back to "<label> <choice>".
   - `verdict` payload fields used: `grades`, `rank`, `strength`, `inconclusive`, `lighting`, `note`, `replace`.
   - `photos` payload: `{"photos": [{"sha256", "tab"}]}`; each is fetched from `GET /api/lab/<p>/incoming/<sha>.jpg`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 def test_pull_applies_a_verdict_and_reports_it(fake, project):   # fake serves one pending verdict
@@ -177,13 +177,13 @@ def test_pull_is_off_with_lab_sync_off(...)        # LAB_SYNC=off -> apply_pendi
 
 Add `"tab"` to photo entries: `add_photos(paths, run_id, files, tabs: list[str | None] | None = None)`.
 
-- [ ] **Step 2: Run** `uv run pytest tests/test_pull.py -q`. Expected: FAIL (no `lab.pull`).
-- [ ] **Step 3: Implement.** The lock is `fcntl.flock(LOCK_EX | LOCK_NB)`; on `BlockingIOError` return `[]`. Handle
+- [x] **Step 2: Run** `uv run pytest tests/test_pull.py -q`. Expected: FAIL (no `lab.pull`).
+- [x] **Step 3: Implement.** The lock is `fcntl.flock(LOCK_EX | LOCK_NB)`; on `BlockingIOError` return `[]`. Handle
   requests sorted by `at`. Downloaded photos go to a temporary directory, which is removed afterwards. Any
   `ValueError` from the lab becomes `refused` with `str(e)`. Write the `requests.jsonl` line before posting the
   result, so a lost result post never causes a reapply.
-- [ ] **Step 4: Run** the same command, then `uv run pytest -q -m "not slow"`. Expected: all pass.
-- [ ] **Step 5: Commit** `feat: lab pull applies the phone's requests`.
+- [x] **Step 4: Run** the same command, then `uv run pytest -q -m "not slow"`. Expected: all pass.
+- [x] **Step 5: Commit** `feat: lab pull applies the phone's requests`.
 
 ### Task 4: Pickup every 60 s (launchd)
 
@@ -199,14 +199,14 @@ Add `"tab"` to photo entries: `add_photos(paths, run_id, files, tabs: list[str |
   `lab pull --install` (writes `~/Library/LaunchAgents/com.printlab.pull.plist`, then
   `launchctl bootstrap gui/<uid> <plist>`), and `lab pull --uninstall` (`launchctl bootout`, then delete the file).
 
-- [ ] **Step 1: Write the failing tests:** `test_plist_has_label_interval_and_command` (parse with `plistlib`) and
+- [x] **Step 1: Write the failing tests:** `test_plist_has_label_interval_and_command` (parse with `plistlib`) and
   `test_install_writes_plist_to_the_given_dir` (directory and `launchctl` runner injected; asserts the bootstrap
   arguments).
-- [ ] **Step 2: Run.** Expected: FAIL.
-- [ ] **Step 3: Implement.** `uv` comes from `shutil.which("uv")`; if it's missing, install refuses with "uv isn't on
+- [x] **Step 2: Run.** Expected: FAIL.
+- [x] **Step 3: Implement.** `uv` comes from `shutil.which("uv")`; if it's missing, install refuses with "uv isn't on
   PATH."
-- [ ] **Step 4: Run** `uv run pytest -q -m "not slow"`. Expected: all pass.
-- [ ] **Step 5: Commit** `feat: lab pull --install runs pickup every minute`.
+- [x] **Step 4: Run** `uv run pytest -q -m "not slow"`. Expected: all pass.
+- [x] **Step 5: Commit** `feat: lab pull --install runs pickup every minute`.
 
 ## Part B: LocalAI (worktree `~/dev/ai-harness/LocalAI-phone-verdicts`, branch `feat/lab-phone-requests` off `origin/main`)
 
