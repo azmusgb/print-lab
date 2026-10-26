@@ -123,6 +123,22 @@ def cmd_slice(args) -> int:
     return 0
 
 
+def cmd_tent(args) -> int:
+    from lab.geometry.tent import render_tent_stl, write_tent_scad
+    out_path = Path(args.out)
+    write_tent_scad(out_path, lean_deg=args.lean, fins=args.fins, tile_width=args.width, neck_mm=args.neck)
+    print(f"Generated {out_path} ({args.lean:g}° lean, {args.fins} fins, {args.neck:g} mm neck)")
+    if getattr(args, "render", False):
+        stl_path = out_path.with_suffix(".stl")
+        try:
+            render_tent_stl(out_path, stl_path)
+            print(f"Rendered STL: {stl_path}")
+        except Exception as e:
+            print(f"OpenSCAD render failed: {e}", file=sys.stderr)
+            return 1
+    return 0
+
+
 def cmd_gcode(args) -> int:
     from lab.adapters.bambu import extract_gcode
     from lab.analysis.gcode import diff_layers, events_near, format_gcode_diff, read_layers
@@ -233,6 +249,14 @@ def main(argv=None) -> int:
     s.add_argument("--kind", default="height_strip")
     s.add_argument("--z", required=True, help="from:to in mm")
     s.add_argument("--out", required=True)
+    t = sub.add_parser("tent", help="generate braced 15° leaned-pair tent stabilizer geometry (OpenSCAD)")
+    t.add_argument("--out", default="tent_pair.scad")
+    t.add_argument("--lean", type=float, default=15.0)
+    t.add_argument("--fins", type=int, default=3)
+    t.add_argument("--width", type=float, default=152.4)
+    t.add_argument("--neck", type=float, default=0.4)
+    t.add_argument("--render", action="store_true", help="render to STL with OpenSCAD")
+    t.set_defaults(fn=cmd_tent)
     s = sub.add_parser("slice", help="slice a 3MF plate with Bambu Studio")
     s.add_argument("file"); s.add_argument("--plate", type=int, default=1); s.add_argument("--out-dir")
     s.set_defaults(fn=cmd_slice)
@@ -252,12 +276,13 @@ def main(argv=None) -> int:
 
     from lab import cli_loop
     cli_loop.register(sub)
-    from lab import page, pull, source, status, sync
+    from lab import page, pull, source, status, sync, watch
     page.register(sub)
     pull.register(sub)
     source.register(sub)
     status.register(sub)
     sync.register(sub)
+    watch.register(sub)
 
     args = p.parse_args(argv)
     try:

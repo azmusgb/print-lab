@@ -118,6 +118,47 @@ def cmd_exp_telemetry(args) -> int:
     return 0
 
 
+def cmd_case(args) -> int:
+    from lab.loop.cases import check_rule_against_history, format_case_detail, format_cases_list, load_cases, sync_cases
+    paths = _paths(args)
+    if args.action == "export":
+        cases = sync_cases(paths)
+        if args.json:
+            print(json.dumps(cases, indent=2))
+        else:
+            print(f"Exported {len(cases)} cases to {paths.root / 'cases'}")
+            print(format_cases_list(cases))
+        return 0
+    if args.action == "list":
+        cases = load_cases(paths) or sync_cases(paths)
+        if args.json:
+            print(json.dumps(cases, indent=2))
+        else:
+            print(format_cases_list(cases))
+        return 0
+    if args.action == "show":
+        cases = load_cases(paths) or sync_cases(paths)
+        c = next((x for x in cases if x["id"] == args.id), None)
+        if not c:
+            raise ValueError(f"Case {args.id} not found in {paths.name}.")
+        if args.json:
+            print(json.dumps(c, indent=2))
+        else:
+            print(format_case_detail(c))
+        return 0
+    if args.action == "check-rule":
+        res = check_rule_against_history(paths, args.id)
+        if args.json:
+            print(json.dumps(res, indent=2))
+        else:
+            print(f"Rule evaluation for {args.id} ({res.get('rule_name')}):")
+            print(f"  Revisions checked: {res['revisions_checked']}")
+            print(f"  Flagged:           {res['flagged_count']} ({', '.join(res['flagged_versions'])})")
+            print(f"  Impact:            {res['precision_note']}")
+        return 0
+    return 0
+
+
 def cmd_exp_plan(args) -> int:
     from lab.loop.builders import plan_experiment
     judged = None
@@ -407,3 +448,10 @@ def register(sub) -> None:
     tl.add_argument("--json", action="store_true")
     tl.add_argument("--project", default=argparse.SUPPRESS)
     tl.set_defaults(fn=cmd_exp_telemetry)
+
+    cs = sub.add_parser("case", help="Stage 3: case library, confidence ladder, and rule evaluation")
+    cs.add_argument("action", choices=["list", "show", "export", "check-rule"])
+    cs.add_argument("id", nargs="?", help="case ID, e.g. CASE-001")
+    cs.add_argument("--json", action="store_true")
+    cs.add_argument("--project", default=argparse.SUPPRESS)
+    cs.set_defaults(fn=cmd_case)

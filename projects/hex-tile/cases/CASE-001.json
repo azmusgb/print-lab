@@ -1,0 +1,28 @@
+{
+  "id": "CASE-001",
+  "title": "Back-to-back Part Gap Fusion on 0.6mm Nozzle",
+  "factor": "part_gap",
+  "finding": "Parallel surfaces separated by <= 0.75 mm fuse solidly when sliced with 0.6 mm nozzle profiles (line width 0.62 mm) in PLA. Gaps must be >= 1.0 mm or use staggered single-band tacks.",
+  "confidence": "reproduced",
+  "ladder_step": 3,
+  "experiments": [
+    "E-008",
+    "E-011",
+    "E-012"
+  ],
+  "runs": [
+    "PR-008-01",
+    "PR-011-01",
+    "PR-012-01"
+  ],
+  "rule_proposal": {
+    "rule_name": "minimum_back_gap",
+    "parameter": "part_gap_mm",
+    "condition": ">= 1.0",
+    "severity": "blocking",
+    "why": "Surfaces within 0.75 mm fuse during 0.6mm printing, preventing parts from twisting or snapping apart.",
+    "fix": "Increase spacing between back ribs to at least 1.0 mm, or replace continuous seams with staggered point tacks."
+  },
+  "created_at": "2026-10-26T03:45:46+00:00",
+  "updated_at": "2026-10-26T03:45:46+00:00"
+}

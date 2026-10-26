@@ -1,0 +1,30 @@
+{
+  "id": "CASE-002",
+  "title": "Inner Wall Speed Acceleration Bands",
+  "factor": "inner_wall_speed",
+  "finding": "Mismatched wall speeds (250 mm/s inner wall vs 80 mm/s outer wall) produce visible bands where geometry narrows and layer times shorten. Keeping inner and outer wall speeds close (< 2x delta) improves surface uniformity.",
+  "confidence": "reproduced",
+  "ladder_step": 3,
+  "experiments": [
+    "E-001",
+    "E-002",
+    "E-004",
+    "E-014"
+  ],
+  "runs": [
+    "PR-002",
+    "PR-004",
+    "PR-006",
+    "PR-014-01"
+  ],
+  "rule_proposal": {
+    "rule_name": "wall_speed_ratio",
+    "parameter": "inner_to_outer_speed_ratio",
+    "condition": "<= 2.0",
+    "severity": "warning",
+    "why": "Large acceleration differentials between inner and outer walls starve flow on direction changes.",
+    "fix": "Reduce inner wall speed or increase outer wall speed so the ratio stays below 2.0."
+  },
+  "created_at": "2026-10-26T03:45:46+00:00",
+  "updated_at": "2026-10-26T03:45:46+00:00"
+}
