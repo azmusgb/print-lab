@@ -1,30 +1,20 @@
-"""Build v62 from v60b125: keep the 1.25 mm backs, remove the old continuous ribs/seams,
-and reconnect the pair only with small breakaway tabs on the solid back rim.
+"""Build v62r from v60b125: retain the current tile/back geometry but replace the
+continuous ribs/seams with v40-style breakaway tabs on the solid back rim.
 
-Design intent
--------------
-- Return to the only join topology that actually separated successfully (v39/v40): rim tabs.
-- Keep the modern v60b125 body/back geometry and current print orientation.
-- Use a 0.4 mm pair gap and 0.6 mm breakaway tabs, matching v40's proven values.
-- Keep max tab pitch <= 12 mm, matching v40's fix for the 6-inch pair flexing apart.
-- Avoid v41's synchronized tab-height lines by varying the inset of successive tabs inside the
-  2 mm rim. On horizontal rim segments this moves adjacent tabs onto different Z bands instead
-  of putting a whole row on one layer.
-
-This script edits the same 3MF mesh objects as make_v61_tacks.py. It does not alter slicer settings.
+The placement is deliberately layer-aware.  v40 proved the rim-tab topology could
+hold a 6-inch pair and still separate; v41 showed that many tabs beginning or ending
+on the same Z layer can print a visible line across the face.  v62r therefore keeps
+v40's 0.4 mm gap, 0.6 mm tabs, and <=12 mm nominal pitch, while phasing the slanted
+sides and staggering the horizontal-side insets so the default 0.2 mm-layer layout
+has no more than two tab start/stop events on any one layer.
 
 Usage:
-    python projects/hex-tile/sources/scad/make_v62_rim_tabs.py \
-        projects/hex-tile/sources/hexagon_v60b125_X2D_0.6nozzle.3mf \
-        projects/hex-tile/sources/hexagon_v62r_X2D_0.6nozzle.3mf
+    uv run python projects/hex-tile/sources/scad/make_v62_rim_tabs.py \
+      projects/hex-tile/sources/hexagon_v60b125_X2D_0.6nozzle.3mf \
+      projects/hex-tile/sources/hexagon_v62r_X2D_0.6nozzle.3mf
 
-Optional arguments:
-    --gap 0.4       physical gap between the two backs, mm
-    --tab 0.6       tab width/height in the Y/Z plane, mm
-    --pitch 12      maximum distance between tabs along each rim side, mm
-    --overlap 0.3   tab overlap into each back, mm
-
-The generated file still needs the normal Print Lab checks and a real Bambu slice before printing.
+The generated file still requires the normal Print Lab geometry checks and an exact
+Bambu Studio slice before physical printing.
 """
 
 from __future__ import annotations
@@ -33,6 +23,7 @@ import argparse
 import math
 import re
 import zipfile
+from collections import Counter
 from pathlib import Path
 
 import manifold3d as mf
@@ -40,12 +31,15 @@ import numpy as np
 import trimesh
 
 
-# 6-inch tile geometry used by v58-v61. In the object mesh, X is across the pair gap and
-# Y/Z are the regular-hex plane. These are the same dimensions used by make_v61_tacks.py.
 R = 76.2
 AP = R * math.cos(math.radians(30.0))
-PHI = (5**0.5 - 1.0) / 2.0
 OBJECT_IDS = ("3", "7", "9")
+RIM_MM = 2.0
+
+# Offsets are in fractions of one nominal tab slot, not absolute side length.
+# Opposite slanted sides are intentionally out of phase so their tab starts/ends
+# do not occur on the same print layers.
+SIDE_SLOT_PHASE = {0: 0.00, 2: 0.18, 3: 0.33, 5: -0.17}
 
 
 def _block(xml: str, oid: str) -> re.Match[str]:
@@ -71,60 +65,107 @@ def _mesh(xml: str, oid: str) -> tuple[np.ndarray, np.ndarray]:
 
 
 def _hex_vertices(inset_mm: float) -> np.ndarray:
-    """Regular hex in the Y/Z plane, inset normally from the outer rim by inset_mm."""
+    """Regular-hex back-rim path in the Y/Z plane, inset normally by inset_mm."""
     ap = AP - inset_mm
     if ap <= 0:
         raise ValueError("rim inset is larger than the tile")
-    r = ap / math.cos(math.radians(30.0))
+    radius = ap / math.cos(math.radians(30.0))
     return np.array(
         [
-            [r, 0.0],
-            [r / 2.0, ap],
-            [-r / 2.0, ap],
-            [-r, 0.0],
-            [-r / 2.0, -ap],
-            [r / 2.0, -ap],
+            [radius, 0.0],
+            [radius / 2.0, ap],
+            [-radius / 2.0, ap],
+            [-radius, 0.0],
+            [-radius / 2.0, -ap],
+            [radius / 2.0, -ap],
         ],
         dtype=float,
     )
 
 
-def _rim_tab_centers(tab_mm: float, pitch_mm: float) -> list[tuple[float, float, float]]:
-    """Return (y, z, inset) centers, max pitch <= pitch_mm, staggered within the rim.
+def _event_layer(z_mm: float, layer_height_mm: float) -> int:
+    return int(math.floor(z_mm / layer_height_mm + 0.5))
 
-    v40 put the tabs on the back rim and proved that the 6-inch pair could separate. v41's
-    problem was many tabs sharing the same Z. We retain the rim topology but vary the normal
-    inset from ~0.65 to ~1.65 mm. On horizontal rim segments that moves adjacent tab centers
-    onto different Z layers while keeping the whole 0.6 mm tab inside the nominal 2 mm rim.
+
+def _event_counts(
+    centers: list[tuple[float, float, float, int, int]],
+    tab_mm: float,
+    layer_height_mm: float,
+) -> Counter[int]:
+    counts: Counter[int] = Counter()
+    half = tab_mm / 2.0
+    for _y, z, _inset, _side, _slot in centers:
+        counts[_event_layer(z - half, layer_height_mm)] += 1
+        counts[_event_layer(z + half, layer_height_mm)] += 1
+    return counts
+
+
+def _rim_tab_centers(
+    tab_mm: float,
+    pitch_mm: float,
+    layer_height_mm: float = 0.2,
+) -> list[tuple[float, float, float, int, int]]:
+    """Return (y, z, inset, side, slot) for the v62r rim tabs.
+
+    There are seven tabs per side at the default 12 mm maximum pitch.  Slanted
+    sides use a small along-side phase shift to break the upper/lower mirror
+    symmetry.  Horizontal top/bottom sides cannot change Z by moving along the
+    side, so their tabs use distinct safe rim insets spread over roughly six
+    print layers.  The resulting default layout is rejected if more than two
+    tab starts/ends fall on one layer.
     """
-    if tab_mm <= 0 or pitch_mm <= 0:
-        raise ValueError("tab and pitch must be positive")
+    if tab_mm <= 0 or pitch_mm <= 0 or layer_height_mm <= 0:
+        raise ValueError("tab, pitch, and layer height must be positive")
     if tab_mm > 1.0:
         raise ValueError("tab > 1.0 mm is intentionally refused; this is a breakaway join")
 
-    # Keep the entire tab inside the ~2 mm rim: inset + half tab <= 1.95 mm.
-    inset_lo = max(0.65, tab_mm / 2.0 + 0.30)
-    inset_hi = 1.95 - tab_mm / 2.0
-    if inset_hi <= inset_lo:
-        raise ValueError("tab is too large to stagger safely inside the rim")
-
-    centers: list[tuple[float, float, float]] = []
-    global_index = 0
-
-    # Side length of a regular hex is R. Use ceil so actual spacing never exceeds pitch.
     n_side = max(2, math.ceil(R / pitch_mm))
+
+    # A square tab on a horizontal rim side extends tab/2 in the normal (Z)
+    # direction.  Keep 0.10 mm extra clearance at the outer edge and stay inside
+    # the nominal 2.0 mm solid rim at the inner edge.
+    safe_lo = tab_mm / 2.0 + 0.10
+    safe_hi = RIM_MM - tab_mm / 2.0
+    if safe_hi <= safe_lo:
+        raise ValueError("tab is too large for the 2 mm rim")
+
+    # Offset the two horizontal sides by 0.10 mm relative to each other.  With
+    # seven 0.6 mm tabs this spreads each row across multiple 0.2 mm layers,
+    # instead of seven tabs appearing/disappearing together as in v41.
+    top_hi = max(safe_lo, safe_hi - 0.10)
+    bottom_lo = min(safe_hi, safe_lo + 0.10)
+    top_insets = np.linspace(safe_lo, top_hi, n_side)
+    bottom_insets = np.linspace(bottom_lo, safe_hi, n_side)
+
+    centers: list[tuple[float, float, float, int, int]] = []
     for side in range(6):
-        for i in range(n_side):
-            # Irrational phase + side offset avoids repeating the same few inset/Z values.
-            phase = (global_index * PHI + side * 0.17320508075688773) % 1.0
-            inset = inset_lo + (inset_hi - inset_lo) * phase
+        for slot in range(n_side):
+            if side == 1:  # top horizontal rim
+                inset = float(top_insets[slot])
+                t = (slot + 0.5) / n_side
+            elif side == 4:  # bottom horizontal rim
+                inset = float(bottom_insets[slot])
+                t = (slot + 0.5) / n_side
+            else:
+                inset = 1.0
+                phase = SIDE_SLOT_PHASE[side]
+                t = (slot + 0.5 + phase) / n_side
+                if not 0.0 < t < 1.0:
+                    raise ValueError("slanted-side phase moved a tab outside its rim side")
+
             verts = _hex_vertices(inset)
             p0 = verts[side]
             p1 = verts[(side + 1) % 6]
-            t = (i + 0.5) / n_side
             y, z = (1.0 - t) * p0 + t * p1
-            centers.append((float(y), float(z), float(inset)))
-            global_index += 1
+            centers.append((float(y), float(z), inset, side, slot))
+
+    events = _event_counts(centers, tab_mm, layer_height_mm)
+    max_events = max(events.values(), default=0)
+    if max_events > 2:
+        raise ValueError(
+            f"tab layout creates {max_events} start/stop events on one {layer_height_mm:.2f} mm layer; "
+            "refusing a v41-like synchronized layer event"
+        )
 
     return centers
 
@@ -137,6 +178,7 @@ def build_v62(
     tab_mm: float = 0.6,
     pitch_mm: float = 12.0,
     overlap_mm: float = 0.3,
+    layer_height_mm: float = 0.2,
 ) -> dict:
     if gap_mm <= 0 or overlap_mm <= 0:
         raise ValueError("gap and overlap must be positive")
@@ -152,16 +194,19 @@ def build_v62(
 
         pair = mf.Manifold(mf.Mesh(vert_properties=vertices, tri_verts=faces))
 
-        # Sever all old v58/v60 ribs and seams with a clean center slab. Unlike v61, which
-        # used a 1.0 mm gap for interior tack posts, v62 restores v40's proven 0.4 mm gap.
-        B = 200.0
-        gap_cut = mf.Manifold.cube([gap_mm, 2 * B, 2 * B]).translate([-gap_mm / 2.0, -B, -B])
+        # This clean slab removes every old v58/v60 rib or seam that crosses the
+        # pair mid-plane.  The only geometry added back across that plane is the
+        # explicit rim-tab set below.
+        bound = 200.0
+        gap_cut = mf.Manifold.cube([gap_mm, 2 * bound, 2 * bound]).translate(
+            [-gap_mm / 2.0, -bound, -bound]
+        )
         pair = pair - gap_cut
 
-        centers = _rim_tab_centers(tab_mm, pitch_mm)
+        centers = _rim_tab_centers(tab_mm, pitch_mm, layer_height_mm)
         bridge_x = gap_mm + 2.0 * overlap_mm
         tabs: mf.Manifold | None = None
-        for y, z, _inset in centers:
+        for y, z, _inset, _side, _slot in centers:
             tab = mf.Manifold.cube([bridge_x, tab_mm, tab_mm]).translate(
                 [-bridge_x / 2.0, y - tab_mm / 2.0, z - tab_mm / 2.0]
             )
@@ -175,15 +220,24 @@ def build_v62(
         nf = np.asarray(mesh_out.tri_verts)
         tri = trimesh.Trimesh(nv, nf, process=False)
         if not tri.is_watertight:
-            raise RuntimeError("generated v62 mesh is not watertight")
+            raise RuntimeError("generated v62r mesh is not watertight")
 
         xml_vertices = "".join(f'<vertex x="{a:.5f}" y="{b:.5f}" z="{c:.5f}"/>' for a, b, c in nv)
         xml_faces = "".join(f'<triangle v1="{a}" v2="{b}" v3="{c}"/>' for a, b, c in nf)
         mesh_body = f"<mesh><vertices>{xml_vertices}</vertices><triangles>{xml_faces}</triangles></mesh>"
 
+        # v61 used the same source object as the canonical pair mesh and replaced
+        # these linked mesh objects together.  Preserve that established 3MF
+        # structure so the Bambu project metadata/placements remain unchanged.
         for oid in OBJECT_IDS:
             match = _block(model_xml, oid)
-            model_xml = model_xml[: match.start()] + match.group(1) + mesh_body + match.group(3) + model_xml[match.end() :]
+            model_xml = (
+                model_xml[: match.start()]
+                + match.group(1)
+                + mesh_body
+                + match.group(3)
+                + model_xml[match.end() :]
+            )
 
         settings = None
         if "Metadata/model_settings.config" in names:
@@ -201,32 +255,45 @@ def build_v62(
                     payload = zin.read(name)
                 zout.writestr(name, payload)
 
-    z_values = np.array([z for _y, z, _inset in centers])
+    events = _event_counts(centers, tab_mm, layer_height_mm)
+    n_side = len(centers) // 6
+    z_values = np.array([z for _y, z, _inset, _side, _slot in centers])
     return {
         "tabs": len(centers),
-        "tabs_per_side": len(centers) // 6,
+        "tabs_per_side": n_side,
         "gap_mm": gap_mm,
         "tab_mm": tab_mm,
-        "pitch_max_mm": R / (len(centers) // 6),
+        "pitch_max_mm": R / n_side,
         "contact_per_tile_mm2": len(centers) * tab_mm * tab_mm,
         "tab_z_min_mm": float(z_values.min()),
         "tab_z_max_mm": float(z_values.max()),
+        "max_tab_events_per_layer": max(events.values(), default=0),
+        "layer_height_mm": layer_height_mm,
         "watertight": True,
-        "volume_mm3": float(tri.volume),
+        "volume_mm3": float(abs(tri.volume)),
     }
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Build v62: v60b125 body with staggered v40-style rim tabs")
+    parser = argparse.ArgumentParser(description="Build v62r: v60b125 body with layer-staggered v40 rim tabs")
     parser.add_argument("src", type=Path)
     parser.add_argument("out", type=Path)
     parser.add_argument("--gap", type=float, default=0.4)
     parser.add_argument("--tab", type=float, default=0.6)
     parser.add_argument("--pitch", type=float, default=12.0)
     parser.add_argument("--overlap", type=float, default=0.3)
+    parser.add_argument("--layer-height", type=float, default=0.2)
     args = parser.parse_args()
 
-    stats = build_v62(args.src, args.out, gap_mm=args.gap, tab_mm=args.tab, pitch_mm=args.pitch, overlap_mm=args.overlap)
+    stats = build_v62(
+        args.src,
+        args.out,
+        gap_mm=args.gap,
+        tab_mm=args.tab,
+        pitch_mm=args.pitch,
+        overlap_mm=args.overlap,
+        layer_height_mm=args.layer_height,
+    )
     print(
         "v62r",
         f"tabs={stats['tabs']} ({stats['tabs_per_side']}/side)",
@@ -234,6 +301,7 @@ def main() -> int:
         f"tab={stats['tab_mm']:.2f}mm",
         f"actual_pitch<={stats['pitch_max_mm']:.2f}mm",
         f"contact/tile={stats['contact_per_tile_mm2']:.1f}mm2",
+        f"max_events/layer={stats['max_tab_events_per_layer']}",
         f"watertight={stats['watertight']}",
         f"volume={stats['volume_mm3']:.1f}mm3",
     )
