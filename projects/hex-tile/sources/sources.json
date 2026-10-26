@@ -73,5 +73,12 @@
     "source": "derived",
     "derived_from": "sources/hexagon_v60b125_X2D_0.6nozzle.3mf",
     "change": "v61t's tacks re-laid so every 0.6 mm band of height has exactly one tack (207 tacks, 1.0 x 0.6 mm, golden-ratio spread across the width, 5-10 mm apart, 4 mm inside the outline, off the rim): the v39/v40 tab idea that separated, without v41's lines across the face from tabs at the same few heights. 124 mm2 of contact (7% of v58's 1697). Made with sources/scad/make_v61_tacks.py (args: src out 8 1.0 0.6)"
+  },
+  {
+    "path": "sources/hexagon_v62k_X2D_0.6nozzle.3mf",
+    "sha256": "d9d699b16e4fcf4905a8ed47ef954aee811e573b16578f1705a94ff23a794c52",
+    "source": "derived",
+    "derived_from": "sources/hexagon_v60b125_X2D_0.6nozzle.3mf",
+    "change": "v61s's 207 staggered tacks made kiss tacks: each is fused 0.3 mm into one back and stops 0.15 mm short of the other, alternating sides (104/103), so the bond to the far back is only the squash of the tack's end lines. E-020 (v61s, tacks fused into both backs): 'SUPER hard' to separate and the tacks tore out of one back; faces clean. Layout, size (1.0 x 0.6 mm) and 124 mm2 of tack end area unchanged; faces, backs and outline unchanged. Made with sources/scad/make_v62_kiss_tacks.py (args: src out 8 1.0 0.6 0.15)"
   }
 ]

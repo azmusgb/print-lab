@@ -1,0 +1,150 @@
+{
+  "schema": 1,
+  "record_type": "experiment",
+  "id": "E-021",
+  "project": "hex-tile",
+  "question": "Q-003",
+  "provenance": "prospective",
+  "question_text": "Do kiss tacks (v62k) let the pair snap apart by hand without tearing a back, where v61s's fused tacks didn't?",
+  "hypothesis": "A tack fused into both backs bonds harder than the 1.25 mm back's layers hold (E-020 tore a back). Joined to the far back only by the squash of its end lines, a kiss tack breaks at that face first.",
+  "prediction": "B twists apart by hand with stubs left on the backs and no torn back; A needs much more force or tears a back. Both fronts clean.",
+  "why_this_test": "E-020 fronts were clean but separation was SUPER hard and one back tore. Strips start at the bed (high strips of lightly joined pairs failed twice). v61s on the same plate is the control.",
+  "test_kind": "height_strip",
+  "factor": {
+    "name": "model_version",
+    "values": [
+      "sources/hexagon_v61s_X2D_0.6nozzle.3mf",
+      "sources/hexagon_v62k_X2D_0.6nozzle.3mf"
+    ],
+    "unit": ""
+  },
+  "factor_scope": "bundle",
+  "dependent_adjustments": {},
+  "controlled": {},
+  "baseline": {},
+  "findings": [],
+  "judge_on": "twist each strip pair apart by hand; both backs whole; fronts clean",
+  "expect": {
+    "better": "E-021-B",
+    "than": "E-021-A",
+    "min_strength": "clearly"
+  },
+  "derived_from_artifact": [],
+  "derived_from_result": [],
+  "controls": {
+    "witness_required": false,
+    "anchor": null
+  },
+  "reference_variants": [],
+  "build_spec": {
+    "kind": "height_strip",
+    "source": "sources/hexagon_v62k_X2D_0.6nozzle.3mf",
+    "object": "_06_6in",
+    "z": [
+      0.0,
+      30.0
+    ],
+    "judged": [
+      6.0,
+      24.0
+    ],
+    "base": "sources/hexagon_v57_X2D_0.4nozzle_kexcelled.3mf",
+    "variants": [
+      {
+        "id": "E-021-A",
+        "tab": "21A",
+        "settings_patch": {},
+        "copies": 1,
+        "source": "sources/hexagon_v61s_X2D_0.6nozzle.3mf"
+      },
+      {
+        "id": "E-021-B",
+        "tab": "21B",
+        "settings_patch": {},
+        "copies": 1,
+        "source": "sources/hexagon_v62k_X2D_0.6nozzle.3mf"
+      }
+    ],
+    "witness": false,
+    "anchor": null,
+    "tabs": true,
+    "notes": []
+  },
+  "status": "build_failed",
+  "variants": [
+    {
+      "id": "E-021-A",
+      "tab": "21A",
+      "factor_value": "sources/hexagon_v61s_X2D_0.6nozzle.3mf",
+      "copies": 1
+    },
+    {
+      "id": "E-021-B",
+      "tab": "21B",
+      "factor_value": "sources/hexagon_v62k_X2D_0.6nozzle.3mf",
+      "copies": 1
+    }
+  ],
+  "builds": [
+    {
+      "id": "BLD-021-01",
+      "ok": false,
+      "at": "2026-10-26T13:49:58+00:00",
+      "inputs": {
+        "model": {
+          "sources/hexagon_v61s_X2D_0.6nozzle.3mf": "9f46a35e64bb70124b3481a499a0cbbc33f5deb9546db6f78fa99b259bebe9df",
+          "sources/hexagon_v62k_X2D_0.6nozzle.3mf": "d9d699b16e4fcf4905a8ed47ef954aee811e573b16578f1705a94ff23a794c52"
+        },
+        "settings": "92a1bd3f78404c165b3a25f0b0ad085b9249086535ff7a587b9f3b86215dfd95",
+        "build_spec_sha256": "2a56453ab7e467ba640acc321b82c1e422896dc47add0fb18f16445b8d4c974a",
+        "builder_version": "1a1.1",
+        "builder_fingerprint": "0f96a98fdbd2ec2bb9a83c11da8a4afbba5bf26f2c46020fefc095b4e5a4b171",
+        "openscad": "2026.10.11",
+        "bambu_studio": "02.08.02.61"
+      },
+      "job": "job-20261026T134958-648b",
+      "artifact": "prints/hex-tile_E-021_BLD-021-01.3mf",
+      "artifact_sha256": "56de201cd5297ac666f6cdf05451fc7c478b4ecabbbb461ff0b3266f67cb09dd",
+      "sliced": null,
+      "estimate": null,
+      "plate": {
+        "objects": [
+          "E-021-A",
+          "E-021-B"
+        ],
+        "placements": [
+          [
+            113.65,
+            128.0
+          ],
+          [
+            142.35,
+            128.0
+          ]
+        ]
+      },
+      "measured": null,
+      "error": "Bambu Studio couldn't slice hex-tile_E-021_BLD-021-01.3mf: /Users/billrahe/dev/print-lab/projects/hex-tile/prints/hex-tile_E-021_BLD-021-01.3mf: Loading of a model file failed."
+    }
+  ],
+  "approval": null,
+  "print_runs": [],
+  "owner_verdict": null,
+  "superseded_verdicts": [],
+  "anchors": [],
+  "ai_observations": [],
+  "comparison_validity": null,
+  "prediction_outcome": null,
+  "analysis": [],
+  "criteria": [
+    {
+      "key": "print",
+      "label": "Fronts",
+      "choices": [
+        "clean",
+        "flawed",
+        "failed"
+      ]
+    }
+  ]
+}
