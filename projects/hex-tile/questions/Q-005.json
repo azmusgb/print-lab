@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "record_type": "question",
+  "id": "Q-005",
+  "project": "hex-tile",
+  "question": "Does v51, reprinted exactly as it was (edge-only kiss seam, no ribs), come apart by hand with a clean face, and does the filament change that?",
+  "status": "active",
+  "autonomy_level": 2,
+  "budget": {
+    "max_test_minutes": 45,
+    "max_test_g": 25,
+    "max_minutes": 540,
+    "max_g": 200
+  },
+  "experiments": [
+    "E-023"
+  ],
+  "plans": [],
+  "stops": []
+}

@@ -170,5 +170,11 @@
     "build_id": "BLD-022-01",
     "file": "hex-tile_E-022_BLD-022-01.3mf",
     "artifact_sha256": "cae480638be32b02c1b3f8f9c014f4f90c8f5977aad84e60e954bb2c2978a208"
+  },
+  {
+    "experiment_id": "E-023",
+    "build_id": "BLD-023-01",
+    "file": "hex-tile_E-023_BLD-023-01.3mf",
+    "artifact_sha256": "da4b9b539f79955bee7723be5afa912a973cf53d46455eafede61bfb76eec141"
   }
 ]
