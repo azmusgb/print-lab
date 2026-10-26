@@ -55,6 +55,12 @@ def sync(pdir: Path, base: str | None = None, timeout: float = 10) -> dict:
     base = (base or os.environ.get("LAB_LOCALAI_URL") or BASE).rstrip("/")
     try:
         key = _key()
+        if os.environ.get("LAB_SYNC", "on") != "off":
+            from lab.pull import apply_pending
+            applied = apply_pending(pdir, base, key, timeout)
+            if any(r.get("status") == "applied" for r in applied):
+                from lab.page import refresh
+                refresh(pdir)
         ix = build_index(pdir)
         project = ix["project"]
         _, have = _call(base, "GET", f"/api/lab/{project}/photos", key, timeout)

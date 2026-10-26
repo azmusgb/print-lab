@@ -451,7 +451,7 @@ def _captured_at(src) -> str | None:
     return datetime.fromtimestamp(Path(src).stat().st_mtime, timezone.utc).isoformat(timespec="seconds")
 
 
-def add_photos(paths: ProjectPaths, run_id: str, files: list) -> list[dict]:
+def add_photos(paths: ProjectPaths, run_id: str, files: list, tabs: list[str | None] | None = None) -> list[dict]:
     """Convert each photo to JPEG (EXIF orientation kept) into photos/ (outside git) and list it on the print run.
     All or nothing: a photo that won't convert means none are added."""
     import subprocess
@@ -462,7 +462,8 @@ def add_photos(paths: ProjectPaths, run_id: str, files: list) -> list[dict]:
     start = len(run.get("photos") or []) + 1
     made, entries = [], []
     try:
-        for i, src in enumerate(map(Path, files), start):
+        for idx, src in enumerate(map(Path, files)):
+            i = start + idx
             dst = paths.photos / f"{run_id}-{i}.jpg"
             r = subprocess.run(["sips", "-s", "format", "jpeg", "-Z", "2400", str(src), "--out", str(dst)],
                                capture_output=True, text=True)
@@ -470,8 +471,11 @@ def add_photos(paths: ProjectPaths, run_id: str, files: list) -> list[dict]:
                 raise ValueError(f"{src.name} couldn't be converted to JPEG ({(r.stderr or r.stdout).strip()[-200:]}). "
                                  "No photos were added.")
             made.append(dst)
-            entries.append({"path": str(dst.relative_to(paths.root)), "sha256": sha256(dst),
-                            "captured_at": _captured_at(src), "source": src.name})
+            entry = {"path": str(dst.relative_to(paths.root)), "sha256": sha256(dst),
+                     "captured_at": _captured_at(src), "source": src.name}
+            if tabs and idx < len(tabs) and tabs[idx] is not None:
+                entry["tab"] = tabs[idx]
+            entries.append(entry)
     except Exception:
         for f in made:
             f.unlink(missing_ok=True)

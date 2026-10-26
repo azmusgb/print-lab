@@ -234,8 +234,9 @@ def main(argv=None) -> int:
 
     from lab import cli_loop
     cli_loop.register(sub)
-    from lab import page, source, sync
+    from lab import page, pull, source, sync
     page.register(sub)
+    pull.register(sub)
     sync.register(sub)
     source.register(sub)
 
