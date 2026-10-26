@@ -8,6 +8,13 @@ on:
       - projects/hex-tile/sources/scad/make_v62_rim_tabs.py
       - tests/test_v62_rim_tabs.py
       - .github/workflows/v62-generate.yml
+  pull_request:
+    branches:
+      - main
+    paths:
+      - projects/hex-tile/sources/scad/make_v62_rim_tabs.py
+      - tests/test_v62_rim_tabs.py
+      - .github/workflows/v62-generate.yml
   workflow_dispatch:
 
 permissions:
@@ -17,10 +24,10 @@ jobs:
   generate:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out branch
+      - name: Check out candidate branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: feat/v62-rim-tabs
           fetch-depth: 0
 
       - name: Set up Python 3.12
@@ -63,6 +70,7 @@ jobs:
           if-no-files-found: error
 
       - name: Commit generated candidate to feature branch
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -71,5 +79,5 @@ jobs:
             echo 'Candidate already current.'
           else
             git commit -m 'Generate v62r rim-tab candidate [skip ci]'
-            git push origin HEAD:${{ github.ref_name }}
+            git push origin HEAD:feat/v62-rim-tabs
           fi
