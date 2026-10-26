@@ -54,7 +54,7 @@ def test_needs_you_lists_actions_with_commands_most_urgent_first(tmp_path):
     ix = page_index.build_index(_project(tmp_path).root)
     needs = ix["needs"]
     assert [n["id"] for n in needs] == ["E-004", "E-002"]  # a print to judge, then an approval; never the abandoned
-    assert needs[0]["action"] == "Judge the print" and "lab exp verdict E-004 --rank \"B>A\"" in needs[0]["command"]
+    assert needs[0]["action"] == "Judge the print" and 'lab exp verdict E-004 --rank "B>A|A>B|A=B"' in needs[0]["command"]
     assert needs[1]["action"] == "Approve or drop" and "63 / 45 min per test" in needs[1]["why"]
     assert needs[1]["command"].startswith("uv run lab exp approve E-002 --reason")
 
@@ -77,7 +77,7 @@ def test_the_verdict_command_fits_the_test(tmp_path):
     full.update(test_kind="full_part", variants=full["variants"][:1])
     p = make_project(tmp_path, minimal_question("Q-009", ("E-010", "E-011")), [one, full])
     cmds = {n["id"]: n["command"] for n in page_index.build_index(p.root)["needs"]}
-    assert "--rank A " in cmds["E-010"] and "--accept yes" in cmds["E-011"]
+    assert "--rank A " in cmds["E-010"] and '--accept "yes|no"' in cmds["E-011"]
 
 
 def test_an_abandoned_experiment_needs_nothing_even_if_its_last_check_blocked(tmp_path):
@@ -88,3 +88,30 @@ def test_an_abandoned_experiment_needs_nothing_even_if_its_last_check_blocked(tm
                                                                 "result": "blocked", "message": "3 pieces"}]}}])
     p = make_project(tmp_path, minimal_question("Q-009", ("E-012",)), [e])
     assert page_index.build_index(p.root)["needs"] == []
+
+
+# The owner's 26 Oct review of the lab page.
+
+def test_a_running_print_says_when_it_is_due_and_reports_no_usage_yet(tmp_path):
+    ix = page_index.build_index(_project(tmp_path).root, at="2026-10-25T09:10:00+00:00")
+    need = next(n for n in ix["needs"] if n["id"] == "E-004")
+    e = {x["id"]: x for x in ix["experiments"]}["E-004"]
+    assert need["due_at"] == e["due_at"] == "2026-10-25T09:40:00+00:00"
+    assert need["why"].startswith("Printing until about ") and "Then look at: bands" in need["why"]
+    assert e["usage"] is None  # the estimate isn't usage until the print ends
+
+
+def test_a_print_past_its_estimate_is_ready_to_judge(tmp_path):
+    ix = page_index.build_index(_project(tmp_path).root, at="2026-10-25T10:00:00+00:00")
+    need = next(n for n in ix["needs"] if n["id"] == "E-004")
+    assert need["why"].startswith("Look at: bands")
+
+
+def test_an_acceptance_verdict_carries_its_defects(tmp_path):
+    full = started(minimal_experiment("E-011", "Q-009"))
+    full.update(test_kind="full_part", variants=full["variants"][:1], status="answered", owner_verdict={
+        "kind": "acceptance", "good_enough": True, "blocking_defects": ["hard to separate"], "lighting": "installed",
+        "print_runs": ["PR-011-01"], "note": "faces good", "by": "owner", "at": "2026-10-26T13:48:01+00:00"})
+    p = make_project(tmp_path, minimal_question("Q-009", ("E-011",)), [full])
+    v = page_index.build_index(p.root)["experiments"][0]["verdict"]
+    assert v["good_enough"] is True and v["defects"] == ["hard to separate"]

@@ -404,8 +404,9 @@ CRITERION_RE = re.compile(r"^([a-z]{1,12})=([^:]+):([a-z]{1,12}(?:,[a-z]{1,12}){
 
 
 def set_criteria(paths: ProjectPaths, eid: str, specs: list[str]) -> dict:
-    """The experiment's own per-strip questions, e.g. 'print=Printed cleanly?:clean,flawed,failed'. Allowed until the
-    first verdict: after it, changing them would change what that verdict meant."""
+    """Adds the experiment's own per-strip questions, e.g. 'print=Printed cleanly?:clean,flawed,failed', after any it
+    has; one given again under the same key replaces it. Allowed until the first verdict: after it, changing them would
+    change what that verdict meant."""
     out = []
     for spec in specs:
         m = CRITERION_RE.match(spec.strip())
@@ -419,7 +420,9 @@ def set_criteria(paths: ProjectPaths, eid: str, specs: list[str]) -> dict:
         e = load_experiment(paths, eid)
         if e.get("owner_verdict"):
             raise ValueError(f"{eid} already has a verdict, so its criteria can't change.")
-        e["criteria"] = out
+        new = {c["key"]: c for c in out}
+        kept = [new.pop(c["key"], c) for c in e.get("criteria") or []]
+        e["criteria"] = kept + list(new.values())
         return save_experiment(paths, e)
 
 

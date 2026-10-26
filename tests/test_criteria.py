@@ -151,3 +151,23 @@ def test_criteria_finding_leaves_out_what_was_not_judged(e012):
 def test_unknown_choice_error_mentions_not_judged(e012):
     with pytest.raises(ValueError, match=r"or - if it can't be judged"):
         V(e012, "E-012", grades=GRADES.replace("apart:no", "apart:maybe"))
+
+
+# The owner's 26 Oct review of the lab page.
+
+def test_criteria_add_appends_and_replaces_a_key_given_again(proj):
+    # E-021: a second `lab exp criteria --add` silently dropped the first criterion
+    set_criteria(proj, "E-009", [APART])
+    e = set_criteria(proj, "E-009", [PRINT])
+    assert [c["key"] for c in e["criteria"]] == ["apart", "print"]
+    e = set_criteria(proj, "E-009", ["apart=Comes apart?:yes,no"])
+    assert [c["key"] for c in e["criteria"]] == ["apart", "print"] and e["criteria"][0]["choices"] == ["yes", "no"]
+
+
+def test_the_page_verdict_command_cannot_record_a_verdict_unedited(e012):
+    # A copied command used to carry each criterion's first choice: run unedited, it recorded "clean" for every strip.
+    cmd = page_index.build_index(e012.root)["needs"][0]["command"]
+    assert "print:clean|flawed|failed,apart:yes|hard|no" in cmd
+    grades = cmd.split('--grade "')[1].rstrip('"')
+    with pytest.raises(ValueError):
+        V(e012, "E-012", grades=grades)

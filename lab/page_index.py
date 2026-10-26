@@ -6,6 +6,7 @@ its original payload with its file's sha256, so a receiver can upsert by ID and 
 """
 import hashlib
 import json
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from lab.loop import ledger
@@ -60,8 +61,25 @@ def _variants(e: dict) -> list[dict]:
     return out
 
 
-def _usage(e: dict) -> dict | None:
+def _running(e: dict) -> dict | None:
+    """The print run still on the printer: the last one, while the experiment is printing and it has no usage yet."""
     runs = e.get("print_runs") or []
+    r = runs[-1] if runs and e["status"] == "printing" else None
+    return r if r and not r.get("usage") and not r.get("failed") else None
+
+
+def _due_at(e: dict) -> str | None:
+    """When the running print should be done: its start plus the build's estimate."""
+    r = _running(e)
+    est = ((_last_build(e) or {}).get("estimate") or {}).get("minutes")
+    if not r or not r.get("started_at") or not est:
+        return None
+    return (datetime.fromisoformat(r["started_at"]) + timedelta(minutes=float(est))).isoformat(timespec="seconds")
+
+
+def _usage(e: dict) -> dict | None:
+    running = _running(e)
+    runs = [r for r in e.get("print_runs") or [] if r is not running]  # an estimate isn't usage until the print ends
     if not runs:
         return None
     builds = {b["id"]: b for b in e.get("builds") or []}
@@ -82,17 +100,22 @@ def _photos(e: dict, root: Path) -> list[dict]:
 def _verdict_command(e: dict) -> str:
     if e.get("criteria"):
         own = [v for v in e.get("variants") or [] if v.get("role", "variant") == "variant"]
-        g = ";".join(f"{v.get('tab') or v['id']}=" + ",".join(f"{c['key']}:{c['choices'][0]}" for c in e["criteria"])
-                     for v in own)
+        # Every answer is a list of the choices, which the command refuses: copied unedited it records nothing.
+        g = ";".join(f"{v.get('tab') or v['id']}=" + ",".join(f"{c['key']}:{'|'.join(c['choices'])}"
+                                                            for c in e["criteria"]) for v in own)
         return f'uv run lab exp verdict {e["id"]} --grade "{g}"'
     if e.get("test_kind") in ("scaled_part", "full_part"):
-        return f'uv run lab exp verdict {e["id"]} --accept yes --note "what you see"'
+        return f'uv run lab exp verdict {e["id"]} --accept "yes|no" --note "what you see"'
     if len([v for v in e.get("variants") or [] if v.get("role", "variant") == "variant"]) > 1:
-        return f'uv run lab exp verdict {e["id"]} --rank "B>A" --strength clearly'
+        return f'uv run lab exp verdict {e["id"]} --rank "B>A|A>B|A=B" --strength "slightly|clearly|a lot"'
     return f'uv run lab exp verdict {e["id"]} --rank A --note "what you see"'
 
 
-def _needs(e: dict) -> dict | None:
+def _clock(iso: str) -> str:
+    return datetime.fromisoformat(iso).astimezone().strftime("%H:%M")
+
+
+def _needs(e: dict, at: str) -> dict | None:
     """What the owner has to do next for this experiment, or None. Urgency: lower first."""
     s, eid, b = e["status"], e["id"], _last_build(e) or {}
     if s in ("answered", "abandoned"):
@@ -100,8 +123,11 @@ def _needs(e: dict) -> dict | None:
     check = b.get("check") or {}
     why = "; ".join(g["message"] for g in check.get("guards") or [] if not g["ok"] and g["result"] != "info")
     if s == "printing" and not e.get("owner_verdict"):
-        return {"id": eid, "urgency": 0, "action": "Judge the print",
-                "why": f"Look at: {e.get('judge_on') or 'the face'}. Photos help.", "command": _verdict_command(e)}
+        look, due = f"look at: {e.get('judge_on') or 'the face'}. Photos help.", _due_at(e)
+        early = due and datetime.fromisoformat(at) < datetime.fromisoformat(due)
+        why = f"Printing until about {_clock(due)} (estimate). Then {look}" if early else look[0].upper() + look[1:]
+        return {"id": eid, "urgency": 0, "action": "Judge the print", "why": why, "due_at": due,
+                "command": _verdict_command(e)}
     if s == "approved":
         return {"id": eid, "urgency": 1, "action": "Send it to the printer",
                 "why": f"Approved; then record that it started.", "command": f"uv run lab exp start {eid}"}
@@ -120,7 +146,7 @@ def _needs(e: dict) -> dict | None:
     return None
 
 
-def _experiment(e: dict, exps: dict, root: Path, tol: float, production) -> dict:
+def _experiment(e: dict, exps: dict, root: Path, tol: float, production, at: str) -> dict:
     validity = outcome = None
     if e.get("owner_verdict") or e.get("print_runs"):
         validity = comparison_validity(e, exps, tol, production)
@@ -135,14 +161,14 @@ def _experiment(e: dict, exps: dict, root: Path, tol: float, production) -> dict
         "variants": _variants(e), "reference_variants": e.get("reference_variants") or [],
         "estimate": b.get("estimate"), "layer_time_median_s": (b.get("measured") or {}).get("layer_time_median_s"),
         "usage": _usage(e), "check": b.get("check"), "outcome": outcome, "validity": validity,
-        "verdict": {k: v.get(k) for k in ("kind", "order", "strength", "good_enough", "grades", "lighting", "note", "at")}
-        if v else None, "criteria": e.get("criteria"),
+        "verdict": {**{k: v.get(k) for k in ("kind", "order", "strength", "good_enough", "grades", "lighting", "note",
+                                             "at")}, "defects": v.get("blocking_defects") or []} if v else None, "criteria": e.get("criteria"),
         "run": (e.get("print_runs") or [{}])[-1].get("id"),
         "approval": e.get("approval"), "abandoned_reason": e.get("abandoned_reason"),
         "filament": (e.get("controlled") or {}).get("filament"),
         "runs": [{"id": r["id"], "started_at": r.get("started_at"), "baseline_missing": r.get("baseline_missing") or []}
                  for r in e.get("print_runs") or []],
-        "finding": criteria_finding(e) or sweep_finding(e), "photos": _photos(e, root), "ai_observations": e.get("ai_observations") or [], "needs": _needs(e)}
+        "finding": criteria_finding(e) or sweep_finding(e), "photos": _photos(e, root), "ai_observations": e.get("ai_observations") or [], "due_at": _due_at(e), "needs": _needs(e, at)}
 
 
 def _question(q: dict, exps: dict, tol: float) -> dict:
@@ -169,18 +195,19 @@ def _question(q: dict, exps: dict, tol: float) -> dict:
             "answered": sum(1 for e in mine.values() if e["status"] == "answered")}
 
 
-def build_index(pdir: Path) -> dict:
+def build_index(pdir: Path, at: str | None = None) -> dict:
+    at = at or now()
     paths = ProjectPaths(Path(pdir))
     records, problems = {}, []
     questions = _load_all(paths, paths.questions, "question", records, problems)
     exps = _load_all(paths, paths.experiments, "experiment", records, problems)
     settings = project_settings(paths)
     tol, production = settings["plate_time_tolerance_pct"], settings.get("production_plate")
-    experiments = [_experiment(e, exps, paths.root, tol, production)
+    experiments = [_experiment(e, exps, paths.root, tol, production, at)
                    for e in sorted(exps.values(), key=lambda e: e["id"], reverse=True)]
     needs = sorted((x["needs"] for x in experiments if x["needs"]), key=lambda n: (n["urgency"], n["id"]))
     needs = [n for n in needs if n["urgency"] < 3 or n["action"] == "Fix the plan"]
     fingerprint = hashlib.sha256(json.dumps({k: r["sha256"] for k, r in sorted(records.items())}).encode()).hexdigest()
-    return {"schema": SCHEMA, "project": paths.name, "generated_at": now(), "fingerprint": fingerprint,
+    return {"schema": SCHEMA, "project": paths.name, "generated_at": at, "fingerprint": fingerprint,
             "questions": [_question(q, exps, tol) for q in sorted(questions.values(), key=lambda q: q["id"], reverse=True)],
             "experiments": experiments, "needs": needs, "records": records, "problems": problems}
