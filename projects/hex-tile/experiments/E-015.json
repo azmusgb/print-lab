@@ -58,7 +58,7 @@
     "tabs": false,
     "notes": []
   },
-  "status": "needs_approval",
+  "status": "abandoned",
   "variants": [
     {
       "id": "E-015-A",
@@ -2750,7 +2750,7 @@
       "error": null,
       "check": {
         "status": "needs_approval",
-        "at": "2026-10-26T01:50:39+00:00",
+        "at": "2026-10-26T01:53:28+00:00",
         "guards": [
           {
             "code": "owner_stopped",
@@ -2878,5 +2878,6 @@
   "ai_observations": [],
   "comparison_validity": null,
   "prediction_outcome": null,
-  "analysis": []
+  "analysis": [],
+  "abandoned_reason": "superseded by E-017/E-018: thicker backs alone don't stop the welding; tack posts replace the ribs"
 }

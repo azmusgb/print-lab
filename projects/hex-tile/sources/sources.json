@@ -59,5 +59,12 @@
     "source": "derived",
     "derived_from": "sources/hexagon_v58_X2D_0.6nozzle.3mf",
     "change": "each tile's back plate thickened 0.65 -> 1.25 mm (inner face moved 0.6 mm toward the skin; outer back, ribs, gap and face unchanged) so the backs survive cutting the welded ribs (E-014: the pair cracked when separated); object names renamed v58 -> v60b125"
+  },
+  {
+    "path": "sources/hexagon_v61t_X2D_0.6nozzle.3mf",
+    "sha256": "dae296679d722b4d419f3fb39a256f182cca6a77adb0dde7154d5322fb272286",
+    "source": "derived",
+    "derived_from": "sources/hexagon_v60b125_X2D_0.6nozzle.3mf",
+    "change": "the full-height ribs and edge seams in the 1.0 mm gap between the backs (1697 mm2 of contact that fused in E-008/E-012/E-014) replaced by 124 tack posts (1.0 x 0.6 mm, 1.6 mm deep, fused into both 1.25 mm backs): on the four old rib lines and 2.5 mm inside the outline, every 8 mm; 74 mm2 of contact (4%). Faces, backs and outline unchanged. Made with sources/scad/make_v61_tacks.py (args: src out 8 1.0 0.6)"
   }
 ]

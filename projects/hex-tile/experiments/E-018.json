@@ -1,0 +1,642 @@
+{
+  "schema": 1,
+  "record_type": "experiment",
+  "id": "E-018",
+  "project": "hex-tile",
+  "question": "Q-003",
+  "provenance": "prospective",
+  "question_text": "Tack-post pair, top strip: does it print braced and snap apart by hand?",
+  "hypothesis": "E-014 faces were good but 1697 mm2 of fused rib/seam contact cracked the 0.65 mm backs on separation; E-011 showed zero contact lets the top wobble. 124 small tacks (4% of the contact) every 8 mm keep the bracing and break easily; 1.25 mm backs survive it.",
+  "prediction": "The strip prints as cleanly as E-012's at the top, and the two halves snap apart by hand without cracking.",
+  "why_this_test": "Short check of bracing and separation before committing 4 h to the deadline pair.",
+  "test_kind": "height_strip",
+  "factor": {
+    "name": "model_version",
+    "values": [
+      "sources/hexagon_v61t_X2D_0.6nozzle.3mf"
+    ],
+    "unit": ""
+  },
+  "factor_scope": "bundle",
+  "dependent_adjustments": {},
+  "controlled": {},
+  "baseline": {},
+  "findings": [],
+  "judge_on": "faces print clean at the top (no loose faces, ripples or strings); the pair snaps apart by hand or with one knife pass, backs whole",
+  "expect": null,
+  "derived_from_artifact": [],
+  "derived_from_result": [],
+  "controls": {
+    "witness_required": false,
+    "anchor": null
+  },
+  "reference_variants": [],
+  "build_spec": {
+    "kind": "height_strip",
+    "source": "sources/hexagon_v61t_X2D_0.6nozzle.3mf",
+    "object": "v61t_06_6in",
+    "z": [
+      106.0,
+      131.982
+    ],
+    "judged": [
+      112.0,
+      125.982
+    ],
+    "base": "sources/hexagon_v57_X2D_0.4nozzle_kexcelled.3mf",
+    "variants": [
+      {
+        "id": "E-018-A",
+        "tab": "18A",
+        "settings_patch": {},
+        "copies": 1,
+        "source": "sources/hexagon_v61t_X2D_0.6nozzle.3mf"
+      }
+    ],
+    "witness": false,
+    "anchor": null,
+    "tabs": true,
+    "notes": []
+  },
+  "status": "built",
+  "variants": [
+    {
+      "id": "E-018-A",
+      "tab": "18A",
+      "factor_value": "sources/hexagon_v61t_X2D_0.6nozzle.3mf",
+      "copies": 1
+    }
+  ],
+  "builds": [
+    {
+      "id": "BLD-018-01",
+      "ok": true,
+      "at": "2026-10-26T01:54:16+00:00",
+      "inputs": {
+        "model": {
+          "sources/hexagon_v61t_X2D_0.6nozzle.3mf": "dae296679d722b4d419f3fb39a256f182cca6a77adb0dde7154d5322fb272286"
+        },
+        "settings": "92a1bd3f78404c165b3a25f0b0ad085b9249086535ff7a587b9f3b86215dfd95",
+        "build_spec_sha256": "cb6678aa1c54ae866ed708e1ac010671aa22099de02e94c722c25c6144c98485",
+        "builder_version": "1a1.1",
+        "builder_fingerprint": "4cd1ccdc50000d43f52d4268204b7b73f4d120efab9b268ebe9b4c9948a01c06",
+        "openscad": "2026.10.11",
+        "bambu_studio": "02.08.02.61"
+      },
+      "job": "job-20261026T015416-ffa0",
+      "artifact": "prints/hex-tile_E-018_BLD-018-01.3mf",
+      "artifact_sha256": "3646c86be8f18a3f3506175038b82c7f7ee1b58862712117cd5430097d6a0206",
+      "sliced": "prints/sliced/hex-tile_E-018_BLD-018-01.gcode.3mf",
+      "estimate": {
+        "minutes": 48.2,
+        "g": 14.88
+      },
+      "plate": {
+        "objects": [
+          "E-018-A"
+        ],
+        "placements": [
+          [
+            128.0,
+            128.0
+          ]
+        ]
+      },
+      "measured": {
+        "layer_time_median_s": 12.54,
+        "layer_time_profile": [
+          [
+            0.2,
+            131.3
+          ],
+          [
+            0.4,
+            15.48
+          ],
+          [
+            0.6,
+            15.17
+          ],
+          [
+            0.8,
+            15.22
+          ],
+          [
+            1.0,
+            15.23
+          ],
+          [
+            1.2,
+            14.6
+          ],
+          [
+            1.4,
+            14.6
+          ],
+          [
+            1.6,
+            14.51
+          ],
+          [
+            1.8,
+            13.7
+          ],
+          [
+            2.0,
+            13.77
+          ],
+          [
+            2.2,
+            13.74
+          ],
+          [
+            2.4,
+            13.71
+          ],
+          [
+            2.6,
+            13.68
+          ],
+          [
+            2.8,
+            13.65
+          ],
+          [
+            3.0,
+            13.62
+          ],
+          [
+            3.2,
+            13.59
+          ],
+          [
+            3.4,
+            13.56
+          ],
+          [
+            3.6,
+            13.53
+          ],
+          [
+            3.8,
+            13.5
+          ],
+          [
+            4.0,
+            13.47
+          ],
+          [
+            4.2,
+            13.44
+          ],
+          [
+            4.4,
+            13.41
+          ],
+          [
+            4.6,
+            13.38
+          ],
+          [
+            4.8,
+            13.35
+          ],
+          [
+            5.0,
+            13.32
+          ],
+          [
+            5.2,
+            13.29
+          ],
+          [
+            5.4,
+            13.26
+          ],
+          [
+            5.6,
+            13.23
+          ],
+          [
+            5.8,
+            13.2
+          ],
+          [
+            6.0,
+            13.17
+          ],
+          [
+            6.2,
+            13.14
+          ],
+          [
+            6.4,
+            13.11
+          ],
+          [
+            6.6,
+            13.08
+          ],
+          [
+            6.8,
+            13.05
+          ],
+          [
+            7.0,
+            13.02
+          ],
+          [
+            7.2,
+            12.99
+          ],
+          [
+            7.4,
+            12.96
+          ],
+          [
+            7.6,
+            12.97
+          ],
+          [
+            7.8,
+            13.59
+          ],
+          [
+            8.0,
+            13.22
+          ],
+          [
+            8.2,
+            13.14
+          ],
+          [
+            8.4,
+            12.8
+          ],
+          [
+            8.6,
+            12.79
+          ],
+          [
+            8.8,
+            12.76
+          ],
+          [
+            9.0,
+            12.73
+          ],
+          [
+            9.2,
+            12.7
+          ],
+          [
+            9.4,
+            12.67
+          ],
+          [
+            9.6,
+            12.64
+          ],
+          [
+            9.8,
+            12.61
+          ],
+          [
+            10.0,
+            12.58
+          ],
+          [
+            10.2,
+            12.55
+          ],
+          [
+            10.4,
+            12.52
+          ],
+          [
+            10.6,
+            12.49
+          ],
+          [
+            10.8,
+            12.46
+          ],
+          [
+            11.0,
+            12.43
+          ],
+          [
+            11.2,
+            12.4
+          ],
+          [
+            11.4,
+            12.37
+          ],
+          [
+            11.6,
+            12.34
+          ],
+          [
+            11.8,
+            12.31
+          ],
+          [
+            12.0,
+            12.28
+          ],
+          [
+            12.2,
+            12.25
+          ],
+          [
+            12.4,
+            12.22
+          ],
+          [
+            12.6,
+            12.19
+          ],
+          [
+            12.8,
+            12.16
+          ],
+          [
+            13.0,
+            12.13
+          ],
+          [
+            13.2,
+            12.1
+          ],
+          [
+            13.4,
+            12.07
+          ],
+          [
+            13.6,
+            12.04
+          ],
+          [
+            13.8,
+            12.05
+          ],
+          [
+            14.0,
+            12.05
+          ],
+          [
+            14.2,
+            11.99
+          ],
+          [
+            14.4,
+            11.91
+          ],
+          [
+            14.6,
+            11.89
+          ],
+          [
+            14.8,
+            11.86
+          ],
+          [
+            15.0,
+            11.83
+          ],
+          [
+            15.2,
+            11.8
+          ],
+          [
+            15.4,
+            11.77
+          ],
+          [
+            15.6,
+            11.74
+          ],
+          [
+            15.8,
+            12.41
+          ],
+          [
+            16.0,
+            11.98
+          ],
+          [
+            16.2,
+            11.93
+          ],
+          [
+            16.4,
+            11.6
+          ],
+          [
+            16.6,
+            11.58
+          ],
+          [
+            16.8,
+            11.55
+          ],
+          [
+            17.0,
+            11.52
+          ],
+          [
+            17.2,
+            11.49
+          ],
+          [
+            17.4,
+            11.46
+          ],
+          [
+            17.6,
+            11.43
+          ],
+          [
+            17.8,
+            11.4
+          ],
+          [
+            18.0,
+            11.37
+          ],
+          [
+            18.2,
+            11.34
+          ],
+          [
+            18.4,
+            11.32
+          ],
+          [
+            18.6,
+            11.29
+          ],
+          [
+            18.8,
+            11.26
+          ],
+          [
+            19.0,
+            11.23
+          ],
+          [
+            19.2,
+            11.22
+          ],
+          [
+            19.4,
+            11.18
+          ],
+          [
+            19.6,
+            11.15
+          ],
+          [
+            19.8,
+            11.13
+          ],
+          [
+            20.0,
+            11.1
+          ],
+          [
+            20.2,
+            11.13
+          ],
+          [
+            20.4,
+            11.09
+          ],
+          [
+            20.6,
+            11.02
+          ],
+          [
+            20.8,
+            11.11
+          ],
+          [
+            21.0,
+            11.43
+          ],
+          [
+            21.2,
+            12.6
+          ],
+          [
+            21.4,
+            12.78
+          ],
+          [
+            21.6,
+            13.3
+          ],
+          [
+            21.8,
+            13.65
+          ],
+          [
+            22.0,
+            13.64
+          ],
+          [
+            22.2,
+            13.75
+          ],
+          [
+            22.4,
+            14.01
+          ],
+          [
+            22.6,
+            14.27
+          ],
+          [
+            22.8,
+            15.02
+          ],
+          [
+            23.0,
+            14.64
+          ],
+          [
+            23.2,
+            15.31
+          ],
+          [
+            23.4,
+            21.99
+          ],
+          [
+            23.6,
+            12.91
+          ],
+          [
+            23.8,
+            11.43
+          ],
+          [
+            24.0,
+            11.23
+          ],
+          [
+            24.2,
+            11.02
+          ],
+          [
+            24.4,
+            9.59
+          ],
+          [
+            24.6,
+            9.69
+          ],
+          [
+            24.8,
+            10.36
+          ],
+          [
+            25.0,
+            10.71
+          ],
+          [
+            25.2,
+            13.44
+          ],
+          [
+            25.4,
+            11.55
+          ],
+          [
+            25.6,
+            10.86
+          ],
+          [
+            25.8,
+            10.33
+          ],
+          [
+            26.0,
+            11.39
+          ]
+        ]
+      },
+      "error": null
+    }
+  ],
+  "approval": null,
+  "print_runs": [],
+  "owner_verdict": null,
+  "superseded_verdicts": [],
+  "anchors": [],
+  "ai_observations": [],
+  "comparison_validity": null,
+  "prediction_outcome": null,
+  "analysis": []
+}
