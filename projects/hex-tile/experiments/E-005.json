@@ -69,7 +69,7 @@
     ],
     "witness": false
   },
-  "status": "approved",
+  "status": "abandoned",
   "variants": [
     {
       "id": "E-005-A",
@@ -413,5 +413,6 @@
     "reasons": []
   },
   "prediction_outcome": null,
-  "analysis": []
+  "analysis": [],
+  "abandoned_reason": "Superseded: built on the Generic PLA base and v58 for Q-001's face bands; after drying + vibration calibration (E-002) and the Kexcelled preset, v58's faces were judged clean or pretty good in E-008, E-012 and E-014, and the work moved to separating the pair (Q-003, v61s). A wall-speed test, if bands return, gets re-planned on the current geometry and preset."
 }

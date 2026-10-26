@@ -92,7 +92,7 @@
     "tabs": true,
     "notes": []
   },
-  "status": "needs_approval",
+  "status": "abandoned",
   "variants": [
     {
       "id": "E-010-A",
@@ -509,5 +509,6 @@
   "ai_observations": [],
   "comparison_validity": null,
   "prediction_outcome": null,
-  "analysis": []
+  "analysis": [],
+  "abandoned_reason": "Superseded: outer-wall speed sweep planned for Q-001 on v58 with the Generic PLA base, never approved; the faces were judged clean or pretty good in E-008, E-012 and E-014 after E-002's baseline fixes and the Kexcelled preset. If bands return, re-plan the sweep on v61s and the Kexcelled base."
 }
