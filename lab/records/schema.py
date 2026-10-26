@@ -32,7 +32,8 @@ BUILD = {"id": F(S, True), "ok": F(B, True), "at": F((S, NUL)), "inputs": F(D), 
          "measured": F((D, NUL)), "error": F((S, NUL)), "factor_scope": F(S, choices=("specific", "bundle")),
          "bundle_differences": F(L), "notes": F(L), "realization": F((D, NUL)), "check": F((D, NUL)), "legacy": F(A)}
 RUN = {"id": F(S, True), "build_id": F((S, NUL)), "started_at": F((S, NUL)), "setup": F((D, NUL)),
-       "baseline_missing": F(L), "usage": F((D, NUL)), "failed": F((D, NUL)), "photos": F(L), "legacy": F(A)}
+       "baseline_missing": F(L), "usage": F((D, NUL)), "failed": F((D, NUL)), "photos": F(L), "legacy": F(A),
+       "started_from": F(S, choices=("page",))}
 CRITERION = {"key": F(S, True), "label": F(S, True), "choices": F(L, True)}
 MARK = {"variant": F(S, True), "mark_z_mm": F((N, NUL)), "defect_z_mm": F((N, NUL))}
 WITNESS = {"id": F(S, True), "condition": F(S, True, WITNESS_CONDITIONS), "note": F((S, NUL))}

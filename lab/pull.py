@@ -10,12 +10,50 @@ import tempfile
 import urllib.request
 from pathlib import Path
 
-from lab.loop.commands import add_photos, record_verdict
+from datetime import datetime, timedelta, timezone
+
+from lab.loop.commands import abandon, add_photos, load_experiment, record_verdict
+from lab.loop.guards import approve, start
 from lab.records.project import ProjectPaths
 from lab.records.store import now
 from lab.sync import BASE, _call, _context, _key
 
 ROOT = Path(__file__).resolve().parent.parent
+
+
+TAP_WINDOW = timedelta(hours=6)  # a phone's tap time is used only if it is this recent and not in the future
+
+
+def _tap_time(raw) -> str | None:
+    """The page's tap time as the start, when it is plausible; else None (the Mac's clock is used)."""
+    try:
+        t = datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if t.tzinfo is None:
+        return None
+    n = datetime.now(timezone.utc)
+    return t.astimezone(timezone.utc).isoformat() if n - TAP_WINDOW <= t <= n + timedelta(minutes=1) else None
+
+
+def _act(paths: ProjectPaths, kind: str, eid: str, run_seen, payload: dict) -> str:
+    """The page's buttons, applied with the CLI's own functions (lab exp start / approve / abandon)."""
+    if kind == "start":
+        e = load_experiment(paths, eid)
+        latest = (e.get("print_runs") or [{}])[-1].get("id")
+        if run_seen and run_seen != latest:
+            raise ValueError(f"{eid} changed since the page was loaded (its latest run is {latest or 'none'}); reload and try again.")
+        e, warn = start(paths, eid, started_at=_tap_time(payload.get("tapped_at")), started_from="page")
+        run = e["print_runs"][-1]
+        return " ".join([f"{eid} printing as {run['id']}", *warn]) if not warn or "already" not in warn[0] else warn[0]
+    reason = str(payload.get("reason") or "").strip()
+    if kind == "approve":
+        e = approve(paths, eid, reason or "approved from the page")
+        return f"Approved {e['approval']['build_id']} for: {', '.join(e['approval']['approved_reasons'])}."
+    if not reason:
+        raise ValueError(f"Dropping {eid} needs a reason.")
+    abandon(paths, eid, reason)
+    return f"{eid} abandoned."
 
 
 def apply_pending(pdir: Path, base: str, key: str, timeout: float = 10) -> list[dict]:
@@ -124,6 +162,11 @@ def apply_pending(pdir: Path, base: str, key: str, timeout: float = 10) -> list[
                 except ValueError as e:
                     status = "refused"
                     message = str(e)
+            elif kind in ("start", "approve", "abandon"):
+                try:
+                    status, message = "applied", _act(paths, kind, eid, req.get("run_seen"), payload)
+                except ValueError as e:
+                    status, message = "refused", str(e)
             else:
                 status = "refused"
                 message = f"unknown request kind {kind}"
