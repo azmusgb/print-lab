@@ -44,3 +44,29 @@ def test_paths_fixed_at_import_point_away_from_the_real_lab():
     from lab.loop import capabilities
     for p in (source.CAP_DIR, capabilities.CAP_DIR):
         assert not p.resolve().is_relative_to(ROOT.resolve())
+
+
+def test_home_and_local_ai_point_nowhere_real():
+    from lab import sync
+    assert Path.home().resolve() != Path(os.environ["PYTEST_REAL_HOME"]).resolve()
+    assert os.environ["LAB_LOCALAI_URL"].startswith("http://127.0.0.1:9")
+    assert not Path(os.environ["LAB_LOCALAI_KEY_FILE"]).exists()
+    assert not sync.HOME.resolve().is_relative_to(Path(os.environ["PYTEST_REAL_HOME"]).resolve())
+
+
+@pytest.mark.parametrize("argv", [["launchctl", "list"], ["/bin/launchctl", "list"],
+                                  ["osascript", "-e", "display notification \"x\""]])
+def test_launchd_and_notifications_are_refused(argv):
+    with pytest.raises(PermissionError, match="tests don't"):
+        subprocess.run(argv, capture_output=True)
+
+
+def test_locks_and_new_records_inside_the_real_lab_are_refused():
+    from lab.records.store import create_record, record_lock
+    with pytest.raises(PermissionError, match="real lab"):
+        with record_lock(ROOT / "projects" / "hex-tile" / ".locks", "probe", "test"):
+            pass
+    with pytest.raises(PermissionError, match="real lab"):
+        create_record(Path(os.environ["LAB_HOME"]) / "locks", ROOT / "projects" / "probe-folder", "P",
+                      lambda i: {"id": i})
+    assert not (ROOT / "projects" / "probe-folder").exists()

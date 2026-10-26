@@ -11,7 +11,7 @@ def lab(*args, env_home=None):
     env = dict(os.environ)
     if env_home:
         env["LAB_HOME"] = str(env_home)
-    return subprocess.run(["uv", "run", "lab", *map(str, args)], capture_output=True, text=True, cwd=ROOT, env=env)
+    return subprocess.run(["uv", "run", "--frozen", "lab", *map(str, args)], capture_output=True, text=True, cwd=ROOT, env=env)
 
 
 def test_inspect_text(hex_dir):

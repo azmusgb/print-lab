@@ -39,6 +39,7 @@ def _no_sync(monkeypatch):
 # 2. writing a record anywhere inside the checkout is refused before it happens;
 # 3. the checkout's files are compared before and after every test, which catches any other kind of write.
 import os
+import subprocess
 import sys
 
 from lab.cli import ROOT as LAB_ROOT
@@ -51,22 +52,48 @@ def _inside_real_lab(path) -> bool:
 
 
 def _snapshot() -> dict:
+    """Every file and folder in the checkout. Inode and ctime are included because a rewrite can keep the size and
+    put the mtime back, but replacing a file changes its inode and any change moves its ctime."""
     out = {}
     for dirpath, dirnames, filenames in os.walk(LAB_ROOT):
         dirnames[:] = [d for d in dirnames if d not in _SKIP_DIRS]
-        for f in filenames:
-            p = os.path.join(dirpath, f)
+        for name in dirnames + filenames:
+            p = os.path.join(dirpath, name)
             try:
-                st = os.stat(p)
+                st = os.lstat(p)
             except FileNotFoundError:
                 continue
-            out[p] = (st.st_size, st.st_mtime_ns)
+            out[p] = (st.st_size, st.st_mtime_ns, st.st_ctime_ns, st.st_ino) if name in filenames else ("dir",)
     return out
+
+
+_REAL_HOME = os.path.expanduser("~")
+_REFUSED_PROGRAMS = {"launchctl", "osascript"}
 
 
 @pytest.fixture(autouse=True)
 def _temporary_lab(tmp_path_factory, monkeypatch):
     monkeypatch.setenv("LAB_HOME", str(tmp_path_factory.mktemp("lab-home")))
+
+
+@pytest.fixture(autouse=True)
+def _nothing_outside_the_checkout(tmp_path_factory, monkeypatch):
+    """Tests don't reach the owner's home folder, the real Local AI, launchd or the notification centre."""
+    from lab import sync
+    home = tmp_path_factory.mktemp("home")
+    monkeypatch.setenv("PYTEST_REAL_HOME", _REAL_HOME)
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("LAB_LOCALAI_URL", "http://127.0.0.1:9")  # the discard port: nothing answers
+    monkeypatch.setenv("LAB_LOCALAI_KEY_FILE", str(home / "no-such.key"))
+    monkeypatch.setattr(sync, "HOME", home / ".claude" / "localai-chat")
+    real_run = subprocess.run
+
+    def run(args, *a, **k):
+        argv = args if isinstance(args, (list, tuple)) else [args]
+        if argv and Path(str(argv[0])).name in _REFUSED_PROGRAMS:
+            raise PermissionError(f"tests don't run {Path(str(argv[0])).name}; inject a fake runner instead")
+        return real_run(args, *a, **k)
+    monkeypatch.setattr(subprocess, "run", run)
 
 
 @pytest.fixture
@@ -80,20 +107,45 @@ def real_project_copy():
     return dst
 
 
+def _refuse(path) -> None:
+    if _inside_real_lab(path):
+        raise PermissionError(f"A test tried to write {path}, inside the real lab ({LAB_ROOT}). Give the test its "
+                              "own project under tmp_path.")
+
+
 @pytest.fixture(autouse=True)
 def _refuse_real_lab_writes(monkeypatch):
+    """Refuse before writing: records (atomic_write_json, and _write_temp under create_record) and record locks,
+    wherever a module imported them from."""
     from lab.records import store
-    original = store.atomic_write_json
+    originals = {"atomic_write_json": store.atomic_write_json, "_write_temp": store._write_temp,
+                 "record_lock": store.record_lock, "create_record": store.create_record}
 
-    def guarded(path, obj, *args, **kwargs):
-        if _inside_real_lab(path):
-            raise PermissionError(f"A test tried to write {path}, inside the real lab ({LAB_ROOT}). Give the test "
-                                  "its own project under tmp_path.")
-        return original(path, obj, *args, **kwargs)
+    def atomic_write_json(path, obj, *a, **k):
+        _refuse(path)
+        return originals["atomic_write_json"](path, obj, *a, **k)
 
+    def _write_temp(folder, obj, *a, **k):
+        _refuse(folder)
+        return originals["_write_temp"](folder, obj, *a, **k)
+
+    def record_lock(lock_dir, *a, **k):
+        _refuse(lock_dir)
+        return originals["record_lock"](lock_dir, *a, **k)
+
+    def create_record(lock_dir, folder, *a, **k):  # it makes its folder before writing anything
+        _refuse(folder)
+        _refuse(lock_dir)
+        return originals["create_record"](lock_dir, folder, *a, **k)
+
+    guarded = {"atomic_write_json": atomic_write_json, "_write_temp": _write_temp, "record_lock": record_lock,
+               "create_record": create_record}
     for name, mod in list(sys.modules.items()):
-        if (name == "lab" or name.startswith("lab.")) and getattr(mod, "atomic_write_json", None) is original:
-            monkeypatch.setattr(mod, "atomic_write_json", guarded)
+        if name == "lab" or name.startswith("lab."):
+            for attr, orig in originals.items():
+                for k, v in list(vars(mod).items()):
+                    if v is orig:  # catches aliased imports too
+                        monkeypatch.setattr(mod, k, guarded[attr])
 
 
 @pytest.fixture(autouse=True)
