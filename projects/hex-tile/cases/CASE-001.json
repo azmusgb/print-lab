@@ -24,5 +24,9 @@
     "fix": "Increase spacing between back ribs to at least 1.0 mm, or replace continuous seams with staggered point tacks."
   },
   "created_at": "2026-10-26T03:45:46+00:00",
-  "updated_at": "2026-10-26T03:45:46+00:00"
+  "updated_at": "2026-10-26T03:45:46+00:00",
+  "status": "promoted",
+  "promoted_at": "2026-10-26T03:53:02+00:00",
+  "promoted_rule": "minimum_back_gap",
+  "target_file": "lab/checks/part_gap.py"
 }

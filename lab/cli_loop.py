@@ -156,6 +156,18 @@ def cmd_case(args) -> int:
             print(f"  Flagged:           {res['flagged_count']} ({', '.join(res['flagged_versions'])})")
             print(f"  Impact:            {res['precision_note']}")
         return 0
+    if args.action == "promote":
+        from lab.loop.cases import promote_case_to_rule
+        res = promote_case_to_rule(paths, args.id)
+        if args.json:
+            print(json.dumps(res, indent=2))
+        else:
+            print(f"✓ Promoted {res['case_id']} to active rule '{res['rule_name']}':")
+            print(f"  Confidence: {res['confidence']} (Level {res['ladder_step']} of 5)")
+            print(f"  Condition:  {res['condition']}")
+            print(f"  Rule File:  {res['rule_file']}")
+            print("  Effect:     Active in `lab inspect`, `lab checks`, and `lab plan`")
+        return 0
     return 0
 
 
@@ -450,7 +462,7 @@ def register(sub) -> None:
     tl.set_defaults(fn=cmd_exp_telemetry)
 
     cs = sub.add_parser("case", help="Stage 3: case library, confidence ladder, and rule evaluation")
-    cs.add_argument("action", choices=["list", "show", "export", "check-rule"])
+    cs.add_argument("action", choices=["list", "show", "export", "check-rule", "promote"])
     cs.add_argument("id", nargs="?", help="case ID, e.g. CASE-001")
     cs.add_argument("--json", action="store_true")
     cs.add_argument("--project", default=argparse.SUPPRESS)

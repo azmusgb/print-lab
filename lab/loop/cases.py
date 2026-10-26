@@ -187,6 +187,45 @@ def check_rule_against_history(paths: ProjectPaths, case_id: str) -> dict:
     }
 
 
+def promote_case_to_rule(paths: ProjectPaths, case_id: str) -> dict:
+    cases = load_cases(paths) or sync_cases(paths)
+    c = next((x for x in cases if x["id"] == case_id), None)
+    if not c:
+        raise ValueError(f"Case {case_id} not found in {paths.name}.")
+
+    if c.get("ladder_step", 1) < 3:
+        raise ValueError(f"Case {case_id} has confidence '{c['confidence']}' (Level {c['ladder_step']}). "
+                         "Only cases at Level >= 3 (reproduced) can be promoted to active rules.")
+
+    prop = c.get("rule_proposal")
+    if not prop:
+        raise ValueError(f"Case {case_id} has no rule proposal.")
+
+    rule_files = {
+        "minimum_back_gap": "lab/checks/part_gap.py",
+        "wall_speed_ratio": "lab/checks/wall_speed.py",
+    }
+    target_file = rule_files.get(prop["rule_name"], "lab/checks/")
+
+    c["status"] = "promoted"
+    c["promoted_at"] = now()
+    c["promoted_rule"] = prop["rule_name"]
+    c["target_file"] = target_file
+
+    cdir = cases_dir(paths)
+    atomic_write_json(cdir / f"{c['id']}.json", c)
+
+    return {
+        "case_id": case_id,
+        "rule_name": prop["rule_name"],
+        "confidence": c["confidence"],
+        "ladder_step": c["ladder_step"],
+        "condition": f"{prop['parameter']} {prop['condition']}",
+        "rule_file": target_file,
+        "status": "promoted",
+    }
+
+
 def format_cases_list(cases: list[dict]) -> str:
     if not cases:
         return "No cases documented yet. Run `lab case export` to generate from answered experiments."

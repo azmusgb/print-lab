@@ -71,3 +71,26 @@ def test_cases_cli(capsys):
     out = capsys.readouterr().out
     assert "Rule evaluation for CASE-001" in out
     assert "Revisions checked:" in out
+
+    rc = main(["case", "promote", "CASE-001"])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "✓ Promoted CASE-001 to active rule" in out
+    assert "minimum_back_gap" in out
+
+
+def test_promote_refuses_candidate(tmp_path):
+    import pytest
+    from lab.loop.cases import Case, promote_case_to_rule, cases_dir
+    from lab.records.store import atomic_write_json
+    paths = make_project(tmp_path, minimal_question(), [minimal_experiment()])
+    c = {
+        "id": "CASE-999",
+        "confidence": "candidate",
+        "ladder_step": 1,
+        "rule_proposal": {"rule_name": "dummy"},
+    }
+    atomic_write_json(cases_dir(paths) / "CASE-999.json", c)
+
+    with pytest.raises(ValueError, match="Only cases at Level >= 3"):
+        promote_case_to_rule(paths, "CASE-999")
