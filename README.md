@@ -20,6 +20,7 @@ Each experiment answers one question, changes one factor and is judged by you. R
     uv run lab exp build E-005              # cut, lay out and slice the plate (prints/sliced/...)
     uv run lab exp check E-005              # READY, NEEDS APPROVAL or BLOCKED, with the reasons
     uv run lab exp approve E-005 --reason "..."   # only for budget or full-part reasons; never a block
+    uv run lab exp send E-005               # open the checked .gcode.3mf in Bambu Connect; print it there unchanged
     uv run lab exp start E-005              # when you send the print: re-checks and snapshots the setup
     uv run lab photos add PR-005-01 ~/Pictures/IMG_*.HEIC
     uv run lab exp verdict E-005 --rank "B>A" --strength clearly
