@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "record_type": "question",
+  "id": "Q-004",
+  "project": "hex-tile",
+  "question": "What put the uneven horizontal ridges on E-021's fronts, when E-020 (same model, same settings, same toolpath per pair) printed clean?",
+  "status": "active",
+  "autonomy_level": 2,
+  "budget": {
+    "max_test_minutes": 45,
+    "max_test_g": 25,
+    "max_minutes": 240,
+    "max_g": 100
+  },
+  "experiments": [
+    "E-022"
+  ],
+  "plans": [],
+  "stops": []
+}

@@ -1,0 +1,891 @@
+{
+  "schema": 1,
+  "record_type": "experiment",
+  "id": "E-022",
+  "project": "hex-tile",
+  "question": "Q-004",
+  "provenance": "prospective",
+  "question_text": "Do the ridges come back when E-021's plate is printed again, unchanged and untouched?",
+  "hypothesis": "E-021's ridges are unevenly spaced and cross the whole face, so whole layers were disturbed at a few moments; the model, settings and per-pair toolpath are identical to E-020, which printed clean. So they came from events during that run (the door or lid opened, a filament feed hiccup), not from the model or from sharing the plate.",
+  "prediction": "Printed again with the door and lid left shut for the whole print, both strips' fronts are clean. If ridges return, they sit at the same heights as E-021's (the printer's Z) or at new heights (plate sharing or the filament).",
+  "why_this_test": "A same-plate repeat is the only test that keeps everything but the run itself the same. A single strip alone would change the plate and the run at once, so it couldn't tell them apart. It also gives a second read on whether the kiss tacks snap apart.",
+  "test_kind": "height_strip",
+  "factor": {
+    "name": "model_version",
+    "values": [
+      "sources/hexagon_v61s_X2D_0.6nozzle.3mf",
+      "sources/hexagon_v62k_X2D_0.6nozzle.3mf"
+    ],
+    "unit": ""
+  },
+  "factor_scope": "bundle",
+  "dependent_adjustments": {},
+  "controlled": {},
+  "baseline": {},
+  "findings": [],
+  "judge_on": "fronts under one low side light, ruler on the face: count the ridges and note their heights from the bed; then twist each pair apart by hand",
+  "expect": null,
+  "derived_from_artifact": [],
+  "derived_from_result": [],
+  "controls": {
+    "witness_required": false,
+    "anchor": null
+  },
+  "reference_variants": [],
+  "build_spec": {
+    "kind": "height_strip",
+    "source": "sources/hexagon_v62k_X2D_0.6nozzle.3mf",
+    "object": "_06_6in",
+    "z": [
+      0.0,
+      30.0
+    ],
+    "judged": [
+      6.0,
+      24.0
+    ],
+    "base": "sources/hexagon_v57_X2D_0.4nozzle_kexcelled.3mf",
+    "variants": [
+      {
+        "id": "E-022-A",
+        "tab": "22A",
+        "settings_patch": {},
+        "copies": 1,
+        "source": "sources/hexagon_v61s_X2D_0.6nozzle.3mf"
+      },
+      {
+        "id": "E-022-B",
+        "tab": "22B",
+        "settings_patch": {},
+        "copies": 1,
+        "source": "sources/hexagon_v62k_X2D_0.6nozzle.3mf"
+      }
+    ],
+    "witness": false,
+    "anchor": null,
+    "tabs": true,
+    "notes": []
+  },
+  "status": "needs_approval",
+  "variants": [
+    {
+      "id": "E-022-A",
+      "tab": "22A",
+      "factor_value": "sources/hexagon_v61s_X2D_0.6nozzle.3mf",
+      "copies": 1
+    },
+    {
+      "id": "E-022-B",
+      "tab": "22B",
+      "factor_value": "sources/hexagon_v62k_X2D_0.6nozzle.3mf",
+      "copies": 1
+    }
+  ],
+  "builds": [
+    {
+      "id": "BLD-022-01",
+      "ok": true,
+      "at": "2026-10-26T16:34:27+00:00",
+      "inputs": {
+        "model": {
+          "sources/hexagon_v61s_X2D_0.6nozzle.3mf": "9f46a35e64bb70124b3481a499a0cbbc33f5deb9546db6f78fa99b259bebe9df",
+          "sources/hexagon_v62k_X2D_0.6nozzle.3mf": "d9d699b16e4fcf4905a8ed47ef954aee811e573b16578f1705a94ff23a794c52"
+        },
+        "settings": "92a1bd3f78404c165b3a25f0b0ad085b9249086535ff7a587b9f3b86215dfd95",
+        "build_spec_sha256": "2fe00052bd6d5cffec3cc1143c66a6c1172d813750962cb78960cb7a8c47a4a6",
+        "builder_version": "1a1.1",
+        "builder_fingerprint": "c48f29cbc5299581fced8e21c04aa104bc8f38a77f417e8441826e56a05cf16f",
+        "openscad": "2026.10.11",
+        "bambu_studio": "02.08.02.61"
+      },
+      "job": "job-20261026T163427-0a69",
+      "artifact": "prints/hex-tile_E-022_BLD-022-01.3mf",
+      "artifact_sha256": "cae480638be32b02c1b3f8f9c014f4f90c8f5977aad84e60e954bb2c2978a208",
+      "sliced": "prints/sliced/hex-tile_E-022_BLD-022-01.gcode.3mf",
+      "estimate": {
+        "minutes": 106.5,
+        "g": 33.83
+      },
+      "plate": {
+        "objects": [
+          "E-022-A",
+          "E-022-B"
+        ],
+        "placements": [
+          [
+            113.65,
+            128.0
+          ],
+          [
+            142.35,
+            128.0
+          ]
+        ]
+      },
+      "measured": {
+        "layer_time_median_s": 25.8,
+        "layer_time_profile": [
+          [
+            0.2,
+            215.36
+          ],
+          [
+            0.4,
+            28.51
+          ],
+          [
+            0.6,
+            29.54
+          ],
+          [
+            0.8,
+            25.33
+          ],
+          [
+            1.0,
+            22.17
+          ],
+          [
+            1.2,
+            20.28
+          ],
+          [
+            1.4,
+            20.05
+          ],
+          [
+            1.6,
+            20.4
+          ],
+          [
+            1.8,
+            19.35
+          ],
+          [
+            2.0,
+            19.48
+          ],
+          [
+            2.2,
+            23.14
+          ],
+          [
+            2.4,
+            23.54
+          ],
+          [
+            2.6,
+            23.65
+          ],
+          [
+            2.8,
+            26.87
+          ],
+          [
+            3.0,
+            26.3
+          ],
+          [
+            3.2,
+            25.67
+          ],
+          [
+            3.4,
+            25.17
+          ],
+          [
+            3.6,
+            24.76
+          ],
+          [
+            3.8,
+            24.81
+          ],
+          [
+            4.0,
+            24.53
+          ],
+          [
+            4.2,
+            23.53
+          ],
+          [
+            4.4,
+            22.64
+          ],
+          [
+            4.6,
+            22.61
+          ],
+          [
+            4.8,
+            22.13
+          ],
+          [
+            5.0,
+            22.02
+          ],
+          [
+            5.2,
+            22.56
+          ],
+          [
+            5.4,
+            22.19
+          ],
+          [
+            5.6,
+            22.39
+          ],
+          [
+            5.8,
+            22.81
+          ],
+          [
+            6.0,
+            22.57
+          ],
+          [
+            6.2,
+            22.59
+          ],
+          [
+            6.4,
+            23.04
+          ],
+          [
+            6.6,
+            22.79
+          ],
+          [
+            6.8,
+            22.83
+          ],
+          [
+            7.0,
+            23.13
+          ],
+          [
+            7.2,
+            22.88
+          ],
+          [
+            7.4,
+            22.93
+          ],
+          [
+            7.6,
+            23.28
+          ],
+          [
+            7.8,
+            23.02
+          ],
+          [
+            8.0,
+            23.07
+          ],
+          [
+            8.2,
+            23.58
+          ],
+          [
+            8.4,
+            23.33
+          ],
+          [
+            8.6,
+            23.27
+          ],
+          [
+            8.8,
+            23.65
+          ],
+          [
+            9.0,
+            23.44
+          ],
+          [
+            9.2,
+            23.5
+          ],
+          [
+            9.4,
+            24.14
+          ],
+          [
+            9.6,
+            23.86
+          ],
+          [
+            9.8,
+            23.77
+          ],
+          [
+            10.0,
+            24.11
+          ],
+          [
+            10.2,
+            23.86
+          ],
+          [
+            10.4,
+            24.13
+          ],
+          [
+            10.6,
+            24.32
+          ],
+          [
+            10.8,
+            24.15
+          ],
+          [
+            11.0,
+            24.12
+          ],
+          [
+            11.2,
+            24.49
+          ],
+          [
+            11.4,
+            24.24
+          ],
+          [
+            11.6,
+            24.29
+          ],
+          [
+            11.8,
+            24.67
+          ],
+          [
+            12.0,
+            24.42
+          ],
+          [
+            12.2,
+            24.43
+          ],
+          [
+            12.4,
+            24.88
+          ],
+          [
+            12.6,
+            24.63
+          ],
+          [
+            12.8,
+            24.68
+          ],
+          [
+            13.0,
+            25.19
+          ],
+          [
+            13.2,
+            24.95
+          ],
+          [
+            13.4,
+            24.85
+          ],
+          [
+            13.6,
+            25.25
+          ],
+          [
+            13.8,
+            25.0
+          ],
+          [
+            14.0,
+            25.05
+          ],
+          [
+            14.2,
+            25.55
+          ],
+          [
+            14.4,
+            25.3
+          ],
+          [
+            14.6,
+            25.21
+          ],
+          [
+            14.8,
+            25.54
+          ],
+          [
+            15.0,
+            25.29
+          ],
+          [
+            15.2,
+            25.34
+          ],
+          [
+            15.4,
+            25.87
+          ],
+          [
+            15.6,
+            25.62
+          ],
+          [
+            15.8,
+            25.57
+          ],
+          [
+            16.0,
+            25.93
+          ],
+          [
+            16.2,
+            25.68
+          ],
+          [
+            16.4,
+            25.73
+          ],
+          [
+            16.6,
+            26.13
+          ],
+          [
+            16.8,
+            25.88
+          ],
+          [
+            17.0,
+            25.89
+          ],
+          [
+            17.2,
+            26.35
+          ],
+          [
+            17.4,
+            26.1
+          ],
+          [
+            17.6,
+            26.15
+          ],
+          [
+            17.8,
+            26.76
+          ],
+          [
+            18.0,
+            26.52
+          ],
+          [
+            18.2,
+            26.43
+          ],
+          [
+            18.4,
+            26.67
+          ],
+          [
+            18.6,
+            26.42
+          ],
+          [
+            18.8,
+            26.47
+          ],
+          [
+            19.0,
+            27.08
+          ],
+          [
+            19.2,
+            26.83
+          ],
+          [
+            19.4,
+            26.72
+          ],
+          [
+            19.6,
+            27.02
+          ],
+          [
+            19.8,
+            26.77
+          ],
+          [
+            20.0,
+            26.82
+          ],
+          [
+            20.2,
+            27.37
+          ],
+          [
+            20.4,
+            27.12
+          ],
+          [
+            20.6,
+            27.04
+          ],
+          [
+            20.8,
+            27.49
+          ],
+          [
+            21.0,
+            27.24
+          ],
+          [
+            21.2,
+            27.29
+          ],
+          [
+            21.4,
+            27.66
+          ],
+          [
+            21.6,
+            27.41
+          ],
+          [
+            21.8,
+            27.41
+          ],
+          [
+            22.0,
+            27.82
+          ],
+          [
+            22.2,
+            27.56
+          ],
+          [
+            22.4,
+            27.61
+          ],
+          [
+            22.6,
+            28.09
+          ],
+          [
+            22.8,
+            27.84
+          ],
+          [
+            23.0,
+            28.11
+          ],
+          [
+            23.2,
+            28.04
+          ],
+          [
+            23.4,
+            27.88
+          ],
+          [
+            23.6,
+            27.93
+          ],
+          [
+            23.8,
+            28.47
+          ],
+          [
+            24.0,
+            28.21
+          ],
+          [
+            24.2,
+            28.09
+          ],
+          [
+            24.4,
+            28.44
+          ],
+          [
+            24.6,
+            28.2
+          ],
+          [
+            24.8,
+            28.25
+          ],
+          [
+            25.0,
+            28.85
+          ],
+          [
+            25.2,
+            28.6
+          ],
+          [
+            25.4,
+            28.5
+          ],
+          [
+            25.6,
+            28.85
+          ],
+          [
+            25.8,
+            28.6
+          ],
+          [
+            26.0,
+            28.65
+          ],
+          [
+            26.2,
+            29.16
+          ],
+          [
+            26.4,
+            28.91
+          ],
+          [
+            26.6,
+            28.88
+          ],
+          [
+            26.8,
+            29.22
+          ],
+          [
+            27.0,
+            28.97
+          ],
+          [
+            27.2,
+            29.02
+          ],
+          [
+            27.4,
+            29.36
+          ],
+          [
+            27.6,
+            29.11
+          ],
+          [
+            27.8,
+            29.15
+          ],
+          [
+            28.0,
+            29.59
+          ],
+          [
+            28.2,
+            29.34
+          ],
+          [
+            28.4,
+            29.39
+          ],
+          [
+            28.6,
+            29.92
+          ],
+          [
+            28.8,
+            29.67
+          ],
+          [
+            29.0,
+            29.53
+          ],
+          [
+            29.2,
+            29.95
+          ],
+          [
+            29.4,
+            29.7
+          ],
+          [
+            29.6,
+            29.75
+          ],
+          [
+            29.8,
+            30.36
+          ],
+          [
+            30.0,
+            29.74
+          ]
+        ]
+      },
+      "error": null,
+      "factor_scope": "bundle",
+      "bundle_differences": [
+        {
+          "where": "geometry",
+          "key": "mesh",
+          "a": "E-022-A",
+          "b": "E-022-B"
+        }
+      ],
+      "check": {
+        "status": "needs_approval",
+        "at": "2026-10-26T16:34:30+00:00",
+        "guards": [
+          {
+            "code": "owner_stopped",
+            "ok": true,
+            "result": "blocked",
+            "message": "question active"
+          },
+          {
+            "code": "auto_stopped",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "no automatic stop"
+          },
+          {
+            "code": "full_part_required",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "diagnostic test type"
+          },
+          {
+            "code": "autonomy_level",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "autonomy level 2"
+          },
+          {
+            "code": "refuted_dependency",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "no contradicted reasoning"
+          },
+          {
+            "code": "no_estimate",
+            "ok": true,
+            "result": "rebuild",
+            "message": "estimate present"
+          },
+          {
+            "code": "stale_build",
+            "ok": true,
+            "result": "rebuild",
+            "message": "inputs unchanged since the build"
+          },
+          {
+            "code": "factor_not_applied",
+            "ok": true,
+            "result": "blocked",
+            "message": "the declared factor differs between the variants"
+          },
+          {
+            "code": "reference_not_comparable",
+            "ok": true,
+            "result": "blocked",
+            "message": "references compared"
+          },
+          {
+            "code": "undeclared_difference",
+            "ok": true,
+            "result": "blocked",
+            "message": "only the declared factor differs"
+          },
+          {
+            "code": "geometry_blocking",
+            "ok": true,
+            "result": "blocked",
+            "message": "no blocking geometry findings"
+          },
+          {
+            "code": "geometry_warning",
+            "ok": false,
+            "result": "info",
+            "message": "E-022-A: parts-too-close: gap 0.3 mm between separate parts, Z 1\u20131 mm. If they should come apart, open the gap to at least 0.5 mm; if they should be one part, join them in the model."
+          },
+          {
+            "code": "geometry_warning",
+            "ok": false,
+            "result": "info",
+            "message": "E-022-B: parts-too-close: gap 0.1 mm between separate parts, Z 5\u201329 mm. If they should come apart, open the gap to at least 0.5 mm; if they should be one part, join them in the model."
+          },
+          {
+            "code": "per_test_time",
+            "ok": false,
+            "result": "needs_approval",
+            "message": "106.5 / 45 min per test"
+          },
+          {
+            "code": "per_test_material",
+            "ok": false,
+            "result": "needs_approval",
+            "message": "33.8 / 25 g per test"
+          },
+          {
+            "code": "question_time",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "0 + 106.5 / 240 min for Q-004"
+          },
+          {
+            "code": "question_material",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "0 + 33.8 / 100 g for Q-004"
+          },
+          {
+            "code": "retry_limit",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "0 / 2 failed attempts"
+          },
+          {
+            "code": "plate_mismatch",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "plate timing matches the compared plates"
+          }
+        ]
+      }
+    }
+  ],
+  "approval": null,
+  "print_runs": [],
+  "owner_verdict": null,
+  "superseded_verdicts": [],
+  "anchors": [],
+  "ai_observations": [],
+  "comparison_validity": null,
+  "prediction_outcome": null,
+  "analysis": [],
+  "criteria": [
+    {
+      "key": "ridges",
+      "label": "Ridges across the front?",
+      "choices": [
+        "none",
+        "faint",
+        "bad"
+      ]
+    },
+    {
+      "key": "apart",
+      "label": "Twists apart by hand?",
+      "choices": [
+        "yes",
+        "hard",
+        "no"
+      ]
+    }
+  ]
+}
