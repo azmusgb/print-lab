@@ -94,9 +94,9 @@ def test_verify_missing_file(tmp_path):
         verify_artifact(paths, "E-009", tmp_path / "nonexistent.3mf")
 
 
-def test_verify_cli(capsys):
-    # Verify against real hex-tile E-020
-    hex_art = Path("projects/hex-tile/prints/hex-tile_E-020_BLD-020-01.3mf")
+def test_verify_cli(capsys, real_project_copy):
+    # Verify against the real hex-tile E-020, in a copy of the project
+    hex_art = real_project_copy / "prints" / "hex-tile_E-020_BLD-020-01.3mf"
     if not hex_art.exists():
         pytest.skip("hex-tile prints not present")
 
@@ -106,7 +106,7 @@ def test_verify_cli(capsys):
     assert "✓ VERIFIED" in out
 
     # Mismatch with a source 3MF
-    src = Path("projects/hex-tile/sources/hexagon_v61s_X2D_0.6nozzle.3mf")
+    src = real_project_copy / "sources" / "hexagon_v61s_X2D_0.6nozzle.3mf"
     rc = main(["exp", "verify", "E-020", str(src)])
     assert rc == 1
     out = capsys.readouterr().out

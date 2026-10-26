@@ -52,8 +52,8 @@ def test_generate_cases(tmp_path):
     assert c1["rule_proposal"]["rule_name"] == "minimum_back_gap"
 
 
-def test_cases_cli(capsys):
-    # Real hex-tile project has answered E-008, E-011, E-012
+def test_cases_cli(capsys, real_project_copy):
+    # A copy of the real hex-tile project (answered E-008, E-011, E-012); `case promote` writes to the copy only
     rc = main(["case", "list"])
     assert rc == 0
     out = capsys.readouterr().out
@@ -77,6 +77,7 @@ def test_cases_cli(capsys):
     out = capsys.readouterr().out
     assert "✓ Promoted CASE-001 to active rule" in out
     assert "minimum_back_gap" in out
+    assert "promoted" in (real_project_copy / "cases" / "CASE-001.json").read_text()
 
 
 def test_promote_refuses_candidate(tmp_path):
