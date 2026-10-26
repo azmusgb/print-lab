@@ -58,7 +58,7 @@
     "tabs": false,
     "notes": []
   },
-  "status": "printing",
+  "status": "answered",
   "variants": [
     {
       "id": "E-020-A",
@@ -2929,12 +2929,31 @@
       "baseline_missing": [
         "nozzle_changed"
       ],
-      "usage": null,
+      "usage": {
+        "actual_minutes": 263.1,
+        "actual_g": 86.21,
+        "usage_source": "telemetry",
+        "completion_fraction": null
+      },
       "failed": null,
       "photos": []
     }
   ],
-  "owner_verdict": null,
+  "owner_verdict": {
+    "kind": "acceptance",
+    "good_enough": true,
+    "blocking_defects": [
+      "separation very hard (owner: SUPER hard)",
+      "one back: tacks tore out of the back instead of breaking, inner layer peeled near an edge (hidden side)"
+    ],
+    "lighting": "installed",
+    "print_runs": [
+      "PR-020-02"
+    ],
+    "note": "Owner 26 Oct: 'was SUPER hard to seperate them'; 'face was good and no extra artifaces on their faces'. Both fronts clean, no tack ghosting. Prediction half met: fronts clean, but separation was not easy; the tacks bonded harder than the 1.25 mm back's own layers. Photos IMG_0913-0926 kept local.",
+    "by": "owner",
+    "at": "2026-10-26T13:48:01+00:00"
+  },
   "superseded_verdicts": [],
   "anchors": [],
   "ai_observations": [

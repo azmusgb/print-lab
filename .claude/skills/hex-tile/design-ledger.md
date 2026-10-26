@@ -21,12 +21,14 @@ stronger claim.
 | v58 g015/g020 | Ribs 0.15 / 0.20 mm short | E-012: all fused | — |
 | v60b125 | v58 with 1.25 mm backs (0.65 before) | never printed | — |
 | v61t | Ribs and seams → 124 tacks, bunched at the same heights | abandoned before printing: repeats v41's layout | — |
-| v61s | Ribs and seams → 207 tacks, one per 0.6 mm band, 1.25 mm backs | E-019 strip came off the plate at layer 14; E-020 full pair built | under test |
+| v61s | Ribs and seams → 207 tacks, one per 0.6 mm band, 1.25 mm backs | E-019 strip came off the plate at layer 14; E-020 full pair: "SUPER hard" to separate, but it did come apart; on one tile the tacks tore out of the back and peeled its inner layer | E-020: "face was good and no extra artifacts" |
 
 **What this proves:** any continuous contact fuses, whatever gap the model leaves below about 0.4 mm, because
 the squashed lines bridge it. v58's ribs and seams were 1,697 mm² of contact; E-014 bridged the gap on 657 of
 660 layers. No contact at all lets the top wobble loose (E-011). Discrete tabs are the only join that ever
 separated (v39/v40). Their one problem was face lines when the tabs sat at the same heights (v41).
+E-020 (v61s) confirmed staggered tacks keep the face clean, but 207 full-width tacks (124 mm²) bond harder than
+the 1.25 mm back holds together: the break ran through one back instead of the tacks. Next: weaken the tack, not the back.
 
 ## What has put lines or ripples on the face
 
