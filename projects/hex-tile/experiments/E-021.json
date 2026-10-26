@@ -943,7 +943,17 @@
         "completion_fraction": null
       },
       "failed": null,
-      "photos": []
+      "photos": [],
+      "usage_revisions": [
+        {
+          "actual_minutes": 118.2,
+          "actual_g": 33.83,
+          "usage_source": "telemetry",
+          "completion_fraction": null,
+          "replaced_at": "2026-10-26T19:46:00+00:00",
+          "reason": "Filled automatically by lab pull from Local AI's last-seen time, not the print's end (the bug fixed in the telemetry logger branch); 33.83 g was the slicer estimate, not a measurement. Replaced by 87 min from the printer's own record (Bambuddy #13: 10:08-11:35 EDT, state FAILED); grams unknown. The 118.2 value was never committed; it is recorded here so the change is auditable."
+        }
+      ]
     }
   ],
   "owner_verdict": null,
