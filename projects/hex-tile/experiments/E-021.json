@@ -782,8 +782,8 @@
         }
       ],
       "check": {
-        "status": "needs_approval",
-        "at": "2026-10-26T14:04:09+00:00",
+        "status": "approved",
+        "at": "2026-10-26T14:11:06+00:00",
         "guards": [
           {
             "code": "owner_stopped",
@@ -795,7 +795,7 @@
             "code": "auto_stopped",
             "ok": false,
             "result": "needs_approval",
-            "message": "810.1 of 720 min used."
+            "message": "916.5 of 720 min used."
           },
           {
             "code": "full_part_required",
@@ -879,13 +879,13 @@
             "code": "question_time",
             "ok": false,
             "result": "needs_approval",
-            "message": "810.1 + 106.4 / 720 min for Q-003"
+            "message": "916.5 + 106.4 / 720 min for Q-003"
           },
           {
             "code": "question_material",
             "ok": true,
             "result": "needs_approval",
-            "message": "271.8 + 33.8 / 370 g for Q-003"
+            "message": "305.6 + 33.8 / 370 g for Q-003"
           },
           {
             "code": "retry_limit",
@@ -952,6 +952,15 @@
   "prediction_outcome": null,
   "analysis": [],
   "criteria": [
+    {
+      "key": "apart",
+      "label": "Twists apart by hand?",
+      "choices": [
+        "yes",
+        "hard",
+        "no"
+      ]
+    },
     {
       "key": "print",
       "label": "Fronts",
