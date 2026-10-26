@@ -16,3 +16,4 @@ projects/*/page.json
 projects/*/sync.json
 projects/*/requests.jsonl
 projects/*/.pull.lock
+projects/*/telemetry/

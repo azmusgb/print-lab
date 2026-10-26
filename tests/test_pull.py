@@ -395,6 +395,8 @@ def test_check_active_print_still_printing(project):
 
 
 def test_check_active_print_records_completion_and_notifies(project):
+    """A finished print with no printer log: the end time is unknown, so no minutes are invented; the owner is told
+    once and the run is marked so the check doesn't repeat."""
     from unittest.mock import patch
     mock_ws = {
         "online": True,
@@ -409,12 +411,16 @@ def test_check_active_print_records_completion_and_notifies(project):
          patch("lab.pull.notify_desktop") as mock_notify:
         res = pull.check_active_print(project)
         assert res is not None
-        assert res["action"] == "telemetry_applied"
+        assert res["action"] == "finished_time_unknown"
         assert res["experiment"] == "E-009"
         assert res["run"] == "PR-009-01"
-        assert res["elapsed_minutes"] == 40.0
+        assert res["elapsed_minutes"] is None
         mock_notify.assert_called_once()
+        from lab.loop.commands import load_experiment
+        u = load_experiment(project, "E-009")["print_runs"][-1]["usage"]
+        assert u == {"actual_minutes": None, "actual_g": None, "usage_source": "finished_unknown",
+                     "completion_fraction": None}
 
-        # Re-check should now be no-op because usage was recorded
+        # Re-check should now be no-op because the run is marked
         res2 = pull.check_active_print(project)
         assert res2 is None

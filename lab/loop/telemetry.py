@@ -49,8 +49,12 @@ def get_run_telemetry(paths: ProjectPaths, eid: str, *, run_id: str | None = Non
     seen_at = p.get("seenAt")
     started_at = run.get("started_at")
 
+    is_finished = (state in ("finish", "idle", "success") or progress >= 100)
+    log_end = (run.get("printer_log") or {}).get("ended_at")
     dt_start = _parse_iso(started_at)
-    dt_seen = _parse_iso(seen_at)
+    # Once the print is over, Local AI's seenAt is when it last looked, not when the print ended; only the printer
+    # log knows the end.
+    dt_seen = _parse_iso(log_end) if log_end else (None if is_finished else _parse_iso(seen_at))
     if dt_start and dt_seen:
         if dt_start.tzinfo is None:
             dt_start = dt_start.replace(tzinfo=datetime.timezone.utc)
@@ -58,10 +62,9 @@ def get_run_telemetry(paths: ProjectPaths, eid: str, *, run_id: str | None = Non
             dt_seen = dt_seen.replace(tzinfo=datetime.timezone.utc)
         elapsed_m = max(0.0, round((dt_seen - dt_start).total_seconds() / 60.0, 1))
     else:
-        elapsed_m = 0.0
+        elapsed_m = None if is_finished else 0.0
 
     consumed_g = round(est_g * (progress / 100.0), 1) if progress < 100 else est_g
-    is_finished = (state in ("finish", "idle", "success") or progress >= 100)
 
     return {
         "experiment_id": eid,
@@ -77,6 +80,7 @@ def get_run_telemetry(paths: ProjectPaths, eid: str, *, run_id: str | None = Non
         "started_at": started_at,
         "seen_at": seen_at,
         "is_finished": is_finished,
+        "elapsed_source": "printer_log" if log_end else ("seen_at" if elapsed_m is not None else None),
     }
 
 
@@ -87,7 +91,8 @@ def format_telemetry_text(t: dict) -> str:
     lines.append(f"Printer:    {t['printer_state']} ({t['progress']}% complete"
                  + (f", ~{t['minutes_left']:g} min left" if t.get("minutes_left") is not None else "") + ")")
     lines.append("Telemetry:")
-    lines.append(f"  Elapsed:     {t['elapsed_minutes']:g} min (started {t['started_at']})")
+    el = "unknown" if t["elapsed_minutes"] is None else f"{t['elapsed_minutes']:g} min"
+    lines.append(f"  Elapsed:     {el} (started {t['started_at']})")
     if t.get("minutes_left") is not None:
         lines.append(f"  Remaining:   {t['minutes_left']:g} min")
     lines.append(f"  Estimate:    {t['estimate_minutes']:g} min, {t['estimate_g']:g} g")
@@ -110,10 +115,29 @@ def apply_telemetry(paths: ProjectPaths, eid: str, *, run_id: str | None = None,
         e = record_usage(paths, t["run_id"], failed_at_pct=failed_at_pct,
                          minutes=t["elapsed_minutes"], grams=t["consumed_g"], usage_source="telemetry")
     elif t["is_finished"]:
-        e = record_usage(paths, t["run_id"], failed_at_pct=None,
-                         minutes=t["elapsed_minutes"], grams=t["estimate_g"], usage_source="telemetry")
+        if t["elapsed_minutes"] is None:
+            raise ValueError(f"{t['run_id']} has finished, but its end time isn't known: Local AI's last-seen time "
+                             "isn't when the print ended. Take the time from the printer's history (Bambuddy or "
+                             f"Bambu Handy) and run `lab exp usage {t['run_id']} --minutes N`, or run "
+                             "`lab exp log` on the next print.")
+        # The printer doesn't report grams, and the slicer's estimate isn't a measurement.
+        e = record_usage(paths, t["run_id"], failed_at_pct=None, minutes=t["elapsed_minutes"], grams=None,
+                         usage_source=t["elapsed_source"])
     else:  # forced partial
         e = record_usage(paths, t["run_id"], failed_at_pct=None,
                          minutes=t["elapsed_minutes"], grams=t["consumed_g"], usage_source="telemetry")
 
     return e, t
+
+
+def mark_finished_unknown(paths: ProjectPaths, eid: str, run_id: str) -> dict:
+    """The print ended but nobody knows when: mark the run so the finish isn't reported again, and leave its cost to
+    the estimate until the owner gives the printer's time."""
+    from lab.loop.commands import save_experiment
+    from lab.records.store import record_lock
+    with record_lock(paths.locks, eid, f"lab pull: {run_id} finished"):
+        e = load_experiment(paths, eid)
+        run = next(r for r in e["print_runs"] if r["id"] == run_id)
+        run["usage"] = {"actual_minutes": None, "actual_g": None, "usage_source": "finished_unknown",
+                        "completion_fraction": None}
+        return save_experiment(paths, e)

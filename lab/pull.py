@@ -163,7 +163,7 @@ def notify_desktop(message: str, title: str = "Print Lab", subtitle: str = "") -
 def check_active_print(paths: ProjectPaths, base: str | None = None, timeout: float = 5.0) -> dict | None:
     """Check if an active in-flight print has finished, and auto-record telemetry usage."""
     from lab.loop.commands import all_experiments
-    from lab.loop.telemetry import apply_telemetry
+    from lab.loop.telemetry import apply_telemetry, get_run_telemetry, mark_finished_unknown
 
     exps = all_experiments(paths)
     printing = next((e for e in exps.values() if e.get("status") == "printing"), None)
@@ -176,9 +176,19 @@ def check_active_print(paths: ProjectPaths, base: str | None = None, timeout: fl
 
     last_run = runs[-1]
     usage = last_run.get("usage")
-    if usage and usage.get("usage_source") in ("telemetry", "manual"):
+    if usage and usage.get("usage_source") in ("telemetry", "manual", "printer_log", "finished_unknown"):
         return None
 
+    try:
+        t = get_run_telemetry(paths, printing["id"], run_id=last_run["id"], base=base)
+    except ValueError:
+        return None
+    if t["is_finished"] and t["elapsed_minutes"] is None:
+        mark_finished_unknown(paths, printing["id"], last_run["id"])
+        notify_desktop(f"Print {t['run_id']} finished. Ready for verdict; give its minutes from the printer's "
+                       "history.", "Print Lab", f"{printing['id']}")
+        return {"action": "finished_time_unknown", "experiment": printing["id"], "run": t["run_id"],
+                "elapsed_minutes": None, "grams": None}
     try:
         e, t = apply_telemetry(paths, printing["id"], run_id=last_run["id"], base=base)
         notify_desktop(f"Print {t['run_id']} finished! Ready for verdict.", "Print Lab", f"{printing['id']}")
@@ -208,7 +218,9 @@ def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]
         applied.append({
             "id": f"event-{event['run']}",
             "status": "applied",
-            "message": f"Print {event['run']} finished; telemetry usage auto-recorded ({event['elapsed_minutes']} min, {event['grams']} g)",
+            "message": (f"Print {event['run']} finished; telemetry usage auto-recorded ({event['elapsed_minutes']} min)"
+                        if event["elapsed_minutes"] is not None else
+                        f"Print {event['run']} finished; its end time is unknown, so record the printer's minutes"),
         })
     return applied
 

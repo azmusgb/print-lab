@@ -118,6 +118,38 @@ def cmd_exp_telemetry(args) -> int:
     return 0
 
 
+def cmd_exp_log(args) -> int:
+    import zipfile
+
+    from lab.loop.commands import load_experiment
+    from lab.printer import run_log
+    from lab.printer.log import heights_from_gcode
+    from lab.printer.mqtt import DEFAULT_ENV, listen, load_printer_env
+    paths = _paths(args)
+    e = load_experiment(paths, args.id)
+    runs = e.get("print_runs") or []
+    run = next((r for r in runs if r["id"] == args.run), None) if args.run else (runs[-1] if runs else None)
+    if args.report:
+        if not run or not run.get("printer_log"):
+            raise ValueError(f"{args.id} has no printer log yet; run `lab exp log {args.id}` while it prints.")
+        print(run_log.report_text(run, (e.get("owner_verdict") or {}).get("marks")))
+        return 0
+    heights = {}
+    build = next((b for b in e.get("builds") or [] if run and b["id"] == run.get("build_id")), None)
+    sliced = paths.root / build["sliced"] if build and build.get("sliced") else None
+    if sliced and sliced.exists():
+        with zipfile.ZipFile(sliced) as z:
+            name = next((n for n in z.namelist() if n.endswith(".gcode")), None)
+            if name:
+                heights = heights_from_gcode(z.read(name).decode("utf-8", "replace"))
+    env = load_printer_env(args.env or DEFAULT_ENV)
+    print(f"Logging {run['id'] if run else args.id} from {env['host']} until the print ends (Ctrl-C stops early)…")
+    e = run_log.log_run(paths, args.id, env=env, listen=listen, heights=heights, run_id=args.run)
+    done = next(r for r in e["print_runs"] if r["id"] == (args.run or e["print_runs"][-1]["id"]))
+    print(run_log.report_text(done))
+    return 0
+
+
 def cmd_case(args) -> int:
     from lab.loop.cases import check_rule_against_history, format_case_detail, format_cases_list, load_cases, sync_cases
     paths = _paths(args)
@@ -460,6 +492,16 @@ def register(sub) -> None:
     tl.add_argument("--json", action="store_true")
     tl.add_argument("--project", default=argparse.SUPPRESS)
     tl.set_defaults(fn=cmd_exp_telemetry)
+
+    lg = es.add_parser("log", help="record what the printer reports (fans, chamber, temperatures) layer by layer "
+                       "while a run prints; read-only")
+    lg.add_argument("id", help="experiment ID")
+    lg.add_argument("--run", help="specific run ID (defaults to latest)")
+    lg.add_argument("--env", help="file with PRINTER_HOST, BAMBU_SERIAL, BAMBU_TOKEN (default "
+                    "~/.config/print-lab/printer.env, chmod 600)")
+    lg.add_argument("--report", action="store_true", help="show the logged events, lined up with your marks")
+    lg.add_argument("--project", default=argparse.SUPPRESS)
+    lg.set_defaults(fn=cmd_exp_log)
 
     cs = sub.add_parser("case", help="Stage 3: case library, confidence ladder, and rule evaluation")
     cs.add_argument("action", choices=["list", "show", "export", "check-rule", "promote"])

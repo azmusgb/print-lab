@@ -14,7 +14,7 @@ def run_usage(run: dict, build: dict | None) -> tuple[float, float]:
     if run.get("failed") and run["failed"].get("at_fraction") is not None:
         f = float(run["failed"]["at_fraction"])
         m, g = round(m * f, 2), round(g * f, 2)
-    if u.get("usage_source") in ("telemetry", "manual"):  # each figure given replaces its own fallback
+    if u.get("usage_source") in ("telemetry", "manual", "printer_log"):  # each figure given replaces its fallback
         if u.get("actual_minutes") is not None:
             m = float(u["actual_minutes"])
         if u.get("actual_g") is not None:
