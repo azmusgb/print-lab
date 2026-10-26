@@ -1,4 +1,4 @@
-# Printer telemetry logger: plan (awaiting owner approval)
+# Printer telemetry logger: plan (approved by the owner, 26 Oct 2026)
 
 **Goal.** While an experiment prints, record what the printer reports, once per layer and at every change: chamber
 temperature, every fan, nozzle and bed temperatures, layer number, print state and HMS codes. Then a ridge at a
@@ -28,6 +28,21 @@ The logger reads the printer's serial and access code from `~/.config/print-lab/
 owner creates. Claude never reads or writes that file. The code never goes into the repo, logs or records.
 The printer's certificate is self-signed, so the file also pins its SHA-256 (`BAMBU_CERT_SHA256`); the logger checks it
 before sending the code and refuses on a mismatch or when nothing is pinned (the first run prints the value to pin).
+
+### Enrolling the printer's certificate
+
+A fingerprint read over the network proves nothing by itself, so pinning is a check by the owner, not automatic:
+
+1. Create `printer.env` without `BAMBU_CERT_SHA256` and run `lab exp log` once. It connects, sends nothing, and
+   prints the certificate's subject, issuer, expiry and SHA-256.
+2. Check the subject's CN is the serial shown on the printer's own screen (Settings → Device), and that the issuer
+   is Bambu Lab's device CA. Do this on your own network, with the printer at its known address.
+3. Only then add the `BAMBU_CERT_SHA256=…` line. Every later handshake, reconnects included, must present exactly
+   that certificate; anything else is refused before the access code is sent.
+
+An expired certificate is refused and never bypassed. If the printer is reset or replaced, repeat the enrolment.
+Not yet done: checking the chain against Bambu's published device CA, which needs one real handshake to confirm
+which CA the X2D uses.
 
 ## Also fixed in the same change
 

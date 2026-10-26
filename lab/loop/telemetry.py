@@ -50,7 +50,9 @@ def get_run_telemetry(paths: ProjectPaths, eid: str, *, run_id: str | None = Non
     started_at = run.get("started_at")
 
     is_finished = (state in ("finish", "idle", "success") or progress >= 100)
-    log_end = (run.get("printer_log") or {}).get("ended_at")
+    plog = run.get("printer_log") or {}
+    # Only a finish heard without a gap is an end time; a cancel, a stop or a gap before the end report isn't.
+    log_end = plog.get("ended_at") if plog.get("final_state") == "FINISH" and not plog.get("end_uncertain") else None
     dt_start = _parse_iso(started_at)
     # Once the print is over, Local AI's seenAt is when it last looked, not when the print ended; only the printer
     # log knows the end.
@@ -81,6 +83,8 @@ def get_run_telemetry(paths: ProjectPaths, eid: str, *, run_id: str | None = Non
         "seen_at": seen_at,
         "is_finished": is_finished,
         "elapsed_source": "printer_log" if log_end else ("seen_at" if elapsed_m is not None else None),
+        "log_final_state": plog.get("final_state"),
+        "log_last_percent": plog.get("last_percent"),
     }
 
 
@@ -111,6 +115,11 @@ def apply_telemetry(paths: ProjectPaths, eid: str, *, run_id: str | None = None,
                          "Wait for the print to finish, or pass --force to record partial elapsed time, "
                          "or --failed-at <pct> to record failure.")
 
+    if t["log_final_state"] == "FAILED" and failed_at_pct is None:
+        pct = t["log_last_percent"]
+        raise ValueError(f"The printer log says {t['run_id']} failed or was cancelled"
+                         + (f" at {pct}%" if pct is not None else "") + ". Record it as a failure: "
+                         f"`lab exp usage {t['run_id']} --failed-at {pct if pct is not None else '<pct>'}`.")
     if failed_at_pct is not None:
         e = record_usage(paths, t["run_id"], failed_at_pct=failed_at_pct,
                          minutes=t["elapsed_minutes"], grams=t["consumed_g"], usage_source="telemetry")

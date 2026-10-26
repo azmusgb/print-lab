@@ -37,8 +37,22 @@ class StateMerger:
         self.state: dict = {}
 
     def update(self, report: dict) -> dict:
+        # A list in a report is the whole list: drop entries the printer no longer lists (e.g. cleared HMS codes).
+        for prefix in _list_paths(report.get("print") or {}, ""):
+            for k in [k for k in self.state if k == prefix or k.startswith(prefix + ".")]:
+                del self.state[k]
         self.state.update(flatten(report))
         return self.state
+
+
+def _list_paths(obj, prefix: str) -> list[str]:
+    out = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            out += _list_paths(v, f"{prefix}.{k}" if prefix else str(k))
+    elif isinstance(obj, list):
+        out.append(prefix)
+    return out
 
 
 def _is_temp(key: str) -> bool:

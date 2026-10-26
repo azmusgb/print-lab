@@ -143,8 +143,12 @@ def cmd_exp_log(args) -> int:
             if name:
                 heights = heights_from_gcode(z.read(name).decode("utf-8", "replace"))
     env = load_printer_env(args.env or DEFAULT_ENV)
-    print(f"Logging {run['id'] if run else args.id} from {env['host']} until the print ends (Ctrl-C stops early)…")
-    e = run_log.log_run(paths, args.id, env=env, listen=listen, heights=heights, run_id=args.run)
+    print(f"Logging {run['id'] if run else args.id} from {env['host']} until the print ends "
+          "(Ctrl-C stops early and keeps what was logged)…")
+    try:
+        e = run_log.log_run(paths, args.id, env=env, listen=listen, heights=heights, run_id=args.run)
+    except (ConnectionError, TimeoutError, OSError) as exc:
+        raise ValueError(f"Couldn't log from the printer: {exc}") from exc
     done = next(r for r in e["print_runs"] if r["id"] == (args.run or e["print_runs"][-1]["id"]))
     print(run_log.report_text(done))
     return 0

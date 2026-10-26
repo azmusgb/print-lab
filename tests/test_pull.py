@@ -424,3 +424,18 @@ def test_check_active_print_records_completion_and_notifies(project):
         # Re-check should now be no-op because the run is marked
         res2 = pull.check_active_print(project)
         assert res2 is None
+
+
+def test_pull_leaves_a_run_alone_once_the_printer_log_recorded_its_minutes(project):
+    from unittest.mock import patch
+    from lab.loop.commands import load_experiment, save_experiment
+    e = load_experiment(project, "E-009")
+    e["print_runs"][-1]["usage"] = {"actual_minutes": 51.0, "actual_g": None, "usage_source": "printer_log",
+                                    "completion_fraction": None}
+    save_experiment(project, e)
+    ws = {"online": True, "printer": {"state": "finish", "progress": 100, "minutesLeft": 0,
+                                      "seenAt": "2026-10-25T13:00:00+00:00"}}
+    with patch("lab.sync.fetch_workshop_status", return_value=ws), patch("lab.pull.notify_desktop") as n:
+        assert pull.check_active_print(project) is None
+        n.assert_not_called()
+    assert load_experiment(project, "E-009")["print_runs"][-1]["usage"]["actual_minutes"] == 51.0

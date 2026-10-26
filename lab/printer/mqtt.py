@@ -1,5 +1,6 @@
-"""Listen to the printer's own MQTT reports over the LAN. The only message ever sent is one `pushall` request,
-which asks the printer to report its full state; nothing that changes the printer can be sent from here."""
+"""Listen to the printer's own MQTT reports over the LAN. The only message ever sent is a `pushall` request (once
+per connection, reconnects included), which asks the printer to report its full state; nothing that changes the
+printer can be sent from here."""
 import json
 import os
 import stat
@@ -68,20 +69,70 @@ def pinned_context(der: bytes):
     return ctx
 
 
-def check_certificate(env: dict, fetch) -> bytes:
+def cert_details(der: bytes) -> dict:
+    """Subject, issuer and expiry of a certificate, read with the openssl command (best effort)."""
+    import shutil
+    import ssl
+    import subprocess
+    if not shutil.which("openssl"):
+        return {"subject": "?", "issuer": "?", "not_after": "?", "expired": False}
+    pem = ssl.DER_cert_to_PEM_cert(der).encode()
+    out = subprocess.run(["openssl", "x509", "-noout", "-subject", "-issuer", "-enddate"], input=pem,
+                         capture_output=True).stdout.decode()
+    fields = dict(line.split("=", 1) for line in out.splitlines() if "=" in line)
+    if not fields:  # openssl couldn't read it: say so rather than guess
+        return {"subject": "unreadable", "issuer": "unreadable", "not_after": "unknown", "expired": None}
+    expired = subprocess.run(["openssl", "x509", "-noout", "-checkend", "0"], input=pem,
+                             capture_output=True).returncode != 0
+    return {"subject": fields.get("subject", "?").strip(), "issuer": fields.get("issuer", "?").strip(),
+            "not_after": fields.get("notAfter", "?").strip(), "expired": expired}
+
+
+def check_certificate(env: dict, fetch, details=cert_details) -> bytes:
     """Refuse to send the access code unless the printer presents the certificate pinned in printer.env. The
     printer's certificate is self-signed, so the pin stands in for normal certificate checking."""
     import hashlib
     der = fetch()
     got = hashlib.sha256(der).hexdigest()
     pin = (env.get("cert_sha256") or "").replace(":", "").lower()
+    info = details(der)
+    if info.get("expired") is True:
+        raise ConnectionError(f"The printer's certificate expired on {info.get('not_after')}. The logger won't "
+                              "connect with an expired certificate and has sent nothing.")
     if not pin:
-        raise ConnectionError("No printer certificate is pinned. If you're on your own network and the address is "
-                              f"the printer's, add this line to printer.env: BAMBU_CERT_SHA256={got}")
+        # Enrolment: a fingerprint read over the network proves nothing by itself, so show what the certificate
+        # claims and let the owner check it against the printer before pinning it.
+        raise ConnectionError(
+            "No printer certificate is pinned, so nothing was sent. Before pinning, check this certificate:\n"
+            f"  subject: {info.get('subject')}\n  issuer:  {info.get('issuer')}\n  expires: {info.get('not_after')}\n"
+            f"  The subject's CN should be the serial on your printer's screen (Settings → Device): "
+            f"{env.get('serial')}; check it matches your printer's serial, and that the issuer is Bambu Lab's device CA.\n"
+            "If both hold and you're on your own network, add this line to printer.env:\n"
+            f"  BAMBU_CERT_SHA256={got}")
     if got != pin:
         raise ConnectionError(f"The certificate at this address doesn't match the pinned printer (got {got}). "
                               "Nothing was sent. If the printer was reset or replaced, check it and update the pin.")
     return der
+
+
+class _ListenerState:
+    """Shared between paho's network thread and the main thread: an error in a report handler stops the listener
+    instead of silently killing paho's thread."""
+
+    def __init__(self):
+        self.connected, self.error = False, None
+
+    def guard(self, fn) -> None:
+        try:
+            fn()
+        except Exception as exc:  # noqa: BLE001 - re-raised on the main thread
+            self.error = self.error or exc
+
+    def raise_if_failed(self) -> None:
+        if isinstance(self.error, BaseException):
+            raise self.error
+        if self.error:
+            raise ConnectionError(self.error)
 
 
 def listen(env: dict, on_report, *, should_stop, connect_timeout_s: float = 20.0) -> None:
@@ -96,34 +147,36 @@ def listen(env: dict, on_report, *, should_stop, connect_timeout_s: float = 20.0
     client.username_pw_set("bblp", env["code"])
     client.tls_set_context(pinned_context(der))
     pub = ReadOnlyPublisher(lambda t, p: client.publish(t, p), serial=env["serial"])
-    state = {"connected": False, "error": None}
+    state = _ListenerState()
 
     def on_connect(c, _u, _f, rc, _p=None):
         if rc != 0:
-            state["error"] = f"the printer refused the connection ({rc}); check the access code and LAN mode"
+            state.error = f"the printer refused the connection ({rc}); check the access code and LAN mode"
             return
-        state["connected"] = True
+        state.connected = True
         c.subscribe(f"device/{env['serial']}/report")
         pub.pushall()
 
     def on_message(_c, _u, msg):
         try:
-            on_report(json.loads(msg.payload))
+            rep = json.loads(msg.payload)
         except ValueError:
-            pass
+            return
+        if isinstance(rep, dict):
+            state.guard(lambda: on_report(rep))
 
     client.on_connect, client.on_message = on_connect, on_message
     client.connect(env["host"], 8883, keepalive=60)
     client.loop_start()
     try:
         t0 = time.time()
-        while not state["connected"] and not state["error"]:
+        while not state.connected and not state.error:
             if time.time() - t0 > connect_timeout_s:
                 raise TimeoutError(f"No answer from the printer at {env['host']}:8883 within {connect_timeout_s:g} s.")
             time.sleep(0.2)
-        if state["error"]:
-            raise ConnectionError(state["error"])
+        state.raise_if_failed()
         while not should_stop():
+            state.raise_if_failed()
             time.sleep(1.0)
     finally:
         client.loop_stop()

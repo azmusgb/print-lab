@@ -120,7 +120,7 @@ def test_log_command_writes_lines_and_a_run_summary(tmp_path, monkeypatch):
 
     clock = iter(range(0, 10_000, 60))
     monkeypatch.setattr(run_log, "_now", lambda: f"2026-10-25T09:{next(clock) // 60:02d}:00+00:00")
-    out = run_log.log_run(paths, "E-009", env={"host": "h", "serial": "S1", "code": "c"}, listen=fake_listen,
+    out = run_log.log_run(paths, "E-009", env={"host": "h", "serial": "S1", "code": "SECRET-CODE-123"}, listen=fake_listen,
                           heights={1: 0.2, 2: 0.4, 3: 0.6})
     run = out["print_runs"][0]
     log = run["printer_log"]
@@ -129,8 +129,11 @@ def test_log_command_writes_lines_and_a_run_summary(tmp_path, monkeypatch):
                               "from": "0", "to": "60"}]
     lines = (paths.root / log["path"]).read_text().splitlines()
     assert len(lines) == 5  # layer 1, layer 2, fan change, layer 3, finish
-    assert "c" not in json.loads(lines[0]).get("state", {}).values()
-    assert run["usage"] is None  # usage stays the owner's call (or `telemetry --apply`)
+    assert "SECRET-CODE-123" not in (paths.root / log["path"]).read_text()
+    assert "SECRET-CODE-123" not in (paths.experiments / "E-009.json").read_text()
+    # A finish heard without a gap gives the printer's minutes (review finding 2); grams stay unknown.
+    assert run["usage"] == {"actual_minutes": 4.0, "actual_g": None, "usage_source": "printer_log",
+                            "completion_fraction": None}
 
 
 def test_log_command_refuses_a_run_that_already_has_a_log(tmp_path):
@@ -213,3 +216,175 @@ def test_every_handshake_must_present_the_pinned_certificate(tmp_path):
     ctx = pinned_context(der_a)
     assert _handshake(ctx, crt_a, key_a) is True
     assert _handshake(ctx, crt_b, key_b) is False
+
+
+# ---- review fixes -------------------------------------------------------------------------------------------------
+
+def _project(tmp_path):
+    from loop_fixtures import make_project, minimal_experiment, minimal_question, started
+    return make_project(tmp_path, minimal_question(), [started(minimal_experiment("E-009"))])
+
+
+def _clock(monkeypatch, step_s=60):
+    from lab.printer import run_log
+    import datetime
+    t0 = datetime.datetime(2026, 10, 25, 9, 0, tzinfo=datetime.timezone.utc)
+    n = iter(range(10_000))
+    monkeypatch.setattr(run_log, "_now", lambda: (t0 + datetime.timedelta(seconds=step_s * next(n))).isoformat())
+
+
+def _feed(reports, interrupt_after=None):
+    def listen(env, on_report, *, should_stop, **_):
+        for i, r in enumerate(reports):
+            if interrupt_after is not None and i == interrupt_after:
+                raise KeyboardInterrupt
+            on_report(r)
+            if should_stop():
+                return
+    return listen
+
+
+def test_ctrl_c_keeps_what_was_logged(tmp_path, monkeypatch):
+    from lab.printer import run_log
+    paths = _project(tmp_path)
+    _clock(monkeypatch)
+    e = run_log.log_run(paths, "E-009", env={}, listen=_feed([FULL, report(layer_num=2), report(layer_num=3)],
+                                                               interrupt_after=2), heights={})
+    log = e["print_runs"][0]["printer_log"]
+    assert log["final_state"] == "stopped" and log["ended_at"] is None and log["lines"] == 2
+    assert e["print_runs"][0]["usage"] is None
+
+
+def test_starting_after_the_print_ended_stops_at_once_and_saves_nothing(tmp_path):
+    from lab.printer import run_log
+    paths = _project(tmp_path)
+    over = report(gcode_state="FINISH", layer_num=150, total_layer_num=150)
+    with pytest.raises(ValueError, match="already over"):
+        run_log.log_run(paths, "E-009", env={}, listen=_feed([over, over]), heights={})
+    from lab.loop.commands import load_experiment
+    assert "printer_log" not in load_experiment(paths, "E-009")["print_runs"][0]
+
+
+def test_a_finished_log_records_the_printers_own_minutes(tmp_path, monkeypatch):
+    """The log records usage itself, so a `lab pull` that already marked the run finished_unknown is corrected."""
+    from lab.printer import run_log
+    from lab.loop.commands import load_experiment, save_experiment
+    paths = _project(tmp_path)
+    e = load_experiment(paths, "E-009")
+    e["print_runs"][0]["usage"] = {"actual_minutes": None, "actual_g": None, "usage_source": "finished_unknown",
+                                   "completion_fraction": None}
+    save_experiment(paths, e)
+    _clock(monkeypatch)
+    start = report(**{**FULL["print"], "gcode_start_time": "1792918800"})  # 2026-10-25 09:00 UTC, the printer's own start
+    e = run_log.log_run(paths, "E-009", env={}, listen=_feed([start, report(layer_num=2), report(layer_num=3),
+                                                                report(gcode_state="FINISH")]), heights={})
+    u = e["print_runs"][0]["usage"]
+    assert u["usage_source"] == "printer_log" and u["actual_minutes"] == 3.0 and u["actual_g"] is None
+    assert e["print_runs"][0]["printer_log"]["ended_at"] == "2026-10-25T09:03:00+00:00"
+
+
+def test_a_cancelled_print_is_not_recorded_as_finished(tmp_path, monkeypatch):
+    from lab.printer import run_log
+    from lab.loop.telemetry import apply_telemetry
+    from unittest.mock import patch
+    paths = _project(tmp_path)
+    _clock(monkeypatch)
+    e = run_log.log_run(paths, "E-009", env={}, listen=_feed([FULL, report(layer_num=2, mc_percent=37),
+                                                                report(gcode_state="FAILED")]), heights={})
+    run = e["print_runs"][0]
+    assert run["usage"] is None and run["printer_log"]["final_state"] == "FAILED"
+    assert run["printer_log"]["last_percent"] == 37
+    ws = {"online": True, "printer": {"state": "idle", "progress": 0, "minutesLeft": 0, "seenAt": "x"}}
+    with patch("lab.sync.fetch_workshop_status", return_value=ws), pytest.raises(ValueError, match="--failed-at 37"):
+        apply_telemetry(paths, "E-009")
+
+
+def test_a_reconnect_after_the_print_ended_uses_the_last_running_report(tmp_path, monkeypatch):
+    """Connection lost mid-print, the print finishes, paho reconnects much later: the end is the last RUNNING
+    report, not the reconnect time."""
+    from lab.printer import run_log
+    paths = _project(tmp_path)
+    times = iter(["2026-10-25T09:00:00+00:00", "2026-10-25T09:01:00+00:00", "2026-10-25T09:02:00+00:00",
+                  "2026-10-25T11:30:00+00:00"])
+    monkeypatch.setattr(run_log, "_now", lambda: next(times))
+    e = run_log.log_run(paths, "E-009", env={}, listen=_feed([FULL, report(layer_num=2), report(layer_num=3),
+                                                                report(gcode_state="FINISH")]), heights={})
+    log = e["print_runs"][0]["printer_log"]
+    assert log["ended_at"] == "2026-10-25T09:02:00+00:00" and log["end_uncertain"] is True
+
+
+def test_logging_again_after_a_stop_starts_a_fresh_file(tmp_path, monkeypatch):
+    from lab.printer import run_log
+    from lab.loop.commands import load_experiment, save_experiment
+    paths = _project(tmp_path)
+    (paths.root / "telemetry").mkdir(parents=True)
+    (paths.root / "telemetry" / "PR-009-01.jsonl").write_text('{"old": 1}\n' * 7)
+    _clock(monkeypatch)
+    e = run_log.log_run(paths, "E-009", env={}, listen=_feed([FULL, report(gcode_state="FINISH")]), heights={})
+    assert len((paths.root / e["print_runs"][0]["printer_log"]["path"]).read_text().splitlines()) == 2
+
+
+def test_report_text_handles_a_mark_without_a_height_and_says_events_may_be_a_layer_early():
+    from lab.printer.run_log import report_text
+    run = {"id": "PR-009-01", "printer_log": {"lines": 3, "final_state": "FINISH", "events": [
+        {"layer": 87, "z_mm": 17.4, "t": "x", "field": "big_fan1_speed", "from": "0", "to": "60"}]}}
+    text = report_text(run, [{"variant": "E-009-A", "mark_z_mm": None, "defect_z_mm": None}])
+    assert "height unknown" in text and "one layer" in text
+
+
+def test_a_cleared_list_drops_its_old_entries():
+    m = StateMerger()
+    m.update(report(hms=[{"attr": 1, "code": 2}]))
+    assert "hms.0.code" in m.state
+    m.update(report(hms=[]))
+    assert not [k for k in m.state if k.startswith("hms.")]
+
+
+def test_an_unexpected_error_in_a_report_handler_stops_the_listener():
+    from lab.printer.mqtt import _ListenerState
+    st = _ListenerState()
+    st.guard(lambda: (_ for _ in ()).throw(OSError("disk full")))
+    with pytest.raises(OSError, match="disk full"):
+        st.raise_if_failed()
+
+
+def test_enrollment_shows_who_the_certificate_names_and_refuses_an_expired_one():
+    from lab.printer.mqtt import check_certificate
+    import hashlib
+    der = b"cert"
+    fp = hashlib.sha256(der).hexdigest()
+    ok = {"subject": "CN=20P6AJ640601656", "issuer": "CN=BBL Device CA", "not_after": "2035-01-01", "expired": False}
+    with pytest.raises(ConnectionError) as no_pin:
+        check_certificate({"serial": "20P6AJ640601656"}, lambda: der, details=lambda d: ok)
+    msg = str(no_pin.value)
+    assert "CN=20P6AJ640601656" in msg and "BBL Device CA" in msg and "matches your printer's serial" in msg
+    old = {**ok, "expired": True, "not_after": "2025-01-01"}
+    with pytest.raises(ConnectionError, match="expired"):
+        check_certificate({"cert_sha256": fp, "serial": "20P6AJ640601656"}, lambda: der, details=lambda d: old)
+
+
+def test_a_different_job_on_the_printer_ends_the_log_without_a_finish(tmp_path, monkeypatch):
+    from lab.printer import run_log
+    paths = _project(tmp_path)
+    _clock(monkeypatch)
+    ours = report(**{**FULL["print"], "subtask_name": "hex-tile_E-009_BLD-009-01"})
+    other = report(subtask_name="someone-elses-job", gcode_state="RUNNING", layer_num=1)
+    e = run_log.log_run(paths, "E-009", env={}, listen=_feed([ours, report(layer_num=2), other,
+                                                                report(gcode_state="FINISH")]), heights={})
+    log = e["print_runs"][0]["printer_log"]
+    assert log["final_state"] == "job_changed" and log["ended_at"] is None
+    assert e["print_runs"][0]["usage"] is None
+
+
+def test_an_estimate_never_becomes_a_finish_time_or_actual_usage(tmp_path):
+    """E-021 regression: a finished print with no printer log keeps unknown minutes and grams, whatever the
+    estimate or Local AI's last-seen time say."""
+    from unittest.mock import patch
+    from lab.loop.telemetry import get_run_telemetry
+    from loop_fixtures import make_project, minimal_experiment, minimal_question, started
+    paths = make_project(tmp_path, minimal_question(), [started(minimal_experiment("E-009"), minutes=106.4, g=33.8)])
+    ws = {"online": True, "printer": {"state": "finish", "progress": 100, "minutesLeft": 0,
+                                      "seenAt": "2026-10-25T10:58:00+00:00"}}
+    with patch("lab.sync.fetch_workshop_status", return_value=ws):
+        t = get_run_telemetry(paths, "E-009")
+    assert t["elapsed_minutes"] is None and t["elapsed_source"] is None
