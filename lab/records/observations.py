@@ -7,6 +7,7 @@ projects/<p>/observations/OBS-NNNN.json; interpretations in projects/<p>/interpr
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 
 from lab.records.project import ProjectPaths
@@ -117,7 +118,15 @@ def _payload_sha(snapshots: list[dict]) -> str:
 
 # ---- reading ------------------------------------------------------------------------------------------------------
 
+def _checked(oid, prefix: str, what: str) -> str:
+    """Ids come from phone requests too: only PREFIX-NNNN is ever used as a file name."""
+    if not isinstance(oid, str) or not re.fullmatch(rf"{prefix}-\d{{4,}}", oid):
+        raise ValueError(f"{oid!r} isn't an {what} id (they look like {prefix}-0001).")
+    return oid
+
+
 def load(paths: ProjectPaths, oid: str) -> dict:
+    oid = _checked(oid, "OBS", "observation")
     f = folder(paths) / f"{oid}.json"
     if not f.exists():
         raise ValueError(f"{oid} isn't in {paths.name}.")
@@ -210,6 +219,7 @@ def record_session(paths: ProjectPaths, snapshots: list[dict], *, submitted: dic
 def correct(paths: ProjectPaths, oid: str, *, expected_rev: int, snapshot: dict, reason: str,
             submitted: dict) -> dict:
     """Add a complete revision. Refused as a Conflict when the latest revision isn't expected_rev."""
+    oid = _checked(oid, "OBS", "observation")
     _validate(snapshot)
     _check_attribution(snapshot, submitted)
     if not (reason or "").strip():
@@ -262,6 +272,7 @@ def interpret(paths: ProjectPaths, *, claim: str, by: str, cites: list[dict]) ->
 
 
 def load_interpretation(paths: ProjectPaths, iid: str) -> dict:
+    iid = _checked(iid, "INT", "interpretation")
     return json.loads((_interp_folder(paths) / f"{iid}.json").read_text())
 
 

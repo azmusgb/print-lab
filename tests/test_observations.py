@@ -235,3 +235,16 @@ def test_observations_override_the_verdicts_finding_and_follow_corrections(tmp_p
     assert x["finding_source"] == "observations"
     assert "came apart with effort" in x["finding"]
     assert x["outcome"] is None  # a criteria verdict still isn't a prediction test
+
+
+@pytest.mark.parametrize("bad", ["../../experiments/E-009", "OBS-1/../../x", "OBS-", "obs-0001", None, 7])
+def test_ids_that_arent_observation_ids_are_refused_before_any_file_is_touched(paths, bad):
+    with pytest.raises(ValueError, match="isn't an observation id"):
+        obs.load(paths, bad)
+    with pytest.raises(ValueError, match="isn't an observation id"):
+        obs.correct(paths, bad, expected_rev=1, snapshot=snap("pair"), reason="r", submitted=PHONE)
+
+
+def test_interpretation_ids_are_checked_too(paths):
+    with pytest.raises(ValueError, match="isn't an interpretation id"):
+        obs.load_interpretation(paths, "../observations/OBS-0001")
