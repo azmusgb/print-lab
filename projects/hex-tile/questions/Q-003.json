@@ -25,5 +25,19 @@
     "E-020"
   ],
   "plans": [],
-  "stops": []
+  "stops": [
+    {
+      "reason": "auto",
+      "auto_code": "budget_time_exhausted",
+      "at": "2026-10-26T02:05:52+00:00",
+      "resumed_at": "2026-10-26T02:05:52+00:00",
+      "resume": {
+        "added": {
+          "minutes": 360,
+          "g": 120
+        },
+        "reason": "deadline pair: staggered tacks"
+      }
+    }
+  ]
 }
