@@ -772,7 +772,8 @@
         "actual_minutes": 19.0,
         "actual_g": 5.7,
         "usage_source": "manual",
-        "completion_fraction": 0.24
+        "completion_fraction": 0.24,
+        "source_note": "minutes from Bambu Handy's print history (shown to 0.1 h, so ±3 min), entered by hand; not printer telemetry; cancelled after 19 min. Grams are an estimate, not measured: slicer 14.83 g x 19/49.8 min"
       },
       "failed": {
         "at_fraction": 0.24,

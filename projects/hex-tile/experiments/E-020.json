@@ -2750,7 +2750,7 @@
       "error": null,
       "check": {
         "status": "needs_approval",
-        "at": "2026-10-26T02:04:49+00:00",
+        "at": "2026-10-26T02:53:19+00:00",
         "guards": [
           {
             "code": "owner_stopped",
@@ -2760,9 +2760,9 @@
           },
           {
             "code": "auto_stopped",
-            "ok": false,
+            "ok": true,
             "result": "needs_approval",
-            "message": "604 of 360 min used."
+            "message": "no automatic stop"
           },
           {
             "code": "full_part_required",
@@ -2840,13 +2840,13 @@
             "code": "question_time",
             "ok": false,
             "result": "needs_approval",
-            "message": "604 + 257.5 / 360 min for Q-003"
+            "message": "547 + 257.5 / 720 min for Q-003"
           },
           {
             "code": "question_material",
-            "ok": false,
+            "ok": true,
             "result": "needs_approval",
-            "message": "179.8 + 86.2 / 250 g for Q-003"
+            "message": "185.5 + 86.2 / 370 g for Q-003"
           },
           {
             "code": "retry_limit",

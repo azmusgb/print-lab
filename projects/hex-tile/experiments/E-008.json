@@ -1176,7 +1176,8 @@
         "actual_minutes": 102.0,
         "actual_g": null,
         "usage_source": "manual",
-        "completion_fraction": null
+        "completion_fraction": null,
+        "source_note": "minutes from Bambu Handy's print history (shown to 0.1 h, so ±3 min), entered by hand; not printer telemetry; grams not measured (slicer estimate)"
       },
       "failed": null,
       "photos": [
