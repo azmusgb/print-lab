@@ -70,7 +70,7 @@
     "tabs": true,
     "notes": []
   },
-  "status": "needs_approval",
+  "status": "printing",
   "variants": [
     {
       "id": "E-021-A",
@@ -903,13 +903,52 @@
       }
     }
   ],
-  "approval": null,
-  "print_runs": [],
+  "approval": {
+    "build_id": "BLD-021-02",
+    "artifact_sha256": "c104ae777feb943216ff3c3ec9451fae8fd6877521f1e6f0a43262b04cc64e29",
+    "approved_reasons": [
+      "auto_stopped",
+      "per_test_time",
+      "per_test_material",
+      "question_time"
+    ],
+    "by": "owner",
+    "at": "2026-10-26T14:05:49+00:00",
+    "reason": "Owner approves the v62k kiss-tack strip test: 106 min and 34 g, over Q-003's time budget and the per-test limits. Question time goes to 916/720 min."
+  },
+  "print_runs": [
+    {
+      "id": "PR-021-01",
+      "build_id": "BLD-021-02",
+      "started_at": "2026-10-26T14:09:10+00:00",
+      "setup": {
+        "filament_dried": {
+          "id": "SET-00001",
+          "at": "2026-10-25T01:40:55+00:00",
+          "fields": {}
+        },
+        "vibration_calibration": {
+          "id": "SET-00002",
+          "at": "2026-10-25T12:38:01+00:00",
+          "fields": {}
+        }
+      },
+      "baseline_missing": [
+        "nozzle_changed"
+      ],
+      "usage": null,
+      "failed": null,
+      "photos": []
+    }
+  ],
   "owner_verdict": null,
   "superseded_verdicts": [],
   "anchors": [],
   "ai_observations": [],
-  "comparison_validity": null,
+  "comparison_validity": {
+    "status": "valid",
+    "reasons": []
+  },
   "prediction_outcome": null,
   "analysis": [],
   "criteria": [
