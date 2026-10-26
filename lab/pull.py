@@ -129,6 +129,30 @@ def apply_pending(pdir: Path, base: str, key: str, timeout: float = 10) -> list[
                 except ValueError as e:
                     status = "refused"
                     message = str(e)
+            elif kind == "observation":
+                from lab.observe_cli import _check_experiment
+                from lab.records import observations as obs
+                try:
+                    snapshots = payload.get("snapshots") or []
+                    _check_experiment(paths, snapshots, eid)
+                    r = obs.record_session(paths, snapshots,
+                                           submitted={"actor": "owner", "channel": "phone", "request_id": req_id})
+                    status, message = "applied", f"Recorded {', '.join(r['ids'])}"
+                except ValueError as e:
+                    status, message = "refused", str(e)
+            elif kind == "observation_correction":
+                from lab.observe_cli import _check_experiment
+                from lab.records import observations as obs
+                try:
+                    _check_experiment(paths, [payload.get("snapshot") or {}], eid)
+                    rec = obs.correct(paths, payload.get("observation"), expected_rev=payload.get("expected_rev"),
+                                      snapshot=payload.get("snapshot") or {}, reason=payload.get("reason") or "",
+                                      submitted={"actor": "owner", "channel": "phone", "request_id": req_id})
+                    status, message = "applied", f"{rec['id']} is now at revision {obs.latest(rec)['rev']}"
+                except obs.Conflict as e:
+                    status, message = "conflict", str(e)
+                except ValueError as e:
+                    status, message = "refused", str(e)
             else:
                 status = "refused"
                 message = f"unknown request kind {kind}"

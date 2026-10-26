@@ -439,3 +439,63 @@ def test_pull_leaves_a_run_alone_once_the_printer_log_recorded_its_minutes(proje
         assert pull.check_active_print(project) is None
         n.assert_not_called()
     assert load_experiment(project, "E-009")["print_runs"][-1]["usage"]["actual_minutes"] == 51.0
+
+
+# ---- observations from the phone (spec 2026-10-26-observation-records-design rev 2) -----------------------------
+
+def _obs_snapshot(kind="pair", **outcomes):
+    from lab.records.observations import ALLOWED
+    out = {k: {"status": "not_assessed", "value": None, "note": None} for k in ALLOWED[kind]}
+    out.update(outcomes)
+    return {"subject": {"kind": kind, "experiment": "E-009", "run": "PR-009-01", "build": "BLD-009-01",
+                        "variant": "E-009-A", "label": "9A", "tile": None, "identified": "confirmed", "note": None},
+            "viewing": {"light": "room"}, "outcomes": out,
+            "source": {"kind": "owner_report", "words": "twisted apart", "evidence": [], "occurred_at": None,
+                       "attributed_by": "phone_session"}}
+
+
+def test_pull_records_a_phone_observation_session_once(project):
+    from lab.records import observations as obs
+    req = {"id": "rq-obs-1", "kind": "observation", "experiment": "E-009", "run": "PR-009-01",
+           "payload": {"snapshots": [_obs_snapshot(separation={"status": "assessed", "value": "effort", "note": None})]},
+           "at": "2026-10-27T10:00:00+00:00"}
+    with FakeLocalAI(requests=[req]) as fake:
+        out = pull.apply_pending(project.root, fake.base, "k")
+    assert out[0]["status"] == "applied" and "OBS-0001" in out[0]["message"]
+    rv = obs.latest(obs.load(project, "OBS-0001"))
+    assert rv["submitted"]["channel"] == "phone" and rv["submitted"]["request_id"] == "rq-obs-1"
+    # Local AI delivers it again after a lost acknowledgement and a wiped requests.jsonl: still one observation
+    (project.root / "requests.jsonl").unlink()
+    with FakeLocalAI(requests=[req]) as fake:
+        out = pull.apply_pending(project.root, fake.base, "k")
+    assert out[0]["status"] == "applied" and len(obs.all_observations(project)) == 1
+
+
+def test_pull_refuses_an_observation_for_another_experiment(project):
+    req = {"id": "rq-obs-2", "kind": "observation", "experiment": "E-009", "run": "PR-009-01",
+           "payload": {"snapshots": [{**_obs_snapshot(), "subject": {**_obs_snapshot()["subject"], "experiment": "E-099"}}]},
+           "at": "2026-10-27T10:00:00+00:00"}
+    with FakeLocalAI(requests=[req]) as fake:
+        out = pull.apply_pending(project.root, fake.base, "k")
+    assert out[0]["status"] == "refused"
+
+
+def test_pull_reports_a_correction_conflict(project):
+    from lab.records import observations as obs
+    obs.record_session(project, [_obs_snapshot()], submitted={"actor": "owner", "channel": "phone", "request_id": "x"})
+    obs.correct(project, "OBS-0001", expected_rev=1, snapshot=_obs_snapshot(), reason="a",
+                submitted={"actor": "owner", "channel": "phone"})
+    req = {"id": "rq-obs-3", "kind": "observation_correction", "experiment": "E-009", "run": "PR-009-01",
+           "payload": {"observation": "OBS-0001", "expected_rev": 1, "snapshot": _obs_snapshot(), "reason": "b"},
+           "at": "2026-10-27T10:00:00+00:00"}
+    with FakeLocalAI(requests=[req]) as fake:
+        out = pull.apply_pending(project.root, fake.base, "k")
+    assert out[0]["status"] == "conflict"
+
+
+def test_pull_refuses_a_malformed_observation_instead_of_crashing(project):
+    req = {"id": "rq-obs-4", "kind": "observation", "experiment": "E-009", "payload": {"snapshots": [{"x": 1}]},
+           "at": "2026-10-27T10:00:00+00:00"}
+    with FakeLocalAI(requests=[req]) as fake:
+        out = pull.apply_pending(project.root, fake.base, "k")
+    assert out[0]["status"] == "refused" and "subject" in out[0]["message"]

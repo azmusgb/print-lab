@@ -225,7 +225,7 @@ def cmd_history(args) -> int:
     return 0
 
 
-REFRESHES_PAGE = ("migrate", "question", "exp", "setup", "photos")
+REFRESHES_PAGE = ("migrate", "question", "exp", "setup", "photos", "observe")
 
 
 def main(argv=None) -> int:
@@ -274,8 +274,9 @@ def main(argv=None) -> int:
     s.add_argument("action", choices=["ingest", "audit", "timeline"]); s.add_argument("folder", nargs="?")
     s.set_defaults(fn=cmd_history)
 
-    from lab import cli_loop
+    from lab import cli_loop, observe_cli
     cli_loop.register(sub)
+    observe_cli.register(sub)
     from lab import page, pull, source, status, sync, watch
     page.register(sub)
     pull.register(sub)

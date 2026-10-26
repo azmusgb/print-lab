@@ -208,7 +208,22 @@ def _experiment(e: dict, exps: dict, root: Path, tol: float, production, at: str
         "filament": (e.get("controlled") or {}).get("filament"),
         "runs": [{"id": r["id"], "started_at": r.get("started_at"), "baseline_missing": r.get("baseline_missing") or []}
                  for r in e.get("print_runs") or []],
-        "finding": criteria_finding(e) or sweep_finding(e), "photos": _photos(e, root), "ai_observations": e.get("ai_observations") or [], "due_at": _due_at(e), "needs": _needs(e, at)}
+        **_finding(e, root), "photos": _photos(e, root), "ai_observations": e.get("ai_observations") or [], "due_at": _due_at(e), "needs": _needs(e, at)}
+
+
+def _finding(e: dict, root: Path) -> dict:
+    """Observations win over the verdict for face, separation, backing, mounting and acceptance (spec rev 2,
+    'Which record wins'); a finding that still comes only from the old verdict is marked as such."""
+    from lab.records import observations as obs
+    recs = obs.for_experiment(ProjectPaths(root), e["id"])
+    if recs:
+        return {"finding": obs.finding(recs), "finding_source": "observations",
+                "observations": [{"id": r["id"], "rev": obs.latest(r)["rev"], "group": obs.latest(r)["subject"].get("group"),
+                                  "subject": obs.latest(r)["subject"], "outcomes": obs.latest(r)["outcomes"],
+                                  "source": obs.latest(r)["source"]["kind"], "light": obs.latest(r)["viewing"]["light"]}
+                                 for r in recs]}
+    legacy = criteria_finding(e) or sweep_finding(e)
+    return {"finding": legacy, "finding_source": "legacy_verdict" if legacy else None, "observations": []}
 
 
 def _question(q: dict, exps: dict, tol: float) -> dict:
