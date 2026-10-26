@@ -58,7 +58,7 @@
     "tabs": false,
     "notes": []
   },
-  "status": "needs_approval",
+  "status": "printing",
   "variants": [
     {
       "id": "E-020-A",
@@ -2749,8 +2749,8 @@
       },
       "error": null,
       "check": {
-        "status": "needs_approval",
-        "at": "2026-10-26T02:53:19+00:00",
+        "status": "approved",
+        "at": "2026-10-26T02:55:21+00:00",
         "guards": [
           {
             "code": "owner_stopped",
@@ -2864,13 +2864,52 @@
       }
     }
   ],
-  "approval": null,
-  "print_runs": [],
+  "approval": {
+    "build_id": "BLD-020-01",
+    "artifact_sha256": "ad93749b379172fdaf6942ef03cdda26354aede28e750653571f3d7182a3d3af",
+    "approved_reasons": [
+      "full_part_required",
+      "per_test_time",
+      "per_test_material",
+      "question_time"
+    ],
+    "by": "owner",
+    "at": "2026-10-26T02:55:15+00:00",
+    "reason": "Deadline requires the full pair; approve full-part print and ~85 min Q-003 time-budget overrun. Filament remains within budget."
+  },
+  "print_runs": [
+    {
+      "id": "PR-020-01",
+      "build_id": "BLD-020-01",
+      "started_at": "2026-10-26T02:56:16+00:00",
+      "setup": {
+        "filament_dried": {
+          "id": "SET-00001",
+          "at": "2026-10-25T01:40:55+00:00",
+          "fields": {}
+        },
+        "vibration_calibration": {
+          "id": "SET-00002",
+          "at": "2026-10-25T12:38:01+00:00",
+          "fields": {}
+        }
+      },
+      "baseline_missing": [
+        "nozzle_changed"
+      ],
+      "usage": null,
+      "failed": null,
+      "photos": []
+    }
+  ],
   "owner_verdict": null,
   "superseded_verdicts": [],
   "anchors": [],
   "ai_observations": [],
-  "comparison_validity": null,
+  "comparison_validity": {
+    "status": "valid",
+    "reasons": []
+  },
   "prediction_outcome": null,
   "analysis": []
 }
