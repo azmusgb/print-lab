@@ -2905,7 +2905,16 @@
   "owner_verdict": null,
   "superseded_verdicts": [],
   "anchors": [],
-  "ai_observations": [],
+  "ai_observations": [
+    {
+      "type": "provenance",
+      "variant": null,
+      "assessment": "Owner re-sliced the project in the Bambu Studio app before sending (owner, 26 Oct), so PR-020-01 printed Studio's G-code, not the approved BLD-020-01 artifact. Studio reported 'Curve planning enhancement: arc fitting disabled'. Setting differences unknown until the owner's sliced file is compared with the build.",
+      "confidence": 1.0,
+      "confirmed": false,
+      "at": "2026-10-26T02:59:44+00:00"
+    }
+  ],
   "comparison_validity": {
     "status": "valid",
     "reasons": []
