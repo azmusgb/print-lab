@@ -170,7 +170,8 @@ def _grades(e: dict, text: str | None) -> dict:
 
 def _criteria_grades(e: dict, grades) -> dict:
     """'12A=print:clean,apart:no;12B=…' (by tab or variant id), or the stored {variant id: {key: choice}} ->
-    {variant id: {key: choice}}; every strip needs every criterion."""
+    {variant id: {key: choice}}; every strip needs every criterion. "-" (None when stored) answers a criterion that
+    can't be judged, e.g. whether a strip that failed to print came apart."""
     crit = {c["key"]: c for c in e["criteria"]}
     own = [v for v in e["variants"] if v.get("role", "variant") == "variant"]
     names = {str(k): v["id"] for v in own for k in (v["id"], v.get("tab")) if k is not None}
@@ -184,7 +185,7 @@ def _criteria_grades(e: dict, grades) -> dict:
             if not part.strip():
                 continue
             k, _, rest = part.partition("=")
-            pairs.append((k.strip(), {a.strip(): b.strip() for a, _, b in
+            pairs.append((k.strip(), {a.strip(): (None if b.strip() == "-" else b.strip()) for a, _, b in
                                       (x.partition(":") for x in rest.split(",") if x.strip())}))
     out = {}
     for k, g in pairs:
@@ -194,9 +195,9 @@ def _criteria_grades(e: dict, grades) -> dict:
         for key, choice in g.items():
             if key not in crit:
                 raise ValueError(f"{e['id']} has no criterion {key!r}; its criteria are {', '.join(crit)}.")
-            if choice not in crit[key]["choices"]:
+            if choice is not None and choice not in crit[key]["choices"]:
                 raise ValueError(f"{tab[names[k]]}: {crit[key]['label']} is one of "
-                                 f"{', '.join(crit[key]['choices'])}, not {choice!r}.")
+                                 f"{', '.join(crit[key]['choices'])}, or - if it can't be judged; not {choice!r}.")
         out[names[k]] = {key: g[key] for key in crit if key in g}
     for v in own:
         if v["id"] not in out:

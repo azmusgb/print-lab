@@ -325,7 +325,8 @@ def register(sub) -> None:
     v.add_argument("--anchor", action="append", help="ANCHOR=EARLIER:same|different|inconclusive[:strength]")
     v.add_argument("--not-about-target", action="store_true")
     v.add_argument("--grade", help="for a speed sweep: each strip by its speed, e.g. 40=clean,60=faint,100=banded; "
-                   "for an experiment with criteria: each strip by its tab, e.g. '12A=print:clean,apart:no;12B=…'")
+                   "for an experiment with criteria: each strip by its tab, e.g. '12A=print:clean,apart:no;12B=…' "
+                   "(- for a criterion that can't be judged)")
     v.add_argument("--lighting", default="diagnostic", help="the light you judged under: diagnostic (raking, side "
                    "by side), or e.g. room; only the diagnostic light can support or refute a prediction")
     v.add_argument("--note")

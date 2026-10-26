@@ -67,7 +67,7 @@ def criteria_finding(exp: dict) -> str | None:
         if g is None:
             continue
         words = [CRITERIA_WORDS.get(c["key"], {}).get(g.get(c["key"])) or f"{c['label'].rstrip('?')} {g.get(c['key'])}"
-                 for c in crit if c["key"] in g]
+                 for c in crit if g.get(c["key"]) is not None]
         out.append(f"{var.get('tab') or var['id']}: {', '.join(words)}.")
     return " ".join(out) or None
 

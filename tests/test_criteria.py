@@ -127,3 +127,27 @@ def test_needs_you_command_for_criteria(e012):
     ix = page_index.build_index(e012.root)
     entry = next(x for x in ix["experiments"] if x["id"] == "E-012")
     assert entry["needs"]["command"].startswith('uv run lab exp verdict E-012 --grade "12A=print:')
+
+
+# A strip that failed to print has nothing to separate: "-" records a criterion as not judged (owner, 26 Oct).
+
+def test_criteria_verdict_records_not_judged_as_null(e012):
+    e = V(e012, "E-012", grades="12A=print:clean,apart:no;12B=print:clean,apart:no;12C=print:failed,apart:-")
+    assert e["owner_verdict"]["grades"]["E-012-C"] == {"print": "failed", "apart": None}
+
+
+def test_criteria_verdict_accepts_not_judged_in_the_stored_dict(e012):
+    stored = {"E-012-A": {"print": "clean", "apart": "no"}, "E-012-B": {"print": "clean", "apart": "no"},
+              "E-012-C": {"print": "failed", "apart": None}}
+    assert V(e012, "E-012", grades=stored)["owner_verdict"]["grades"] == stored
+
+
+def test_criteria_finding_leaves_out_what_was_not_judged(e012):
+    e = V(e012, "E-012", grades="12A=print:clean,apart:no;12B=print:clean,apart:no;12C=print:failed,apart:-")
+    assert criteria_finding(e) == ("12A: printed clean, didn't come apart. 12B: printed clean, didn't come apart. "
+                                   "12C: failed to print.")
+
+
+def test_unknown_choice_error_mentions_not_judged(e012):
+    with pytest.raises(ValueError, match=r"or - if it can't be judged"):
+        V(e012, "E-012", grades=GRADES.replace("apart:no", "apart:maybe"))
