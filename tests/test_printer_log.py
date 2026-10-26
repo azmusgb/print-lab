@@ -131,9 +131,8 @@ def test_log_command_writes_lines_and_a_run_summary(tmp_path, monkeypatch):
     assert len(lines) == 5  # layer 1, layer 2, fan change, layer 3, finish
     assert "SECRET-CODE-123" not in (paths.root / log["path"]).read_text()
     assert "SECRET-CODE-123" not in (paths.experiments / "E-009.json").read_text()
-    # A finish heard without a gap gives the printer's minutes (review finding 2); grams stay unknown.
-    assert run["usage"] == {"actual_minutes": 4.0, "actual_g": None, "usage_source": "printer_log",
-                            "completion_fraction": None}
+    # No job name and no printer start in these reports: the run can't be confirmed, so no usage is recorded.
+    assert run["usage"] is None
 
 
 def test_log_command_refuses_a_run_that_already_has_a_log(tmp_path):
@@ -275,7 +274,8 @@ def test_a_finished_log_records_the_printers_own_minutes(tmp_path, monkeypatch):
                                    "completion_fraction": None}
     save_experiment(paths, e)
     _clock(monkeypatch)
-    start = report(**{**FULL["print"], "gcode_start_time": "1792918800"})  # 2026-10-25 09:00 UTC, the printer's own start
+    start = report(**{**FULL["print"], "gcode_start_time": "1792918800",  # 2026-10-25 09:00 UTC, the printer's start
+                      "subtask_name": "hex-tile_E-009_BLD-009-01"})
     e = run_log.log_run(paths, "E-009", env={}, listen=_feed([start, report(layer_num=2), report(layer_num=3),
                                                                 report(gcode_state="FINISH")]), heights={})
     u = e["print_runs"][0]["usage"]
@@ -388,3 +388,87 @@ def test_an_estimate_never_becomes_a_finish_time_or_actual_usage(tmp_path):
     with patch("lab.sync.fetch_workshop_status", return_value=ws):
         t = get_run_telemetry(paths, "E-009")
     assert t["elapsed_minutes"] is None and t["elapsed_source"] is None
+
+
+# ---- second review ------------------------------------------------------------------------------------------------
+
+def test_a_connection_error_keeps_what_was_logged_and_says_so(tmp_path, monkeypatch):
+    from lab.printer import run_log
+    paths = _project(tmp_path)
+    _clock(monkeypatch)
+
+    def listen(env, on_report, **_):
+        on_report(FULL)
+        on_report(report(layer_num=2))
+        raise ConnectionError("printer went away")
+    with pytest.raises(ConnectionError):
+        run_log.log_run(paths, "E-009", env={}, listen=listen, heights={})
+    from lab.loop.commands import load_experiment
+    run = load_experiment(paths, "E-009")["print_runs"][0]
+    log = run["printer_log"]
+    assert log["final_state"] == "error" and "printer went away" in log["error"] and log["ended_at"] is None
+    assert log["lines"] == 2 and len((paths.root / log["path"]).read_text().splitlines()) == 2
+    assert run["usage"] is None
+
+
+def test_another_job_already_printing_is_refused_and_nothing_is_saved(tmp_path):
+    from lab.printer import run_log
+    from lab.loop.commands import load_experiment
+    paths = _project(tmp_path)
+    theirs = report(**{**FULL["print"], "subtask_name": "hex-tile_E-010_BLD-010-01"})
+    with pytest.raises(ValueError, match="BLD-009-01"):
+        run_log.log_run(paths, "E-009", env={}, listen=_feed([theirs, theirs]), heights={})
+    assert "printer_log" not in load_experiment(paths, "E-009")["print_runs"][0]
+    assert not list((paths.root / "telemetry").glob("*"))
+
+
+def test_without_a_job_name_or_a_printer_start_no_usage_is_recorded(tmp_path, monkeypatch):
+    from lab.printer import run_log
+    paths = _project(tmp_path)
+    _clock(monkeypatch)
+    e = run_log.log_run(paths, "E-009", env={}, listen=_feed([FULL, report(layer_num=2),
+                                                                report(gcode_state="FINISH")]), heights={})
+    run = e["print_runs"][0]
+    assert run["printer_log"]["ended_at"] and run["printer_log"]["job_confirmed"] is False
+    assert run["usage"] is None
+
+
+def test_a_disconnect_before_the_end_makes_the_end_uncertain(tmp_path, monkeypatch):
+    from lab.printer import run_log
+    paths = _project(tmp_path)
+    _clock(monkeypatch)
+    ours = report(**{**FULL["print"], "subtask_name": "hex-tile_E-009_BLD-009-01", "gcode_start_time": "1792918800"})
+
+    def listen(env, on_report, *, should_stop, on_disconnect=None, **_):
+        on_report(ours)
+        on_report(report(layer_num=2))
+        on_disconnect()
+        on_report(report(gcode_state="FINISH"))
+    e = run_log.log_run(paths, "E-009", env={}, listen=listen, heights={})
+    run = e["print_runs"][0]
+    assert run["printer_log"]["end_uncertain"] is True and run["usage"] is None
+
+
+def test_a_partial_report_with_only_the_file_name_is_not_a_new_job(tmp_path, monkeypatch):
+    from lab.printer import run_log
+    paths = _project(tmp_path)
+    _clock(monkeypatch)
+    ours = report(**{**FULL["print"], "subtask_name": "hex-tile_E-009_BLD-009-01"})
+    e = run_log.log_run(paths, "E-009", env={}, listen=_feed([ours, report(gcode_file="/sdcard/x.gcode.3mf", layer_num=2),
+                                                                report(gcode_state="FINISH")]), heights={})
+    assert e["print_runs"][0]["printer_log"]["final_state"] == "FINISH"
+
+
+def test_a_failure_never_gets_minutes_from_a_late_look_or_grams_from_the_estimate(tmp_path):
+    from unittest.mock import patch
+    from lab.loop.telemetry import apply_telemetry
+    from loop_fixtures import make_project, minimal_experiment, minimal_question, started
+    e = started(minimal_experiment("E-009"), minutes=60.0, g=20.0)
+    paths = make_project(tmp_path, minimal_question(), [e])
+    ws = {"online": True, "printer": {"state": "failed", "progress": 30, "minutesLeft": 0,
+                                      "seenAt": "2026-10-25T13:00:00+00:00"}}
+    with patch("lab.sync.fetch_workshop_status", return_value=ws):
+        exp, _ = apply_telemetry(paths, "E-009", failed_at_pct=30)
+    run = exp["print_runs"][0]
+    assert run["failed"]["at_fraction"] == 0.3
+    assert run["usage"] is None or (run["usage"]["actual_minutes"] is None and run["usage"]["actual_g"] is None)

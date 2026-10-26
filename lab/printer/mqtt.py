@@ -135,9 +135,11 @@ class _ListenerState:
             raise ConnectionError(self.error)
 
 
-def listen(env: dict, on_report, *, should_stop, connect_timeout_s: float = 20.0) -> None:
-    """Connect, subscribe to the report topic, send pushall once, and pass each decoded report to on_report until
-    should_stop() is true. Needs paho-mqtt."""
+def listen(env: dict, on_report, *, should_stop, on_disconnect=None, connect_timeout_s: float = 20.0,
+           idle_timeout_s: float = 600.0) -> None:
+    """Connect, subscribe to the report topic, send pushall on each connection, and pass each decoded report to
+    on_report until should_stop() is true. on_disconnect is called whenever the connection drops. Silence longer than
+    idle_timeout_s raises TimeoutError instead of waiting forever. Needs paho-mqtt."""
     import paho.mqtt.client as mqtt
 
     # Fetch the certificate once to compare with the pin, then make paho's TLS trust only that certificate, so the
@@ -149,23 +151,31 @@ def listen(env: dict, on_report, *, should_stop, connect_timeout_s: float = 20.0
     pub = ReadOnlyPublisher(lambda t, p: client.publish(t, p), serial=env["serial"])
     state = _ListenerState()
 
+    last_heard = [time.time()]
+
     def on_connect(c, _u, _f, rc, _p=None):
-        if rc != 0:
-            state.error = f"the printer refused the connection ({rc}); check the access code and LAN mode"
-            return
-        state.connected = True
-        c.subscribe(f"device/{env['serial']}/report")
-        pub.pushall()
+        def go():
+            if rc != 0:
+                raise ConnectionError(f"the printer refused the connection ({rc}); check the access code and LAN mode")
+            state.connected = True
+            c.subscribe(f"device/{env['serial']}/report")
+            pub.pushall()
+        state.guard(go)
+
+    def on_disconnect_cb(_c, _u, *_rest):
+        if on_disconnect:
+            state.guard(on_disconnect)
 
     def on_message(_c, _u, msg):
         try:
             rep = json.loads(msg.payload)
         except ValueError:
             return
+        last_heard[0] = time.time()
         if isinstance(rep, dict):
             state.guard(lambda: on_report(rep))
 
-    client.on_connect, client.on_message = on_connect, on_message
+    client.on_connect, client.on_message, client.on_disconnect = on_connect, on_message, on_disconnect_cb
     client.connect(env["host"], 8883, keepalive=60)
     client.loop_start()
     try:
@@ -177,6 +187,8 @@ def listen(env: dict, on_report, *, should_stop, connect_timeout_s: float = 20.0
         state.raise_if_failed()
         while not should_stop():
             state.raise_if_failed()
+            if time.time() - last_heard[0] > idle_timeout_s:
+                raise TimeoutError(f"Nothing from the printer for {idle_timeout_s / 60:g} minutes.")
             time.sleep(1.0)
     finally:
         client.loop_stop()

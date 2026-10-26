@@ -121,8 +121,12 @@ def apply_telemetry(paths: ProjectPaths, eid: str, *, run_id: str | None = None,
                          + (f" at {pct}%" if pct is not None else "") + ". Record it as a failure: "
                          f"`lab exp usage {t['run_id']} --failed-at {pct if pct is not None else '<pct>'}`.")
     if failed_at_pct is not None:
-        e = record_usage(paths, t["run_id"], failed_at_pct=failed_at_pct,
-                         minutes=t["elapsed_minutes"], grams=t["consumed_g"], usage_source="telemetry")
+        # Minutes only from a live reading (Local AI saw it still printing) or the printer log's end; never from a
+        # later look at an idle or failed printer. Grams are never the estimate times progress.
+        live = t["printer_state"] in ("printing", "running")
+        minutes = t["elapsed_minutes"] if (live or t["elapsed_source"] == "printer_log") else None
+        e = record_usage(paths, t["run_id"], failed_at_pct=failed_at_pct, minutes=minutes, grams=None,
+                         usage_source="telemetry")
     elif t["is_finished"]:
         if t["elapsed_minutes"] is None:
             raise ValueError(f"{t['run_id']} has finished, but its end time isn't known: Local AI's last-seen time "
@@ -132,9 +136,9 @@ def apply_telemetry(paths: ProjectPaths, eid: str, *, run_id: str | None = None,
         # The printer doesn't report grams, and the slicer's estimate isn't a measurement.
         e = record_usage(paths, t["run_id"], failed_at_pct=None, minutes=t["elapsed_minutes"], grams=None,
                          usage_source=t["elapsed_source"])
-    else:  # forced partial
+    else:  # forced partial: elapsed so far, no grams
         e = record_usage(paths, t["run_id"], failed_at_pct=None,
-                         minutes=t["elapsed_minutes"], grams=t["consumed_g"], usage_source="telemetry")
+                         minutes=t["elapsed_minutes"], grams=None, usage_source="telemetry")
 
     return e, t
 

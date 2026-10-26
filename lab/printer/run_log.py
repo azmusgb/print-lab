@@ -41,9 +41,9 @@ def _printer_start(raw: str | None, first_seen: str | None) -> str | None:
 
 def log_run(paths: ProjectPaths, eid: str, *, env: dict, listen, heights: dict[int, float],
             run_id: str | None = None) -> dict:
-    """Listen until the printer reports an end state (or Ctrl-C), writing telemetry/<RUN>.jsonl, then store the
-    summary in the run's `printer_log`. Usage is recorded from the printer's times only for a print heard finishing
-    without a gap; a replaced value is kept in `usage_revisions`."""
+    """Listen until the printer reports an end state (or Ctrl-C, or an error), writing the lines to a partial file
+    that becomes telemetry/<RUN>.jsonl when the summary is saved in the run's `printer_log`. Usage is recorded only
+    for this run's own job, heard finishing without a gap or a disconnect, from the printer's own start time."""
     e = load_experiment(paths, eid)
     runs = e.get("print_runs") or []
     run = next((r for r in runs if r["id"] == run_id), None) if run_id else (runs[-1] if runs else None)
@@ -51,27 +51,35 @@ def log_run(paths: ProjectPaths, eid: str, *, env: dict, listen, heights: dict[i
         raise ValueError(f"{eid} has no print run{' ' + run_id if run_id else ''} to log; run `lab exp start` first.")
     if run.get("printer_log"):
         raise ValueError(f"{run['id']} already has a printer log ({run['printer_log'].get('path')}).")
+    build_id = run.get("build_id")
     rel = f"telemetry/{run['id']}.jsonl"
     out_path = paths.root / rel
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text("")  # a fresh log for this run, never appended to an earlier attempt
+    partial = out_path.with_suffix(".jsonl.partial")
+    partial.parent.mkdir(parents=True, exist_ok=True)
+    partial.write_text("")
     merger, log, lines = StateMerger(), LayerLog(), []
     seen = {"first": None, "running": False, "late": False, "end": None, "end_uncertain": False, "state": None,
             "last_report": None, "last_running": None, "last_percent": None, "gcode_start": None, "job": None,
-            "job_changed": False}
+            "job_changed": False, "wrong_job": None, "disconnected": False}
+
+    def on_disconnect() -> None:
+        seen["disconnected"] = True  # whatever ends while we can't hear it has no known end time
 
     def on_report(rep: dict) -> None:
         now = _now()
-        seen["first"] = seen["first"] or now
         p = rep.get("print") or {}
-        if p.get("gcode_start_time"):
-            seen["gcode_start"] = p["gcode_start_time"]
-        job = p.get("subtask_name") or p.get("gcode_file")
+        job = p.get("subtask_name")
         if job:
+            if build_id and build_id not in job and not seen["running"]:
+                seen["wrong_job"] = job  # the printer is busy with something else
+                return
             if seen["job"] and job != seen["job"]:
                 seen["job_changed"] = True  # another print started: nothing after this belongs to our run
                 return
             seen["job"] = job
+        seen["first"] = seen["first"] or now
+        if p.get("gcode_start_time"):
+            seen["gcode_start"] = p["gcode_start_time"]
         state = merger.update(rep)
         gs = state.get("gcode_state")
         if not seen["running"] and gs in END_STATES:
@@ -86,54 +94,71 @@ def log_run(paths: ProjectPaths, eid: str, *, env: dict, listen, heights: dict[i
         line = log.offer(state, t=now)
         if line:
             lines.append(line)
-            with out_path.open("a") as f:
+            with partial.open("a") as f:
                 f.write(json.dumps(line) + "\n")
         if seen["running"] and gs in END_STATES and not seen["end"]:
             gap = (_ts(now) - _ts(seen["last_report"])).total_seconds() if seen["last_report"] else 0
-            if gap > MAX_GAP_S:  # e.g. reconnected after the print ended: the end lies somewhere in the gap
+            if gap > MAX_GAP_S or seen["disconnected"]:  # the end lies somewhere in a silence
                 seen["end"], seen["end_uncertain"] = seen["last_running"], True
             else:
                 seen["end"] = now
         seen["last_report"] = now
 
-    stopped = False
+    stopped, error = False, None
     try:
-        listen(env, on_report, should_stop=lambda: seen["end"] is not None or seen["late"] or seen["job_changed"])
+        listen(env, on_report, on_disconnect=on_disconnect,
+               should_stop=lambda: (seen["end"] is not None or seen["late"] or seen["job_changed"]
+                                    or seen["wrong_job"] is not None))
     except KeyboardInterrupt:
         stopped = True
+    except Exception as exc:  # noqa: BLE001 - saved below, then raised again
+        error = exc
+    if seen["wrong_job"] and not lines:
+        partial.unlink(missing_ok=True)
+        raise ValueError(f"The printer is running '{seen['wrong_job']}', not this run's build {build_id}; "
+                         "nothing was logged.")
     if seen["late"] and not lines:
-        out_path.unlink(missing_ok=True)
+        partial.unlink(missing_ok=True)
         raise ValueError(f"The printer says the print is already over ({merger.state.get('gcode_state')}); "
                          "nothing was logged. Start `lab exp log` while the run is printing.")
-    if seen["job_changed"] and not seen["end"]:
+    if error is not None and not seen["end"]:
+        final = "error"
+    elif seen["job_changed"] and not seen["end"]:
         final = "job_changed"
     elif stopped and not seen["end"]:
         final = "stopped"
     else:
         final = seen["state"]
-    summary = {"path": rel, "first_seen": seen["first"], "printer_start": _printer_start(seen["gcode_start"], seen["first"]),
-               "last_running": seen["last_running"], "ended_at": seen["end"], "job": seen["job"],
-               "end_uncertain": seen["end_uncertain"], "final_state": final, "last_percent": seen["last_percent"],
-               "lines": len(lines), "events": summarize(lines, heights)}
+    summary = {"path": rel, "first_seen": seen["first"],
+               "printer_start": _printer_start(seen["gcode_start"], seen["first"]),
+               "last_running": seen["last_running"], "ended_at": seen["end"], "end_uncertain": seen["end_uncertain"],
+               "final_state": final, "last_percent": seen["last_percent"], "job": seen["job"],
+               "job_confirmed": bool(seen["job"] and build_id and build_id in seen["job"]),
+               "disconnected": seen["disconnected"], "lines": len(lines), "events": summarize(lines, heights)}
+    if error is not None:
+        summary["error"] = f"{type(error).__name__}: {error}"
+    partial.replace(out_path)
     with record_lock(paths.locks, eid, f"lab exp log {eid}"):
         e = load_experiment(paths, eid)
         target = next(r for r in e["print_runs"] if r["id"] == run["id"])
         target["printer_log"] = summary
         _record_logged_usage(target, summary)
-        return save_experiment(paths, e)
+        e = save_experiment(paths, e)
+    if error is not None:
+        raise error
+    return e
 
 
 def _record_logged_usage(run: dict, log: dict) -> None:
-    """Minutes from the printer's start (or `lab exp start`) to a finish heard without a gap. Never grams: the
+    """Minutes from the printer's own start to a finish heard without a gap. Never grams: the
     printer doesn't report them, and the slicer estimate isn't a measurement."""
-    if log["final_state"] != "FINISH" or log["end_uncertain"] or not log["ended_at"]:
-        return
+    if (log["final_state"] != "FINISH" or log["end_uncertain"] or not log["ended_at"] or not log.get("job_confirmed")
+            or not log.get("printer_start")):
+        return  # not this run's job for sure, or no printer start: lab exp start's time isn't the print's start
     current = run.get("usage")
     if current and current.get("usage_source") not in (None, "finished_unknown"):
         return  # an owner or earlier figure stands; the log is in printer_log for comparison
-    start = _ts(log.get("printer_start") or run.get("started_at"))
-    if not start:
-        return
+    start = _ts(log["printer_start"])
     minutes = round((_ts(log["ended_at"]) - start).total_seconds() / 60.0, 1)
     if current:
         run.setdefault("usage_revisions", []).append(

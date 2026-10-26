@@ -69,7 +69,7 @@ def test_apply_telemetry_guards_and_force(tmp_path):
         run = exp["print_runs"][0]
         assert run["usage"]["usage_source"] == "telemetry"
         assert run["usage"]["actual_minutes"] == 15.0
-        assert run["usage"]["actual_g"] == 5.0
+        assert run["usage"]["actual_g"] is None  # estimate x progress isn't a measurement
 
 
 def test_a_finished_print_without_a_printer_log_has_no_elapsed_time(tmp_path):
@@ -124,7 +124,8 @@ def test_apply_telemetry_failed_at(tmp_path):
         run = exp["print_runs"][0]
         assert run["failed"]["at_fraction"] == 0.3
         assert run["usage"]["usage_source"] == "telemetry"
-        assert run["usage"]["actual_minutes"] == 20.0
+        assert run["usage"]["actual_minutes"] == 20.0  # Local AI saw it still printing: a live reading
+        assert run["usage"]["actual_g"] is None
 
 
 def test_telemetry_cli(tmp_path, capsys, monkeypatch):
