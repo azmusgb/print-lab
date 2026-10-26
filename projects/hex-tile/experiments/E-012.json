@@ -74,7 +74,7 @@
     "tabs": true,
     "notes": []
   },
-  "status": "printing",
+  "status": "answered",
   "variants": [
     {
       "id": "E-012-A",
@@ -1382,7 +1382,30 @@
       ]
     }
   ],
-  "owner_verdict": null,
+  "owner_verdict": {
+    "kind": "criteria",
+    "grades": {
+      "E-012-A": {
+        "print": "clean",
+        "apart": "no"
+      },
+      "E-012-B": {
+        "print": "clean",
+        "apart": "no"
+      },
+      "E-012-C": {
+        "print": "failed",
+        "apart": null
+      }
+    },
+    "lighting": "diagnostic",
+    "print_runs": [
+      "PR-012-01"
+    ],
+    "note": "Owner, 26 Oct: 12A and 12B printed clean but were fused too strongly to separate; 12C failed and gives no valid separation result.",
+    "by": "owner",
+    "at": "2026-10-26T02:43:41+00:00"
+  },
   "superseded_verdicts": [],
   "anchors": [],
   "ai_observations": [],
