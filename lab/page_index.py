@@ -212,18 +212,27 @@ def _experiment(e: dict, exps: dict, root: Path, tol: float, production, at: str
 
 
 def _finding(e: dict, root: Path) -> dict:
-    """Observations win over the verdict for face, separation, backing, mounting and acceptance (spec rev 2,
-    'Which record wins'); a finding that still comes only from the old verdict is marked as such."""
+    """Observations win over the verdict for the variants they cover (spec rev 2, 'Which record wins'); the verdict's
+    finding is kept, marked legacy, for variants nobody has observed, and a sweep's finding (a prediction-side result)
+    is always kept."""
     from lab.records import observations as obs
     recs = obs.for_experiment(ProjectPaths(root), e["id"])
-    if recs:
-        return {"finding": obs.finding(recs), "finding_source": "observations",
-                "observations": [{"id": r["id"], "rev": obs.latest(r)["rev"], "group": obs.latest(r)["subject"].get("group"),
-                                  "subject": obs.latest(r)["subject"], "outcomes": obs.latest(r)["outcomes"],
-                                  "source": obs.latest(r)["source"]["kind"], "light": obs.latest(r)["viewing"]["light"]}
-                                 for r in recs]}
-    legacy = criteria_finding(e) or sweep_finding(e)
-    return {"finding": legacy, "finding_source": "legacy_verdict" if legacy else None, "observations": []}
+    covered = {obs.latest(r)["subject"].get("variant") for r in recs}
+    v = e.get("owner_verdict") or {}
+    legacy = None
+    if v.get("kind") == "criteria":
+        left = {k: g for k, g in (v.get("grades") or {}).items() if k not in covered}
+        legacy = criteria_finding({**e, "owner_verdict": {**v, "grades": left}}) if left else None
+    sweep = sweep_finding(e)
+    observed = obs.finding(recs) if recs else None
+    parts = [x for x in (observed, legacy and f"{legacy} (from the old verdict, not re-checked)", sweep) if x]
+    source = ("mixed" if observed and legacy else "observations" if observed else
+              "legacy_verdict" if legacy or sweep else None)
+    return {"finding": " ".join(parts) or None, "finding_source": source,
+            "observations": [{"id": r["id"], "rev": obs.latest(r)["rev"], "group": obs.latest(r)["subject"].get("group"),
+                              "subject": obs.latest(r)["subject"], "outcomes": obs.latest(r)["outcomes"],
+                              "source": obs.latest(r)["source"]["kind"], "light": obs.latest(r)["viewing"]["light"]}
+                             for r in recs]}
 
 
 def _question(q: dict, exps: dict, tol: float) -> dict:

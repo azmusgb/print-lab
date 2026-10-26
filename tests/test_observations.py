@@ -202,7 +202,7 @@ def test_import_keeps_scope_is_repeatable_and_doesnt_trust_old_defaults(tmp_path
     assert len(plan) == 2 and not list(obs.folder(p).glob("OBS-*.json"))
     made = obs.import_verdicts(p, apply=True)
     again = obs.import_verdicts(p, apply=True)
-    assert len(made) == 2 and again == []
+    assert sum(len(m["ids"]) for m in made) == 2 and len(made) == 1 and again == []  # one group per verdict
     recs = [obs.latest(obs.load(p, f.stem)) for f in sorted(obs.folder(p).glob("OBS-*.json"))]
     assert {r["subject"]["kind"] for r in recs} == {"strip"}
     assert all(r["subject"]["identified"] == "assumed" for r in recs)
@@ -248,3 +248,117 @@ def test_ids_that_arent_observation_ids_are_refused_before_any_file_is_touched(p
 def test_interpretation_ids_are_checked_too(paths):
     with pytest.raises(ValueError, match="isn't an interpretation id"):
         obs.load_interpretation(paths, "../observations/OBS-0001")
+
+
+# ---- review of 736c977 --------------------------------------------------------------------------------------------
+
+def test_a_retry_after_a_crash_part_way_through_a_session_writes_the_rest(paths, monkeypatch):
+    real, calls = obs._link_new, {"n": 0}
+
+    def dies_on_second(d, name, record):
+        calls["n"] += 1
+        if calls["n"] == 2:
+            raise SystemExit("killed")  # stands in for a hard kill: the cleanup below is skipped
+        return real(d, name, record)
+    monkeypatch.setattr(obs, "_link_new", dies_on_second)
+    monkeypatch.setattr(obs, "_cleanup", lambda written: None)  # a killed process cleans nothing up
+    with pytest.raises(SystemExit):
+        session(paths, "req-20")
+    monkeypatch.setattr(obs, "_link_new", real)
+    r = session(paths, "req-20")
+    assert len(r["ids"]) == 3 and len(obs.all_observations(paths)) == 3
+    assert len({obs.latest(x)["subject"]["group"] for x in obs.all_observations(paths)}) == 1
+
+
+def test_a_retried_correction_returns_the_record_and_a_changed_one_is_refused(paths):
+    rid = session(paths)["ids"][0]
+    sub = {**PHONE, "request_id": "corr-1"}
+    s = snap("pair", {"separation": assessed("easily")})
+    a = obs.correct(paths, rid, expected_rev=1, snapshot=s, reason="misread", submitted=sub)
+    b = obs.correct(paths, rid, expected_rev=1, snapshot=s, reason="misread", submitted=sub)
+    assert a == b and len(b["revisions"]) == 2
+    with pytest.raises(ValueError, match="already used"):
+        obs.correct(paths, rid, expected_rev=2, snapshot=snap("pair", {"separation": assessed("no")}),
+                    reason="x", submitted=sub)
+
+
+def test_a_missing_expected_rev_is_a_bad_request_not_a_conflict(paths):
+    rid = session(paths)["ids"][0]
+    with pytest.raises(ValueError, match="expected_rev") as e:
+        obs.correct(paths, rid, expected_rev=None, snapshot=snap("pair"), reason="r", submitted=PHONE)
+    assert not isinstance(e.value, obs.Conflict)
+
+
+def test_concurrent_imports_create_each_observation_once_in_one_group_per_verdict(tmp_path):
+    p = _with_criteria_verdict(tmp_path)
+    threads = [threading.Thread(target=lambda: obs.import_verdicts(p, apply=True)) for _ in range(3)]
+    [t.start() for t in threads]
+    [t.join() for t in threads]
+    recs = obs.all_observations(p)
+    assert len(recs) == 2 and len({obs.latest(r)["subject"]["group"] for r in recs}) == 1
+
+
+def test_a_replaced_verdict_isnt_imported_beside_the_old_one(tmp_path):
+    from lab.loop.commands import load_experiment, save_experiment
+    p = _with_criteria_verdict(tmp_path)
+    obs.import_verdicts(p, apply=True)
+    e = load_experiment(p, "E-012")
+    e["owner_verdict"]["at"] = "2026-10-27T09:00:00+00:00"
+    save_experiment(p, e)
+    plan = obs.import_verdicts(p, apply=False)
+    assert plan == [] and len(obs.all_observations(p)) == 2
+    assert "E-012" in obs.import_skipped(p)
+
+
+def test_a_correction_makes_reviews_of_its_experiment_stale(paths):
+    from lab.loop.cases import cases_dir, load_cases
+    from lab.records.store import atomic_write_json
+    atomic_write_json(cases_dir(paths) / "CASE-001.json",
+                      {"id": "CASE-001", "title": "t", "factor": "x", "finding": "f", "confidence": "reproduced",
+                       "ladder_step": 3, "experiments": ["E-009"],
+                       "review": {"by": "owner", "level": "reproduced", "reason": "r", "at": "t"}})
+    rid = session(paths)["ids"][0]
+    obs.correct(paths, rid, expected_rev=1, snapshot=snap("pair", {"separation": assessed("easily")}),
+                reason="misread", submitted=PHONE)
+    c = load_cases(paths)[0]
+    assert c["review"]["stale"] is True and c["confidence"] == "supported"
+
+
+def test_an_ai_reading_names_the_ai(paths):
+    s = snap("pair")
+    s["source"] = {"kind": "ai_reading", "words": "two backs", "evidence": [], "occurred_at": None,
+                   "attributed_by": None}
+    with pytest.raises(ValueError, match="by"):
+        obs.record_session(paths, [s], submitted={"actor": "claude", "channel": "cli", "request_id": None})
+    s["source"]["by"] = "claude-opus-5-5, session 5e49"
+    assert obs.record_session(paths, [s], submitted={"actor": "claude", "channel": "cli", "request_id": None})["ids"]
+
+
+def test_a_retry_with_extra_client_fields_is_the_same_request(paths):
+    a = session(paths, "req-30")
+    snaps = [snap("pair", {"separation": assessed("effort")}),
+             snap("tile", {"face": assessed("clean")}, tile="left"),
+             snap("tile", {"face": assessed("flawed", "ridge at 14 mm")}, tile="right")]
+    for s in snaps:
+        s["draft_saved_at"] = "2026-10-27T10:00:01Z"
+    assert obs.record_session(paths, snaps, submitted={**PHONE, "request_id": "req-30"}) == a
+
+
+def test_a_broken_record_is_reported_and_doesnt_stop_the_others(paths):
+    session(paths, "req-40")
+    (obs.folder(paths) / "OBS-0099.json").write_text("{not json")
+    (obs.folder(paths) / "OBS-0098.json").write_text('{"id": "OBS-0098"}')
+    assert len(obs.all_observations(paths)) == 3
+    assert sorted(obs.problems(paths)) == ["OBS-0098", "OBS-0099"]
+    assert session(paths, "req-41", snapshots=[snap("pair")])["ids"]
+
+
+def test_findings_merge_observed_and_legacy_variants(tmp_path):
+    from lab import page_index
+    p = _with_criteria_verdict(tmp_path)
+    s = snap("strip", {"face": assessed("flawed")}, experiment="E-012", run="PR-012-01", build="BLD-012-01",
+             variant="E-012-A", label="12A")
+    obs.record_session(p, [s], submitted={**PHONE, "request_id": "r-merge"})
+    x = page_index.build_index(p.root)["experiments"][0]
+    assert x["finding_source"] == "mixed"
+    assert "12A: face flawed" in x["finding"] and "12B" in x["finding"]

@@ -85,6 +85,8 @@ def _validate(snapshot: dict) -> None:
         raise ValueError(f"The light is one of {', '.join(LIGHTS)}.")
     if snapshot["source"].get("kind") not in SOURCE_KINDS:
         raise ValueError(f"The source is one of {', '.join(SOURCE_KINDS)}.")
+    if snapshot["source"]["kind"] == "ai_reading" and not (snapshot["source"].get("by") or "").strip():
+        raise ValueError("An ai_reading names the AI that made it (source.by: model and session).")
 
 
 def _check_attribution(snapshot: dict, submitted: dict) -> None:
@@ -112,8 +114,13 @@ def _check_attribution(snapshot: dict, submitted: dict) -> None:
                      "import.")
 
 
+_STORED = ("import_key", "subject", "source", "viewing", "outcomes")
+
+
 def _payload_sha(snapshots: list[dict]) -> str:
-    return hashlib.sha256(json.dumps(snapshots, sort_keys=True).encode()).hexdigest()
+    """Over the fields that are stored, so extra client fields (draft times) don't make a retry look different."""
+    return hashlib.sha256(json.dumps([{k: s.get(k) for k in _STORED} for s in snapshots], sort_keys=True).encode()
+                          ).hexdigest()
 
 
 # ---- reading ------------------------------------------------------------------------------------------------------
@@ -125,12 +132,27 @@ def _checked(oid, prefix: str, what: str) -> str:
     return oid
 
 
+def _read(f: Path) -> dict | None:
+    """A record, or None when the file isn't a readable observation (reported by problems())."""
+    try:
+        r = json.loads(f.read_text())
+    except (OSError, ValueError):
+        return None
+    if (not isinstance(r, dict) or not isinstance(r.get("revisions"), list) or not r["revisions"]
+            or not all(isinstance(rv, dict) and isinstance(rv.get("subject"), dict) for rv in r["revisions"])):
+        return None
+    return r
+
+
 def load(paths: ProjectPaths, oid: str) -> dict:
     oid = _checked(oid, "OBS", "observation")
     f = folder(paths) / f"{oid}.json"
     if not f.exists():
         raise ValueError(f"{oid} isn't in {paths.name}.")
-    return json.loads(f.read_text())
+    r = _read(f)
+    if r is None:
+        raise ValueError(f"{oid} can't be read as an observation; fix or remove {f}.")
+    return r
 
 
 def latest(rec: dict) -> dict:
@@ -139,7 +161,13 @@ def latest(rec: dict) -> dict:
 
 def all_observations(paths: ProjectPaths) -> list[dict]:
     d = folder(paths)
-    return [json.loads(f.read_text()) for f in sorted(d.glob("OBS-*.json"))] if d.exists() else []
+    return [r for f in sorted(d.glob("OBS-*.json")) if (r := _read(f)) is not None] if d.exists() else []
+
+
+def problems(paths: ProjectPaths) -> list[str]:
+    """Observation files that can't be read; they're left out everywhere else."""
+    d = folder(paths)
+    return [f.stem for f in sorted(d.glob("OBS-*.json")) if _read(f) is None] if d.exists() else []
 
 
 def for_experiment(paths: ProjectPaths, eid: str) -> list[dict]:
@@ -148,7 +176,7 @@ def for_experiment(paths: ProjectPaths, eid: str) -> list[dict]:
 
 # ---- writing ------------------------------------------------------------------------------------------------------
 
-def _next_id(d: Path, prefix: str, width: int = 4) -> int:
+def _next_id(d: Path, prefix: str) -> int:
     nums = [int(f.stem.split("-")[1]) for f in d.glob(f"{prefix}-*.json") if f.stem.split("-")[1].isdigit()]
     return (max(nums) + 1) if nums else 1
 
@@ -163,18 +191,39 @@ def _link_new(d: Path, name: str, record: dict) -> Path:
     return path
 
 
+def _cleanup(written: list[Path]) -> None:
+    for p in written:
+        p.unlink(missing_ok=True)
+
+
 def _receipt(ids: list[str], group: str) -> dict:
     return {"ids": ids, "group": group}
 
 
-def _find_request(paths: ProjectPaths, request_id: str) -> list[dict]:
-    return [r for r in all_observations(paths)
-            if any((rv.get("submitted") or {}).get("request_id") == request_id for rv in r["revisions"])]
+def _session_hits(paths: ProjectPaths, request_id: str | None, keys: list) -> list[dict]:
+    """Observations already written for this request (by request_id) or this import (by import_key)."""
+    out = []
+    for r in all_observations(paths):
+        first = r["revisions"][0].get("submitted") or {}
+        if (request_id and first.get("request_id") == request_id) or (r.get("import_key") and r["import_key"] in keys):
+            out.append(r)
+    return out
+
+
+def _new_record(oid: str, project: str, s: dict, group: str, submitted: dict, sha: str, index: int, size: int,
+                stamp: str) -> dict:
+    rev = {"rev": 1, "subject": {**s["subject"], "group": group}, "source": s["source"],
+           "submitted": {**{x: submitted.get(x) for x in ("actor", "channel", "request_id")}, "payload_sha256": sha,
+                         "session_index": index, "session_size": size, "recorded_at": stamp},
+           "viewing": s["viewing"], "outcomes": s["outcomes"], "correction": None}
+    return {"schema": 1, "record_type": "observation", "id": oid, "project": project,
+            "import_key": s.get("import_key"), "revisions": [rev]}
 
 
 def record_session(paths: ProjectPaths, snapshots: list[dict], *, submitted: dict) -> dict:
-    """Create one linked observation per snapshot, all or nothing, under the observations lock. A request_id that was
-    already applied returns its receipt (same content) or is refused (different content); nothing is written twice."""
+    """Create one linked observation per snapshot under the observations lock. A request (by request_id) or import
+    (by import_key) that was already written returns its receipt, after writing any snapshots a crash left out; the
+    same request_id with different content is refused."""
     if not snapshots:
         raise ValueError("Nothing to record.")
     for s in snapshots:
@@ -182,67 +231,76 @@ def record_session(paths: ProjectPaths, snapshots: list[dict], *, submitted: dic
         _check_attribution(s, submitted)
     sha = _payload_sha(snapshots)
     request_id = submitted.get("request_id")
+    keys = [s.get("import_key") for s in snapshots if s.get("import_key")]
     d = folder(paths)
     d.mkdir(parents=True, exist_ok=True)
     with record_lock(paths.locks, LOCK, f"record observations {request_id or ''}".strip()):
-        if request_id:
-            found = _find_request(paths, request_id)
-            if found:
-                first = next(rv for rv in found[0]["revisions"] if rv["submitted"].get("request_id") == request_id)
-                if first["submitted"].get("payload_sha256") != sha:
-                    raise ValueError(f"The request id {request_id} was already used for different content.")
-                ids = sorted(r["id"] for r in found)
-                return _receipt(ids, first["subject"]["group"])
-        keys = [s.get("import_key") for s in snapshots]
-        start = _next_id(d, "OBS")
-        group = f"G-{start:04d}"
-        stamp = now()
-        written, ids = [], []
+        hits = _session_hits(paths, request_id, keys)
+        if hits:
+            firsts = [h["revisions"][0]["submitted"] for h in hits]
+            if request_id and any(f.get("payload_sha256") != sha for f in firsts):
+                raise ValueError(f"The request id {request_id} was already used for different content.")
+            group = hits[0]["revisions"][0]["subject"]["group"]
+            done = {f.get("session_index") for f in firsts}
+            missing = [i for i in range(len(snapshots)) if i not in done]
+        else:
+            group, missing = None, list(range(len(snapshots)))
+        stamp, written = now(), []
         try:
-            for k, s in enumerate(snapshots):
-                oid = f"OBS-{start + k:04d}"
-                rev = {"rev": 1, "subject": {**s["subject"], "group": group}, "source": s["source"],
-                       "submitted": {**{x: submitted.get(x) for x in ("actor", "channel", "request_id")},
-                                     "payload_sha256": sha, "recorded_at": stamp},
-                       "viewing": s["viewing"], "outcomes": s["outcomes"], "correction": None}
-                record = {"schema": 1, "record_type": "observation", "id": oid, "project": paths.name,
-                          "import_key": keys[k], "revisions": [rev]}
-                written.append(_link_new(d, oid, record))
-                ids.append(oid)
-        except BaseException:
-            for p in written:  # all or nothing
-                p.unlink(missing_ok=True)
+            for i in missing:
+                oid = f"OBS-{_next_id(d, 'OBS'):04d}"
+                group = group or f"G-{int(oid.split('-')[1]):04d}"
+                written.append(_link_new(d, oid, _new_record(oid, paths.name, snapshots[i], group, submitted, sha,
+                                                             i, len(snapshots), stamp)))
+        except Exception:
+            _cleanup(written)  # all or nothing within this attempt; a killed process is completed on retry
             raise
+        ids = sorted(r["id"] for r in _session_hits(paths, request_id, keys)) if (request_id or keys) else \
+            sorted(p.stem for p in written)
     return _receipt(ids, group)
 
 
 def correct(paths: ProjectPaths, oid: str, *, expected_rev: int, snapshot: dict, reason: str,
             submitted: dict) -> dict:
-    """Add a complete revision. Refused as a Conflict when the latest revision isn't expected_rev."""
+    """Add a complete revision. A retried request returns the record; a Conflict when the latest revision isn't
+    expected_rev."""
     oid = _checked(oid, "OBS", "observation")
+    if not isinstance(expected_rev, int) or isinstance(expected_rev, bool):
+        raise ValueError("A correction says which revision it was made against (expected_rev).")
     _validate(snapshot)
     _check_attribution(snapshot, submitted)
     if not (reason or "").strip():
         raise ValueError("A correction needs its reason.")
+    sha = _payload_sha([snapshot])
+    request_id = submitted.get("request_id")
     with record_lock(paths.locks, LOCK, f"correct {oid}"):
         rec = load(paths, oid)
+        if request_id:
+            for r in all_observations(paths):
+                for rv in r["revisions"]:
+                    if (rv.get("submitted") or {}).get("request_id") == request_id:
+                        if r["id"] == oid and rv["submitted"].get("payload_sha256") == sha and rv["rev"] > 1:
+                            return rec  # already applied
+                        raise ValueError(f"The request id {request_id} was already used for different content.")
         cur = latest(rec)["rev"]
         if cur != expected_rev:
             raise Conflict(f"{oid} is at revision {cur}, not {expected_rev}: someone changed it since you read it.")
         stamp = now()
+        old_eid = latest(rec)["subject"].get("experiment")
         group = latest(rec)["subject"].get("group")
         rec["revisions"].append({
             "rev": cur + 1, "subject": {**snapshot["subject"], "group": group}, "source": snapshot["source"],
             "submitted": {**{x: submitted.get(x) for x in ("actor", "channel", "request_id")},
-                          "payload_sha256": _payload_sha([snapshot]), "recorded_at": stamp},
+                          "payload_sha256": sha, "recorded_at": stamp},
             "viewing": snapshot["viewing"], "outcomes": snapshot["outcomes"],
             "correction": {"reason": reason.strip(), "by": submitted.get("actor"), "at": stamp}})
+        # Flag first: a crash after this leaves a spurious flag, never a missing one.
+        _flag_dependents(paths, oid, cur + 1, {old_eid, snapshot["subject"].get("experiment")} - {None})
         atomic_write_json(folder(paths) / f"{oid}.json", rec)
-        _flag_dependents(paths, oid, cur + 1, latest(rec)["subject"].get("experiment"))
     return rec
 
 
-def _flag_dependents(paths: ProjectPaths, oid: str, new_rev: int, eid: str | None) -> None:
+def _flag_dependents(paths: ProjectPaths, oid: str, new_rev: int, eids: set) -> None:
     d = _interp_folder(paths)
     for f in sorted(d.glob("INT-*.json")) if d.exists() else []:
         it = json.loads(f.read_text())
@@ -250,11 +308,15 @@ def _flag_dependents(paths: ProjectPaths, oid: str, new_rev: int, eid: str | Non
             it["needs_review"] = True
             atomic_write_json(f, it)
     cdir = paths.root / "cases"
-    for f in sorted(cdir.glob("CASE-*.json")) if cdir.exists() and eid else []:
-        c = json.loads(f.read_text())
-        if eid in (c.get("experiments") or []) and c.get("review"):
-            c["review"]["needs_review"] = True
-            atomic_write_json(f, c)
+    if not (cdir.exists() and eids):
+        return
+    with record_lock(paths.locks, "cases", f"flag reviews after correcting {oid}"):
+        for f in sorted(cdir.glob("CASE-*.json")):
+            c = json.loads(f.read_text())
+            if eids & set(c.get("experiments") or []) and c.get("review") and not c["review"].get("stale"):
+                c["review"]["stale"] = True  # an observation it rests on was corrected
+                c["review"]["stale_because"] = f"{oid} corrected (rev {new_rev})"
+                atomic_write_json(f, c)
 
 
 # ---- interpretations ----------------------------------------------------------------------------------------------
@@ -344,16 +406,42 @@ def _plan_imports(paths: ProjectPaths) -> list[tuple[str, dict]]:
     return out
 
 
+def import_skipped(paths: ProjectPaths) -> list[str]:
+    """Experiments whose verdict changed after their observations were imported: they aren't imported again; correct
+    the imported observations instead."""
+    from lab.loop.commands import all_experiments
+    imported = {}
+    for r in all_observations(paths):
+        k = r.get("import_key") or ""
+        if k.startswith("verdict:"):
+            _, eid, rest = k.split(":", 2)
+            imported.setdefault(eid, set()).add(rest.rsplit(":", 1)[0])
+    out = []
+    for eid, e in sorted(all_experiments(paths).items()):
+        at = (e.get("owner_verdict") or {}).get("at")
+        if eid in imported and at not in imported[eid]:
+            out.append(eid)
+    return out
+
+
 def import_verdicts(paths: ProjectPaths, *, apply: bool) -> list[dict]:
-    """Observations from existing criteria and acceptance verdicts, at their original scope. A dry run unless
-    apply; already-imported verdicts (by import_key) are skipped, so it can run any number of times."""
-    plan = _plan_imports(paths)
+    """Observations from existing criteria and acceptance verdicts, at their original scope, one linked group per
+    verdict. A dry run unless apply; already-imported verdicts are skipped (import_key, checked under the lock), and
+    an experiment whose verdict changed since its import is skipped and listed by import_skipped()."""
+    skip = set(import_skipped(paths))
+    plan = [(k, s) for k, s in _plan_imports(paths) if k.split(":")[1] not in skip]
     if not apply:
         return [{"import_key": k, "subject": s["subject"], "outcomes": s["outcomes"]} for k, s in plan]
+    by_verdict: dict[str, list[dict]] = {}
+    for k, s in plan:
+        by_verdict.setdefault(k.rsplit(":", 1)[0], []).append(s)
     made = []
-    for key, s in plan:
-        r = record_session(paths, [s], submitted={"actor": "import", "channel": "import", "request_id": None})
-        made.append({"import_key": key, "ids": r["ids"]})
+    for vkey, snaps in by_verdict.items():
+        before = {r["id"] for r in all_observations(paths)}
+        r = record_session(paths, snaps, submitted={"actor": "import", "channel": "import", "request_id": None})
+        new = [i for i in r["ids"] if i not in before]
+        if new:
+            made.append({"verdict": vkey, "ids": new})
     return made
 
 
