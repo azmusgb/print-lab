@@ -160,3 +160,56 @@ def test_printer_env_reads_the_pinned_fingerprint(tmp_path):
     p.write_text("PRINTER_HOST=h\nBAMBU_SERIAL=S1\nBAMBU_TOKEN=abc\nBAMBU_CERT_SHA256=AB:CD\n")
     p.chmod(0o600)
     assert load_printer_env(p)["cert_sha256"] == "abcd"
+
+
+def _self_signed(tmp_path, name):
+    import shutil
+    import subprocess
+    if not shutil.which("openssl"):
+        pytest.skip("openssl not installed")
+    key, crt = tmp_path / f"{name}.key", tmp_path / f"{name}.pem"
+    subprocess.run(["openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-keyout", str(key), "-out", str(crt),
+                    "-days", "2", "-subj", f"/CN={name}"], check=True, capture_output=True)
+    return key, crt
+
+
+def _handshake(ctx, crt, key):
+    """Run one TLS handshake against a throwaway local server presenting crt; True if the client accepted it."""
+    import socket
+    import ssl
+    import threading
+    srv_ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    srv_ctx.load_cert_chain(crt, key)
+    ls = socket.socket()
+    ls.bind(("127.0.0.1", 0))
+    ls.listen(1)
+
+    def serve():
+        conn, _ = ls.accept()
+        try:
+            with srv_ctx.wrap_socket(conn, server_side=True):
+                pass
+        except (ssl.SSLError, OSError):
+            pass
+    th = threading.Thread(target=serve, daemon=True)
+    th.start()
+    try:
+        with socket.create_connection(ls.getsockname(), timeout=5) as raw, ctx.wrap_socket(raw):
+            return True
+    except ssl.SSLError:
+        return False
+    finally:
+        ls.close()
+        th.join(5)
+
+
+def test_every_handshake_must_present_the_pinned_certificate(tmp_path):
+    """The context paho uses trusts only the pinned certificate, so a reconnect to a different device fails too."""
+    import ssl
+    from lab.printer.mqtt import pinned_context
+    key_a, crt_a = _self_signed(tmp_path, "printer")
+    key_b, crt_b = _self_signed(tmp_path, "impostor")
+    der_a = ssl.PEM_cert_to_DER_cert(crt_a.read_text())
+    ctx = pinned_context(der_a)
+    assert _handshake(ctx, crt_a, key_a) is True
+    assert _handshake(ctx, crt_b, key_b) is False

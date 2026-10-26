@@ -55,11 +55,25 @@ def _peer_certificate(host: str, port: int = 8883, timeout: float = 10.0) -> byt
         return tls.getpeercert(binary_form=True)
 
 
-def check_certificate(env: dict, fetch) -> None:
+def pinned_context(der: bytes):
+    """A TLS context that trusts exactly this certificate and nothing else. Used for every handshake paho makes,
+    reconnects included, so a different device at the printer's address is refused before the access code is sent.
+    Hostname checking stays off: the printer's certificate names its serial, not its address."""
+    import ssl
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_REQUIRED
+    ctx.verify_flags |= ssl.VERIFY_X509_PARTIAL_CHAIN  # the pinned leaf itself is the trust anchor
+    ctx.load_verify_locations(cadata=der)
+    return ctx
+
+
+def check_certificate(env: dict, fetch) -> bytes:
     """Refuse to send the access code unless the printer presents the certificate pinned in printer.env. The
     printer's certificate is self-signed, so the pin stands in for normal certificate checking."""
     import hashlib
-    got = hashlib.sha256(fetch()).hexdigest()
+    der = fetch()
+    got = hashlib.sha256(der).hexdigest()
     pin = (env.get("cert_sha256") or "").replace(":", "").lower()
     if not pin:
         raise ConnectionError("No printer certificate is pinned. If you're on your own network and the address is "
@@ -67,23 +81,20 @@ def check_certificate(env: dict, fetch) -> None:
     if got != pin:
         raise ConnectionError(f"The certificate at this address doesn't match the pinned printer (got {got}). "
                               "Nothing was sent. If the printer was reset or replaced, check it and update the pin.")
+    return der
 
 
 def listen(env: dict, on_report, *, should_stop, connect_timeout_s: float = 20.0) -> None:
     """Connect, subscribe to the report topic, send pushall once, and pass each decoded report to on_report until
     should_stop() is true. Needs paho-mqtt."""
-    import ssl
-
     import paho.mqtt.client as mqtt
 
-    check_certificate(env, lambda: _peer_certificate(env["host"]))
+    # Fetch the certificate once to compare with the pin, then make paho's TLS trust only that certificate, so the
+    # check holds on the connection that carries the access code and on every reconnect.
+    der = check_certificate(env, lambda: _peer_certificate(env["host"]))
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"print-lab-log-{os.getpid()}")
     client.username_pw_set("bblp", env["code"])
-    # The printer's certificate is self-signed, so normal checking can't pass; check_certificate above pinned it.
-    # The pin is checked on a separate connection just before this one; an attacker would have to swap devices
-    # in that moment.
-    client.tls_set(cert_reqs=ssl.CERT_NONE)
-    client.tls_insecure_set(True)
+    client.tls_set_context(pinned_context(der))
     pub = ReadOnlyPublisher(lambda t, p: client.publish(t, p), serial=env["serial"])
     state = {"connected": False, "error": None}
 
