@@ -1,8 +1,8 @@
-"""`lab sync`: push the project's read-only projection (the page.json index) and its new photos to Local AI, so the
-lab page is on the phone too (spec: docs/superpowers/specs/2026-10-24-print-lab-slim-1b-design.md).
+"""`lab sync`: push the project's read-only projection (`build_index`, plus the spool colours `lab page` saved in
+page.json) and its new photos to Local AI, so the lab page is on the phone too (spec: docs/superpowers/specs/2026-10-24-print-lab-slim-1b-design.md).
 
 The Mac stays the record: Local AI stores what it's sent and never writes back. Photos go up once each, named by
-their sha256. Every attempt is written to <project>/sync.json, which the page shows. Commands that change a record
+their sha256. Every attempt is written to <project>/sync.json, which `lab status` shows. Commands that change a record
 start a sync in the background (`background`); LAB_SYNC=off turns that off.
 """
 import json
@@ -62,6 +62,10 @@ def sync(pdir: Path, base: str | None = None, timeout: float = 10) -> dict:
                 from lab.page import refresh
                 refresh(pdir)
         ix = build_index(pdir)
+        try:
+            ix["colours"] = json.loads((pdir / "page.json").read_text()).get("colours") or {}
+        except (OSError, ValueError):
+            ix["colours"] = {}
         project = ix["project"]
         _, have = _call(base, "GET", f"/api/lab/{project}/photos", key, timeout)
         have = set(have.get("have") or [])

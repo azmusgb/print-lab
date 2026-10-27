@@ -111,3 +111,17 @@ def test_the_page_says_when_it_last_synced(lab):
     (lab.root / "sync.json").write_text(json.dumps({"ok": False, "at": "2026-10-25T02:00:00+00:00",
                                                     "message": "Local AI didn't answer"}))
     assert "Local AI: not synced (Local AI didn&#x27;t answer)" in page.build(lab.root, colours={})
+
+
+def test_sync_sends_the_saved_spool_colours(lab):
+    (lab.root / "page.json").write_text(json.dumps({"colours": {"terracotta": "#c0623a"}}))
+    with Fake() as f:
+        assert sync.sync(lab.root, base=f.url)["ok"]
+    assert f.calls[-1][3]["colours"] == {"terracotta": "#c0623a"}
+
+
+def test_sync_sends_no_colours_without_page_json(lab):
+    (lab.root / "page.json").unlink(missing_ok=True)
+    with Fake() as f:
+        assert sync.sync(lab.root, base=f.url)["ok"]
+    assert f.calls[-1][3]["colours"] == {}
