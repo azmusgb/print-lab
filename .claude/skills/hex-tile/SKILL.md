@@ -65,6 +65,9 @@ Nothing below is proven. Each line says how far the evidence goes; don't present
 
 ## Diagnosing
 
+General printer tuning (drying, flow, pressure advance, temperature, retraction; OrcaSlicer's calibrations; symptom → cause
+from Ellis' guide) is in `docs/tuning.md`. It is general advice, not tile evidence: test it like any other factor.
+
 - **Lines at a regular spacing:** measure the spacing and the heights, then compare them with the model's features at those heights. Candidates: tacks, pad ends, the facet switch at 89.75 mm, and a v58 strip's own start or end. If they match, the feature is the cause (see v41, v49/v50). If they don't, the next single-factor test is wall speed (E-010).
 - **Part off the plate early:** tell plate contamination apart from strip shape before changing the model. Re-run on a washed plate, or print a strip that starts at the bed.
 - **Tacks still crack the backs:** reduce the tack width before thickening the backs again; contact area is the lever. Regenerate with `make_v61_tacks.py`: argument 4 is width, argument 5 is height.
