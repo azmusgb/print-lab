@@ -15,26 +15,19 @@ import re
 import urllib.request
 from pathlib import Path
 
+from lab import bambuddy
 from lab.page_index import build_index
 
 NEUTRAL = "#8698b1"
 
 
-def _bambuddy_key() -> str | None:
-    path = Path(os.environ.get("LAB_BAMBUDDY_KEY_FILE") or Path.home() / ".config/bambuddy/print-lab-key")
-    try:
-        return path.read_text().strip() or None
-    except OSError:
-        return None
-
-
 def bambuddy_colours(url=None, timeout=2.0) -> dict | None:
     """Spool colour name (lower case) → '#rrggbb', from Bambuddy; {} when it's off, None when it doesn't answer or
     refuses (so the caller keeps what it had rather than wiping it)."""
-    url = url if url is not None else os.environ.get("LAB_BAMBUDDY_URL", "http://10.0.0.30:8000")
+    url = url if url is not None else bambuddy.base_url()
     if not url or url == "off":
         return {}
-    key = _bambuddy_key()
+    key = bambuddy.key()
     req = urllib.request.Request(f"{url}/api/v1/inventory/spools", headers={"X-API-Key": key} if key else {})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
