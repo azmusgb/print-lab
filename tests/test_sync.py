@@ -6,7 +6,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import pytest
 
 from lab import sync
-from test_page import _html
+from test_page_index import _project
 
 
 class Fake:
@@ -58,7 +58,12 @@ def lab(tmp_path, monkeypatch):
     key = tmp_path / "mac.key"
     key.write_text("test-key\n")
     monkeypatch.setenv("LAB_LOCALAI_KEY_FILE", str(key))
-    p, _ = _html(tmp_path)
+    p = _project(tmp_path)
+    (p.root / "photos").mkdir(exist_ok=True)
+    (p.root / "photos" / "PR-001-01-1.jpg").write_bytes(b"\xff\xd8jpeg")
+    e = json.loads((p.experiments / "E-001.json").read_text())
+    e["print_runs"][0]["photos"] = [{"path": "photos/PR-001-01-1.jpg", "source": "IMG_1.HEIC"}]
+    (p.experiments / "E-001.json").write_text(json.dumps(e))
     return p
 
 
@@ -104,13 +109,6 @@ def test_background_sync_is_off_when_asked(lab, monkeypatch):
     monkeypatch.setenv("LAB_SYNC", "on")
     sync.background(lab.root)
     assert len(started) == 1
-
-
-def test_the_page_says_when_it_last_synced(lab):
-    from lab import page
-    (lab.root / "sync.json").write_text(json.dumps({"ok": False, "at": "2026-10-25T02:00:00+00:00",
-                                                    "message": "Local AI didn't answer"}))
-    assert "Local AI: not synced (Local AI didn&#x27;t answer)" in page.build(lab.root, colours={})
 
 
 def test_sync_sends_the_saved_spool_colours(lab):

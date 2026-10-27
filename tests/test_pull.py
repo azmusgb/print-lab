@@ -282,7 +282,6 @@ def test_pull_skips_when_locked(project):
 
 
 def test_sync_pulls_first_and_refreshes(project, monkeypatch):
-    from test_page import _html
     key = project.root / "mac.key"
     key.write_text("test-key\n")
     monkeypatch.setenv("LAB_LOCALAI_KEY_FILE", str(key))
