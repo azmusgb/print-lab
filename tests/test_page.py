@@ -100,3 +100,11 @@ def test_a_silent_bambuddy_keeps_the_saved_outside_and_refresh_reuses_it(tmp_pat
     monkeypatch.setattr(page.bambuddy, "print_log", lambda *a, **k: (_ for _ in ()).throw(AssertionError("asked")))
     page.refresh(p.root)
     assert json.loads((p.root / "page.json").read_text())["outside"] == saved
+
+
+def test_refresh_drops_a_print_that_is_now_linked(tmp_path):
+    p = _linked_project(tmp_path, print_id=7)
+    mk = lambda i: {"print": i, "archive": i, "name": "n", "status_word": "Finished", "started": None, "ended": None}
+    (p.root / "page.json").write_text(json.dumps({"colours": {}, "outside": [mk(7), mk(8)]}))
+    page.refresh(p.root)
+    assert [o["print"] for o in json.loads((p.root / "page.json").read_text())["outside"]] == [8]

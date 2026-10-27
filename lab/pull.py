@@ -296,7 +296,7 @@ def check_active_print(paths: ProjectPaths, base: str | None = None, timeout: fl
         return None
 
 
-def link_new_prints(paths: ProjectPaths) -> list[dict]:
+def link_new_prints(paths: ProjectPaths, seen: dict | None = None) -> list[dict]:
     """Link Bambuddy prints newer than the last one seen (plus linked ones still awaiting their end), saving the
     newest id only once linking is done. Bambuddy off or failing: nothing happens and the saved id stays.
     Limits: the print log is read 100 entries deep, so more than 100 new prints between pulls leaves the oldest
@@ -312,6 +312,8 @@ def link_new_prints(paths: ProjectPaths) -> list[dict]:
         entries = None
     if entries is None:
         return []
+    if seen is not None:
+        seen["entries"] = entries  # the caller rebuilds the outside list from this, without a second request
     state = paths.root / "bambuddy-seen.json"
     try:
         last_id = int(json.loads(state.read_text())["last_id"])
@@ -345,11 +347,12 @@ def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]
     base = (base or os.environ.get("LAB_LOCALAI_URL") or BASE).rstrip("/")
     key = _key()
     applied = apply_pending(pdir, base, key, timeout)
+    seen: dict = {}
     lock_fd = open(pdir / ".pull.lock", "a")
     try:
         fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)  # one pull links at a time; a busy lock skips linking
         try:
-            applied += link_new_prints(ProjectPaths(pdir))
+            applied += link_new_prints(ProjectPaths(pdir), seen)
         except Exception as e:  # linking must never stop the rest of the pull
             print(f"lab pull: linking Bambuddy prints failed: {e}", file=sys.stderr)
     except OSError:
@@ -357,7 +360,16 @@ def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]
     finally:
         lock_fd.close()  # releases the lock
     event = check_active_print(ProjectPaths(pdir), base, timeout)
-    if any(r.get("status") == "applied" for r in applied) or event:
+    outside_changed = False
+    if seen.get("entries") is not None and (pdir / "page.json").exists():
+        from lab.page import refresh
+        try:
+            before = json.loads((pdir / "page.json").read_text()).get("outside")
+            refresh(pdir, seen["entries"])
+            outside_changed = (before or []) != (json.loads((pdir / "page.json").read_text()).get("outside") or [])
+        except (OSError, ValueError):
+            pass
+    if any(r.get("status") == "applied" for r in applied) or event or outside_changed:
         from lab.page import refresh
         refresh(pdir)
         from lab.sync import sync

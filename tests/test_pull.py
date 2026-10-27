@@ -591,3 +591,55 @@ def test_pull_skips_linking_while_another_pull_holds_the_lock(lab023, monkeypatc
         fcntl.flock(f, fcntl.LOCK_EX)
         out, _ = _run_pull(lab023, monkeypatch, [_entry(25)])
     assert out == [] and not (lab023.root / "bambuddy-seen.json").exists()
+
+
+def _saved_outside(paths, outside):
+    from lab import page
+    page.write(paths.root, {}, outside)
+
+
+def _outside(paths):
+    return json.loads((paths.root / "page.json").read_text())["outside"]
+
+
+def test_pull_drops_a_print_it_linked_from_outside_and_adds_a_new_one(lab023, monkeypatch):
+    stale = [{"print": 25, "archive": 25, "name": "x", "status_word": "Finished", "started": None, "ended": None}]
+    _saved_outside(lab023, stale)
+    synced = []
+    monkeypatch.setattr("lab.sync.sync", lambda *a, **k: synced.append(1))
+    _run_pull(lab023, monkeypatch, [_entry(25), _entry(24, print_name="benchy")])
+    assert [o["print"] for o in _outside(lab023)] == [24] and synced == [1]
+
+
+def test_pull_with_bambuddy_silent_keeps_outside_and_does_not_sync_for_it(lab023, monkeypatch):
+    saved = [{"print": 3, "archive": 3, "name": "x", "status_word": "Finished", "started": None, "ended": None}]
+    _saved_outside(lab023, saved)
+    synced = []
+    monkeypatch.setattr("lab.sync.sync", lambda *a, **k: synced.append(1))
+    _run_pull(lab023, monkeypatch, lambda *a, **k: None)
+    assert _outside(lab023) == saved and synced == []
+
+
+def test_pull_does_not_sync_when_outside_is_unchanged(lab023, monkeypatch):
+    _saved_outside(lab023, [])
+    synced = []
+    monkeypatch.setattr("lab.sync.sync", lambda *a, **k: synced.append(1))
+    _run_pull(lab023, monkeypatch, [_entry(25, print_name="hex-tile_E-999_BLD-999-01")])
+    assert _outside(lab023) != [] and synced == [1]  # a new outside print is a change
+    synced.clear()
+    _run_pull(lab023, monkeypatch, [_entry(25, print_name="hex-tile_E-999_BLD-999-01")])
+    assert synced == []
+
+
+def test_sync_sends_outside_and_it_changes_the_fingerprint(lab023, monkeypatch):
+    from lab import page
+    _saved_outside(lab023, [])
+    sent = []
+    with FakeLocalAI() as fake:
+        sync.sync(lab023.root, base=fake.base)
+        _saved_outside(lab023, [{"print": 9, "archive": 9, "name": "n", "status_word": "Finished", "started": None,
+                                 "ended": None}])
+        sync.sync(lab023.root, base=fake.base)
+        posts = [c[3] for c in fake.calls if c[0] == "POST" and "/sync" in c[1]]
+    assert posts[0]["outside"] == [] and [o["print"] for o in posts[1]["outside"]] == [9]
+    assert posts[0]["fingerprint"] != posts[1]["fingerprint"]

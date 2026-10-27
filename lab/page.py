@@ -64,7 +64,7 @@ def outside_prints(log: list[dict], linked: set) -> list[dict]:
             for e in log if e.get("id") is not None and e["id"] not in linked][:20]
 
 
-def write(pdir: Path, colours: dict | None = None, outside: list | None = None) -> Path:
+def write(pdir: Path, colours: dict | None = None, outside: list | None = None, log: list | None = None) -> Path:
     """page.json (the index and the spool colours); a page.html left from before is removed so it can't mislead."""
     pdir = Path(pdir)
     if colours is None:
@@ -76,16 +76,17 @@ def write(pdir: Path, colours: dict | None = None, outside: list | None = None) 
             colours = {}
     ix = build_index(pdir)
     ix["colours"] = colours
-    if outside is None:
+    linked = {r["print"]["id"] for e in ix["experiments"] for r in e["runs"] if r.get("print")}
+    if outside is None and log is None:
         log = bambuddy.print_log()
-        if log is not None:
-            linked = {r["print"]["id"] for e in ix["experiments"] for r in e["runs"] if r.get("print")}
-            outside = outside_prints(log, linked)
+    if log is not None:  # a print log just read: the list is rebuilt from it
+        outside = outside_prints(log, linked)
     if outside is None:  # Bambuddy didn't answer: keep the saved list
         try:
             outside = json.loads((pdir / "page.json").read_text()).get("outside") or []
         except (OSError, ValueError):
             outside = []
+    outside = [o for o in outside if o.get("print") not in linked]  # a print linked since is no longer outside
     ix["outside"] = outside
     out = pdir / "page.json"
     out.write_text(json.dumps(ix, indent=1))
@@ -93,7 +94,7 @@ def write(pdir: Path, colours: dict | None = None, outside: list | None = None) 
     return out
 
 
-def refresh(pdir: Path) -> None:
+def refresh(pdir: Path, log: list | None = None) -> None:
     """After a command changed a record: rebuild page.json if there is one, reusing its saved spool colours."""
     pdir = Path(pdir)
     if not (pdir / "page.json").exists():
@@ -102,7 +103,7 @@ def refresh(pdir: Path) -> None:
         saved = json.loads((pdir / "page.json").read_text())
     except (OSError, ValueError):
         saved = {}
-    write(pdir, saved.get("colours") or {}, saved.get("outside") or [])
+    write(pdir, saved.get("colours") or {}, saved.get("outside") or [], log)
 
 
 def page_url() -> str:

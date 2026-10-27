@@ -5,6 +5,7 @@ The Mac stays the record: Local AI stores what it's sent and never writes back. 
 their sha256. Every attempt is written to <project>/sync.json, which `lab status` shows. Commands that change a record
 start a sync in the background (`background`); LAB_SYNC=off turns that off.
 """
+import hashlib
 import json
 import os
 import ssl
@@ -63,9 +64,14 @@ def sync(pdir: Path, base: str | None = None, timeout: float = 10) -> dict:
                 refresh(pdir)
         ix = build_index(pdir)
         try:
-            ix["colours"] = json.loads((pdir / "page.json").read_text()).get("colours") or {}
+            saved = json.loads((pdir / "page.json").read_text())
         except (OSError, ValueError):
-            ix["colours"] = {}
+            saved = {}
+        ix["colours"] = saved.get("colours") or {}
+        ix["outside"] = saved.get("outside") or []
+        if ix["outside"]:  # Local AI skips a push whose fingerprint it has, so the list is part of it
+            ids = json.dumps([o.get("print") for o in ix["outside"]])
+            ix["fingerprint"] += ":o" + hashlib.sha256(ids.encode()).hexdigest()[:12]
         project = ix["project"]
         _, have = _call(base, "GET", f"/api/lab/{project}/photos", key, timeout)
         have = set(have.get("have") or [])
