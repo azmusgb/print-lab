@@ -140,5 +140,21 @@
     "source": "downloads",
     "derived_from": "sources/scad/HEX_TILE_v72.scad",
     "note": "v72 STL as delivered (27 Oct 01:19 EDT); unchanged. 55709 mm3. Owner started printing it ~27 Oct 05:30 UTC, outside the lab's build flow (no experiment record)."
+  },
+  {
+    "path": "sources/scad/HEX_TILE_v73.scad",
+    "sha256": "757120471e2d3d5fed6fbd407897f1ea99fd5cfddc5aaeff855332df4ba2f181",
+    "source": "derived",
+    "derived_from": "sources/scad/HEX_TILE_v72.scad",
+    "change": "face skin 1.2 -> 1.68 mm (1.7 trips the clearance assert by float rounding); front_chamfer 0.15 -> 0.6 (back to v70); everything else v72",
+    "note": "Made 27 Oct 2026 for a stronger face (owner: commercial wall display behind a dance-studio reception desk). Sliced with the v70 presets: face = 4 walls + gap fill on every layer (v72: 2 walls + gap fill)."
+  },
+  {
+    "path": "sources/HEX_TILE_v73.stl",
+    "sha256": "a3e27f50378369deb06b45ff4f7bd0a6c30c79da05ccde9505072c28e3a5717b",
+    "source": "derived",
+    "derived_from": "sources/scad/HEX_TILE_v73.scad",
+    "change": "OpenSCAD 2026.10.11 manifold export of HEX_TILE_v73.scad",
+    "note": "67830 mm3 (v72 55709; rendering v72's SCAD reproduces its delivered STL's volume exactly). v70 presets: 3 h 34 min, 78.7 g (v72: 3 h 21 min, 63.3 g); tabs cross the gap on 111/660 layers (v72 121/660)."
   }
 ]
