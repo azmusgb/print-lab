@@ -111,3 +111,31 @@ def test_verify_cli(capsys, real_project_copy):
     assert rc == 1
     out = capsys.readouterr().out
     assert "✗ MISMATCH" in out
+
+
+def test_verify_tagged_candidate_matches_content(tmp_path, real_project_copy):
+    hex_art = real_project_copy / "prints" / "hex-tile_E-020_BLD-020-01.3mf"
+    if not hex_art.exists():
+        pytest.skip("hex-tile prints not present")
+    from lab.adapters.threemf import tag_3mf
+    tagged = tmp_path / "tagged.3mf"
+    import shutil
+    shutil.copyfile(hex_art, tagged)
+    tag_3mf(tagged, experiment_id="E-020", build_id="BLD-020-01", print_run_id="PR-020-99")
+
+    rc = main(["exp", "verify", "E-020", str(tagged)])
+    assert rc == 0
+
+
+def test_exp_tag_writes_copies_and_leaves_the_build_unchanged(tmp_path, real_project_copy, capsys):
+    hex_art = real_project_copy / "prints" / "hex-tile_E-020_BLD-020-01.3mf"
+    if not hex_art.exists():
+        pytest.skip("hex-tile prints not present")
+    import hashlib
+    before = hashlib.sha256(hex_art.read_bytes()).hexdigest()
+    out = tmp_path / "tagged"
+    assert main(["exp", "tag", "E-020", "--run", "PR-020-99", "--out", str(out)]) == 0
+    assert hashlib.sha256(hex_art.read_bytes()).hexdigest() == before
+    from lab.adapters.threemf import read_3mf_tags
+    assert read_3mf_tags(out / hex_art.name)["print_run_id"] == "PR-020-99"
+    assert main(["exp", "verify", "E-020", str(out / hex_art.name)]) == 0

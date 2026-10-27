@@ -2,6 +2,7 @@
 import argparse
 import json
 import sys
+from pathlib import Path
 
 
 def _paths(args):
@@ -331,6 +332,39 @@ def cmd_exp_observe(args) -> int:
     return 0
 
 
+def cmd_exp_tag(args) -> int:
+    from lab.loop.commands import load_experiment
+    from lab.records.store import next_local_id
+    from lab.adapters.threemf import tag_3mf, read_3mf_tags
+    paths = _paths(args)
+    e = load_experiment(paths, args.id)
+    b = next((x for x in reversed(e.get("builds") or []) if x.get("ok")), None)
+    if not b:
+        print(f"Error: {args.id} has no valid build to tag.", file=sys.stderr)
+        return 1
+    runs = e.get("print_runs") or []
+    run_id = args.run or (runs[-1]["id"] if runs else next_local_id(e, "print_runs", f"PR-{args.id[2:]}"))
+    out_dir = Path(args.out).resolve()
+    tagged = []
+    for key in ("artifact", "sliced"):
+        f = b.get(key)
+        if f and (paths.root / f).exists():
+            # A copy: the build's own files stay byte-identical to the hashes the build and approval recorded.
+            target = out_dir / Path(f).name
+            if target.resolve() == (paths.root / f).resolve():
+                print(f"Error: --out would overwrite {f}; choose another directory.", file=sys.stderr)
+                return 1
+            tag_3mf(paths.root / f, experiment_id=args.id, build_id=b["id"], print_run_id=run_id, out=target)
+            tagged.append({"file": str(target), "tags": read_3mf_tags(target)})
+    if args.json:
+        print(json.dumps({"experiment": args.id, "build": b["id"], "run": run_id, "tagged": tagged}, indent=2))
+    else:
+        print(f"Tagged {args.id} (build {b['id']}, run {run_id}):")
+        for item in tagged:
+            print(f"  {item['file']}: {item['tags']}")
+    return 0
+
+
 def cmd_capability(args) -> int:
     from lab.loop import capabilities
     if args.action == "run":
@@ -515,6 +549,13 @@ def register(sub) -> None:
     lg.add_argument("--report", action="store_true", help="show the logged events, lined up with your marks")
     lg.add_argument("--project", default=argparse.SUPPRESS)
     lg.set_defaults(fn=cmd_exp_log)
+    tg = es.add_parser("tag", help="write copies of the build's files tagged with its experiment, build and run IDs")
+    tg.add_argument("id", help="experiment ID")
+    tg.add_argument("--out", required=True, help="directory for the tagged copies (the build's own files never change)")
+    tg.add_argument("--run", help="specific print run ID (defaults to latest or next anticipated run)")
+    tg.add_argument("--json", action="store_true")
+    tg.add_argument("--project", default=argparse.SUPPRESS)
+    tg.set_defaults(fn=cmd_exp_tag)
 
     cs = sub.add_parser("case", help="Stage 3: case library, confidence ladder, and rule evaluation")
     cs.add_argument("action", choices=["list", "show", "export", "check-rule", "review", "promote"])

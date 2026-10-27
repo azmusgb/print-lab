@@ -94,6 +94,27 @@ def verify_artifact(paths: ProjectPaths, eid: str, candidate_file: Path | str, *
             "warnings": [],
         }
 
+    # Content-based match (ignoring dynamic metadata/comments such as run ID tags)
+    from lab.adapters.threemf import content_sha256
+    if artifact_path and artifact_path.exists():
+        try:
+            if content_sha256(candidate_path) == content_sha256(artifact_path):
+                return {
+                    "ok": True,
+                    "match": "content_exact",
+                    "match_target": "artifact",
+                    "experiment_id": eid,
+                    "build_id": build["id"],
+                    "candidate_path": str(candidate_path),
+                    "candidate_sha256": candidate_sha,
+                    "approved_path": str(artifact_path),
+                    "approved_sha256": artifact_sha,
+                    "differences": [],
+                    "warnings": [],
+                }
+        except Exception:
+            pass
+
     # Hash mismatch: analyze settings differences
     cand_settings = read_settings(candidate_path) if candidate_path.suffix == ".3mf" else None
     appr_settings = None

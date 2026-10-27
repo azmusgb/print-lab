@@ -58,6 +58,69 @@ def test_write_print_3mf_roundtrip(tmp_path, hex_dir):
     assert sorted(round(x) for x in m.extents) == [10, 10, 10]
 
 
+def test_write_print_3mf_tags_model_settings(tmp_path, hex_dir):
+    base = hex_dir / "hexagon_v57_X2D_0.4nozzle.3mf"
+    out = tmp_path / "tagged.3mf"
+    parts = [("a", trimesh.creation.box((10, 10, 10)), (100.0, 128.0))]
+    threemf.write_print_3mf(base, parts, out, {
+        "experiment_id": "E-020",
+        "build_id": "BLD-020-01",
+        "print_run_id": "PR-020-01"
+    })
+    tags = threemf.read_3mf_tags(out)
+    assert tags["experiment_id"] == "E-020"
+    assert tags["build_id"] == "BLD-020-01"
+    assert tags["print_run_id"] == "PR-020-01"
+
+    with zipfile.ZipFile(out) as z:
+        ms = z.read("Metadata/model_settings.config").decode()
+    assert "<!-- print_lab_experiment: E-020 -->" in ms
+    assert "<!-- print_lab_build: BLD-020-01 -->" in ms
+    assert "<!-- print_lab_run: PR-020-01 -->" in ms
+    assert '<metadata key="print_lab_experiment" value="E-020"/>' in ms
+    assert '<metadata key="print_lab_build" value="BLD-020-01"/>' in ms
+    assert '<metadata key="print_lab_run" value="PR-020-01"/>' in ms
+
+
+def test_tag_3mf_injects_and_updates_tags(tmp_path, hex_dir):
+    base = hex_dir / "hexagon_v57_X2D_0.4nozzle.3mf"
+    test_file = tmp_path / "test_run.3mf"
+    import shutil
+    shutil.copyfile(base, test_file)
+
+    threemf.tag_3mf(test_file, experiment_id="E-099", build_id="BLD-099-01", print_run_id="PR-099-02")
+    tags = threemf.read_3mf_tags(test_file)
+    assert tags["experiment_id"] == "E-099"
+    assert tags["build_id"] == "BLD-099-01"
+    assert tags["print_run_id"] == "PR-099-02"
+
+    with zipfile.ZipFile(test_file) as z:
+        ms = z.read("Metadata/model_settings.config").decode()
+    assert "<!-- print_lab_experiment: E-099 -->" in ms
+    assert '<metadata key="print_lab_experiment" value="E-099"/>' in ms
+
+
+def _config_level_metadata(path):
+    import xml.etree.ElementTree as ET
+    with zipfile.ZipFile(path) as z:
+        root = ET.fromstring(z.read("Metadata/model_settings.config"))
+    return [m.get("key") for m in root.findall("metadata")]
+
+
+def test_tags_stay_out_of_config_level(tmp_path, hex_dir):
+    # Bambu Studio refuses a model_settings.config with <metadata> directly under <config>
+    # ("Cannot find object for metadata, id -1"), so every build failed to slice (E-021, 26 Oct).
+    base = hex_dir / "hexagon_v57_X2D_0.4nozzle.3mf"
+    out = tmp_path / "tagged.3mf"
+    parts = [("a", trimesh.creation.box((10, 10, 10)), (100.0, 128.0))]
+    threemf.write_print_3mf(base, parts, out, {"experiment_id": "E-021", "build_id": "BLD-021-01"})
+    assert _config_level_metadata(out) == []
+    threemf.tag_3mf(out, print_run_id="PR-021-01")
+    assert _config_level_metadata(out) == []
+    assert threemf.read_3mf_tags(out) == {"experiment_id": "E-021", "build_id": "BLD-021-01",
+                                          "print_run_id": "PR-021-01"}
+
+
 def test_missing_openscad_message(monkeypatch):
     monkeypatch.setenv("LAB_OPENSCAD", "/nonexistent/openscad")
     with pytest.raises(FileNotFoundError) as e:

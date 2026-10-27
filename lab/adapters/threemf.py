@@ -1,5 +1,6 @@
 """Reading meshes out of Bambu 3MF projects and writing the lab's print files."""
 import json
+import re
 import xml.etree.ElementTree as ET
 from xml.sax.saxutils import quoteattr
 import zipfile
@@ -140,7 +141,12 @@ def content_sha256(path_3mf: Path) -> str:
         for name in sorted(z.namelist()):
             if name == "Metadata/print_lab.json":
                 continue  # names the build ID, which differs between two renders by design
-            h.update(name.encode() + b"\0" + z.read(name) + b"\0")
+            data = z.read(name)
+            if name == "Metadata/model_settings.config":
+                # Normalize out dynamic print_lab comments and metadata tags so content hash is invariant
+                data = re.sub(rb"\s*<!--\s*print_lab[^>]*-->\s*", b"", data)
+                data = re.sub(rb'\s*<metadata key="(?:print_lab_[^"]*|experiment_id|build_id|print_run_id)" value="[^"]*"/>\s*', b"", data)
+            h.update(name.encode() + b"\0" + data + b"\0")
     return h.hexdigest()
 
 
@@ -155,6 +161,32 @@ def patch_settings(settings: dict, patch: dict) -> dict:
         else:
             out[k] = str(v)
     return out
+
+
+def _format_model_settings_tags(meta: dict) -> tuple[str, str]:
+    """Returns (comments_xml, tags_xml) for Metadata/model_settings.config."""
+    exp = meta.get("experiment_id") or meta.get("experiment")
+    bld = meta.get("build_id") or meta.get("build")
+    run = meta.get("print_run_id") or meta.get("run_id") or meta.get("run")
+
+    comments = []
+    tags = []
+    if exp:
+        comments.append(f"<!-- print_lab_experiment: {exp} -->")
+        tags.append(f'<metadata key="print_lab_experiment" value={quoteattr(str(exp))}/>')
+        tags.append(f'<metadata key="experiment_id" value={quoteattr(str(exp))}/>')
+    if bld:
+        comments.append(f"<!-- print_lab_build: {bld} -->")
+        tags.append(f'<metadata key="print_lab_build" value={quoteattr(str(bld))}/>')
+        tags.append(f'<metadata key="build_id" value={quoteattr(str(bld))}/>')
+    if run:
+        comments.append(f"<!-- print_lab_run: {run} -->")
+        tags.append(f'<metadata key="print_lab_run" value={quoteattr(str(run))}/>')
+        tags.append(f'<metadata key="print_run_id" value={quoteattr(str(run))}/>')
+
+    comments_xml = ("\n  " + "\n  ".join(comments) + "\n  ") if comments else ""
+    tags_xml = "".join(tags)
+    return comments_xml, tags_xml
 
 
 def write_print_3mf(base_3mf: Path, meshes: list[tuple[str, trimesh.Trimesh, tuple[float, float]]], out: Path,
@@ -192,8 +224,10 @@ def write_print_3mf(base_3mf: Path, meshes: list[tuple[str, trimesh.Trimesh, tup
              '<metadata name="Application">BambuStudio-02.08.02.61</metadata>'
              '<metadata name="BambuStudio:3mfVersion">1</metadata>'
              f'<resources>{"".join(objs)}</resources><build>{"".join(items)}</build></model>')
-    model_settings = ('<?xml version="1.0" encoding="UTF-8"?>\n<config>' + "".join(ms_objs) +
-                      '<plate><metadata key="plater_id" value="1"/>' + "".join(insts) + '</plate></config>')
+    comments_xml, tags_xml = _format_model_settings_tags(meta)
+    # Tags go inside <plate> only: Bambu Studio refuses <metadata> directly under <config>.
+    model_settings = ('<?xml version="1.0" encoding="UTF-8"?>\n<config>' + comments_xml + "".join(ms_objs) +
+                      '<plate><metadata key="plater_id" value="1"/>' + tags_xml + "".join(insts) + '</plate></config>')
     out.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("[Content_Types].xml", _CT)
@@ -205,3 +239,106 @@ def write_print_3mf(base_3mf: Path, meshes: list[tuple[str, trimesh.Trimesh, tup
         if height_ranges and any(height_ranges):
             z.writestr("Metadata/layer_config_ranges.xml", _ranges_xml(height_ranges, json.loads(settings)))
     return sha256(out)
+
+
+def tag_3mf(path_3mf: Path, *, experiment_id: str | None = None, build_id: str | None = None,
+            print_run_id: str | None = None, out: Path | None = None) -> Path:
+    """Inject or update experiment ID, build ID, and print run ID into 3MF Metadata comments
+    and keys in Metadata/model_settings.config (and Metadata/print_lab.json).
+    Works on both raw .3mf and sliced .gcode.3mf archives.
+    """
+    path = Path(path_3mf)
+    target = Path(out) if out else path
+
+    with zipfile.ZipFile(path, "r") as z:
+        namelist = z.namelist()
+        entries = {name: z.read(name) for name in namelist}
+
+    meta = {}
+    if "Metadata/print_lab.json" in entries:
+        try:
+            meta = json.loads(entries["Metadata/print_lab.json"].decode("utf-8"))
+        except Exception:
+            meta = {}
+    if experiment_id:
+        meta["experiment_id"] = experiment_id
+    if build_id:
+        meta["build_id"] = build_id
+    if print_run_id:
+        meta["print_run_id"] = print_run_id
+    entries["Metadata/print_lab.json"] = json.dumps(meta, indent=2).encode("utf-8")
+
+    if "Metadata/model_settings.config" in entries:
+        ms_str = entries["Metadata/model_settings.config"].decode("utf-8", errors="ignore")
+        # Remove any existing print_lab comments or metadata tags
+        ms_str = re.sub(r'\s*<!--\s*print_lab[^>]*-->\s*', '', ms_str)
+        ms_str = re.sub(r'\s*<metadata key="print_lab_[^"]*" value="[^"]*"/>\s*', '', ms_str)
+        ms_str = re.sub(r'\s*<metadata key="(?:experiment_id|build_id|print_run_id)" value="[^"]*"/>\s*', '', ms_str)
+
+        comments_xml, tags_xml = _format_model_settings_tags(meta)
+
+        # Comments at the top, tags inside <plate> only: Bambu Studio refuses <metadata> directly under <config>.
+        if "<config>" in ms_str:
+            ms_str = ms_str.replace("<config>", f"<config>{comments_xml}", 1)
+        elif "<config " in ms_str:
+            idx = ms_str.find("<config ")
+            end_idx = ms_str.find(">", idx)
+            if end_idx != -1:
+                ms_str = ms_str[:end_idx+1] + comments_xml + ms_str[end_idx+1:]
+
+        if "<plate>" in ms_str:
+            ms_str = ms_str.replace("<plate>", f"<plate>{tags_xml}", 1)
+        elif "<plate " in ms_str:
+            idx = ms_str.find("<plate ")
+            end_idx = ms_str.find(">", idx)
+            if end_idx != -1:
+                ms_str = ms_str[:end_idx+1] + tags_xml + ms_str[end_idx+1:]
+
+        entries["Metadata/model_settings.config"] = ms_str.encode("utf-8")
+
+    tmp = target.with_suffix(".tmp.3mf")
+    tmp.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as z:
+        for name, data in entries.items():
+            z.writestr(name, data)
+    tmp.replace(target)
+    return target
+
+
+def read_3mf_tags(path_3mf: Path) -> dict[str, str]:
+    """Read experiment_id, build_id, and print_run_id from a 3MF's Metadata/model_settings.config
+    and Metadata/print_lab.json.
+    """
+    path = Path(path_3mf)
+    if not path.exists():
+        return {}
+    out = {}
+    with zipfile.ZipFile(path, "r") as z:
+        names = z.namelist()
+        if "Metadata/print_lab.json" in names:
+            try:
+                pj = json.loads(z.read("Metadata/print_lab.json").decode("utf-8"))
+                for k in ("experiment_id", "build_id", "print_run_id"):
+                    if pj.get(k):
+                        out[k] = str(pj[k])
+            except Exception:
+                pass
+        if "Metadata/model_settings.config" in names:
+            ms = z.read("Metadata/model_settings.config").decode("utf-8", errors="ignore")
+            for m in re.finditer(r'<!--\s*(?:print_lab_)?(experiment(?:_id)?|build(?:_id)?|run(?:_id)?|print_run_id):\s*([^\s>]+)\s*-->', ms):
+                key, val = m.group(1), m.group(2)
+                std_key = "experiment_id" if "experiment" in key else "build_id" if "build" in key else "print_run_id"
+                out.setdefault(std_key, val)
+            try:
+                root = ET.fromstring(ms)
+                for meta_el in root.iter("metadata"):
+                    k, v = meta_el.get("key"), meta_el.get("value")
+                    if k in ("print_lab_experiment", "experiment_id"):
+                        out.setdefault("experiment_id", v)
+                    elif k in ("print_lab_build", "build_id"):
+                        out.setdefault("build_id", v)
+                    elif k in ("print_lab_run", "print_run_id"):
+                        out.setdefault("print_run_id", v)
+            except Exception:
+                pass
+    return out
