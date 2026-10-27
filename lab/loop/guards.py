@@ -230,8 +230,10 @@ def approve(paths: ProjectPaths, exp_id: str, reason: str) -> dict:
         return save_experiment(paths, e)
 
 
-def start(paths: ProjectPaths, exp_id: str) -> tuple[dict, list[str]]:
-    """Record that the owner sent the print: re-check the live state, snapshot the setup, open a print run."""
+def start(paths: ProjectPaths, exp_id: str, started_at: str | None = None,
+          started_from: str | None = None) -> tuple[dict, list[str]]:
+    """Record that the owner sent the print: re-check the live state, snapshot the setup, open a print run.
+    started_at: when it really started (the page's tap time), else now; started_from: "page" when it came from Local AI."""
     from lab.loop.setup_log import current_setup
     e = load_experiment(paths, exp_id)
     if e["status"] == "printing":
@@ -247,9 +249,11 @@ def start(paths: ProjectPaths, exp_id: str) -> tuple[dict, list[str]]:
     with record_lock(paths.locks, exp_id, f"lab exp start {exp_id}"):
         e = load_experiment(paths, exp_id)
         run = {"id": next_local_id(e, "print_runs", f"PR-{exp_id[2:]}"), "build_id": r.build["id"],
-               "started_at": now(), "setup": {k: {"id": v["id"], "at": v["at"], "fields": v["fields"]}
+               "started_at": started_at or now(), "setup": {k: {"id": v["id"], "at": v["at"], "fields": v["fields"]}
                                               for k, v in setup.items()},
                "baseline_missing": missing, "usage": None, "failed": None, "photos": []}
+        if started_from:
+            run["started_from"] = started_from
         e["print_runs"].append(run)
         e["status"] = "printing"
         e = save_experiment(paths, refresh_derived(paths, e))
