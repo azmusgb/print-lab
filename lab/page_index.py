@@ -1,4 +1,4 @@
-"""The project as one read-only projection: what `lab page` draws and what Stage 1B pushes to Local AI.
+"""The project as one read-only projection: what `lab sync` pushes to Local AI, whose print lab page draws it.
 
 Every number comes from the loop's own code (ledger, outcome), so the page can't disagree with `lab question status`.
 Records that fail validation are listed under `problems` and left out, never guessed at. Each record also travels as

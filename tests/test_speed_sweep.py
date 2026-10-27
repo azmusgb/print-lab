@@ -100,14 +100,12 @@ def test_grades_judged_in_room_light_dont_count(proj):
 
 
 def test_the_page_shows_each_strip_grade_and_the_finding(proj):
-    from lab import page, page_index
+    from lab import page_index
     eid = _printed(proj, expect="")
     V(proj, eid, grades="40=clean,60=clean,80=faint,100=banded")
     x = {e["id"]: e for e in page_index.build_index(proj.root)["experiments"]}[eid]
     assert [v["grade"] for v in x["variants"]] == ["clean", "clean", "faint", "banded"]
     assert x["finding"] == "clean up to 60, faint at 80, bands from 100 mm/s"
-    html = page.build(proj.root, colours={})
-    assert "Finding: clean up to 60, faint at 80, bands from 100 mm/s" in html and "80: 80 mm/s · faint" in html
 
 
 def test_only_a_sweep_has_a_finding(proj):
