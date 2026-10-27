@@ -498,3 +498,82 @@ def test_pull_refuses_a_malformed_observation_instead_of_crashing(project):
     with FakeLocalAI(requests=[req]) as fake:
         out = pull.apply_pending(project.root, fake.base, "k")
     assert out[0]["status"] == "refused" and "subject" in out[0]["message"]
+
+
+# ---- Bambuddy linking ------------------------------------------------------------------------------------------
+LOG = json.loads((Path(__file__).parent / "fixtures" / "bambuddy_print_log.json").read_text())["items"]
+
+
+def _entry(print_id: int, **changes) -> dict:
+    e = next(x for x in LOG if x["id"] == print_id)
+    return {**e, "print_name": "hex-tile_E-023_BLD-023-01", **changes}
+
+
+@pytest.fixture
+def lab023(tmp_path, monkeypatch):
+    """hex-tile with E-023 printing BLD-023-01 on PR-023-01, and a key file for the fake Local AI."""
+    key = tmp_path / "mac.key"
+    key.write_text("k")
+    monkeypatch.setenv("LAB_LOCALAI_KEY_FILE", str(key))
+    e = started(minimal_experiment("E-023", "Q-023"), minutes=50.0, g=20.0)
+    return make_project(tmp_path, minimal_question("Q-023", ("E-023",)), [e])
+
+
+def _seen(paths) -> dict:
+    return json.loads((paths.root / "bambuddy-seen.json").read_text())
+
+
+def _run_pull(paths, monkeypatch, log, planned=None):
+    from lab import bambuddy
+    asked = []
+
+    def archive(i, timeout=5.0):
+        asked.append(i)
+        return {"print_time_seconds": planned}
+    monkeypatch.setattr(bambuddy, "print_log", log if callable(log) else (lambda *a, **k: log))
+    monkeypatch.setattr(bambuddy, "archive", archive)
+    with FakeLocalAI() as fake:
+        return pull.pull(paths.root, fake.base), asked
+
+
+def test_pull_links_new_prints_and_saves_last_id(lab023, monkeypatch):
+    out, _ = _run_pull(lab023, monkeypatch, [_entry(25), _entry(24, print_name="benchy")])
+    e = load_experiment(lab023, "E-023")
+    assert e["print_runs"][0]["bambuddy"]["print"] == 25 and e["print_runs"][0]["bambuddy"]["snapshot_at"]
+    assert {r["status"] for r in out} == {"applied"} and {r["id"] for r in out} == {"link-25"}
+    assert len(out) == 2  # linked + snapshot
+    assert _seen(lab023) == {"last_id": 25}
+    out, _ = _run_pull(lab023, monkeypatch, [_entry(25), _entry(24, print_name="benchy")])
+    assert out == []  # nothing new, nothing due
+
+
+def test_pull_snapshots_a_print_that_was_printing_last_time(lab023, monkeypatch):
+    _run_pull(lab023, monkeypatch, [_entry(25, status="printing", completed_at=None, duration_seconds=None)])
+    assert load_experiment(lab023, "E-023")["print_runs"][0]["bambuddy"]["snapshot_at"] is None
+    out, _ = _run_pull(lab023, monkeypatch, [_entry(25)])
+    assert load_experiment(lab023, "E-023")["print_runs"][0]["bambuddy"]["snapshot_at"]
+    assert [r["id"] for r in out] == ["link-25"]
+    assert _seen(lab023) == {"last_id": 25}
+
+
+def test_pull_asks_for_the_planned_time_once_per_archive(lab023, monkeypatch):
+    log = [_entry(15, archive_id=7), _entry(16, archive_id=7, status="failed")]
+    _, asked = _run_pull(lab023, monkeypatch, log, planned=3000.0)
+    assert asked == [7]
+
+
+@pytest.mark.parametrize("failure", ["none", "raises"])
+def test_pull_with_bambuddy_down_keeps_last_id(lab023, monkeypatch, failure):
+    (lab023.root / "bambuddy-seen.json").write_text(json.dumps({"last_id": 20}))
+
+    def down(*a, **k):
+        if failure == "raises":
+            raise OSError("down")
+        return None
+    from unittest.mock import patch
+    checked = []
+    monkeypatch.setattr(pull, "check_active_print", lambda *a, **k: checked.append(1))
+    out, _ = _run_pull(lab023, monkeypatch, down)
+    assert out == [] and checked == [1]
+    assert _seen(lab023) == {"last_id": 20}
+    assert load_experiment(lab023, "E-023")["print_runs"][0].get("bambuddy") is None

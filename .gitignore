@@ -15,5 +15,6 @@ projects/*/page.html
 projects/*/page.json
 projects/*/sync.json
 projects/*/requests.jsonl
+projects/*/bambuddy-seen.json
 projects/*/.pull.lock
 projects/*/telemetry/

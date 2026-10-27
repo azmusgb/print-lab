@@ -346,3 +346,21 @@ def test_fixture_durations_agree_with_timestamps():
         if x["completed_at"]:
             span = datetime.fromisoformat(x["completed_at"]) - datetime.fromisoformat(x["started_at"])
             assert abs(span.total_seconds() - x["duration_seconds"]) < 1, x["id"]
+
+
+def test_double_unlink_of_an_opened_run_says_not_linked(tmp_path, monkeypatch):
+    from lab.loop import linking
+    p = built_project(tmp_path, "approved")
+    link_entries(p, [entry(15, status="printing", completed_at=None, duration_seconds=None)], no_plan)
+    stale = linking.find_run(p, "PR-023-01")
+    unlink(p, "PR-023-01")  # deletes the run it opened
+    monkeypatch.setattr(linking, "find_run", lambda *_: stale)
+    with pytest.raises(ValueError, match="isn't linked"):
+        unlink(p, "PR-023-01")
+
+
+def test_a_failed_print_outside_the_lab_never_asks_for_the_planned_time(paths):
+    asked = []
+    link_entries(paths, [entry(15, print_name="benchy"), entry(15, print_name="hex-tile_E-999_BLD-999-01")],
+                 lambda a: asked.append(a))
+    assert asked == []

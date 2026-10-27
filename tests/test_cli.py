@@ -86,3 +86,26 @@ def test_ingest_keeps_only_the_project_lineage_and_relative_paths(tmp_path, hex_
     text = (hist / "inventory.json").read_text() + (hist / "revisions.json").read_text()
     assert "TaxReturn" not in text and str(tmp_path) not in text
     assert all(a["lineage"] == "hex-tile" for a in json.loads((hist / "inventory.json").read_text()))
+
+
+def test_cli_link_and_unlink(tmp_path, monkeypatch, capsys):
+    import sys
+    sys.path.insert(0, str(ROOT / "tests"))
+    from loop_fixtures import make_project, minimal_experiment, minimal_question, started
+    from lab import bambuddy, cli
+    from lab.loop.commands import load_experiment
+    log = json.loads((ROOT / "tests" / "fixtures" / "bambuddy_print_log.json").read_text())["items"]
+    p = make_project(tmp_path, minimal_question("Q-023", ("E-023",)),
+                     [started(minimal_experiment("E-023", "Q-023"), minutes=50.0, g=20.0)])
+    monkeypatch.setenv("LAB_HOME", str(tmp_path))
+    monkeypatch.setattr(bambuddy, "print_log", lambda *a, **k: log)
+    monkeypatch.setattr(bambuddy, "archive", lambda *a, **k: None)
+    assert cli.main(["exp", "link", "E-023", "BLD-023-01", "--print", "26"]) == 0
+    assert load_experiment(p, "E-023")["print_runs"][0]["bambuddy"]["linked"] == "hand"
+    capsys.readouterr()
+    assert cli.main(["exp", "unlink", "PR-023-01"]) == 0
+    assert "bambuddy" not in load_experiment(p, "E-023")["print_runs"][0]
+    capsys.readouterr()
+    assert cli.main(["exp", "link", "E-023", "BLD-023-01", "--print", "999"]) == 1
+    err = capsys.readouterr().err.strip()
+    assert len(err.splitlines()) == 1 and "999" in err

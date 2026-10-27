@@ -296,11 +296,56 @@ def check_active_print(paths: ProjectPaths, base: str | None = None, timeout: fl
         return None
 
 
+def link_new_prints(paths: ProjectPaths) -> list[dict]:
+    """Link Bambuddy prints newer than the last one seen (plus linked ones still awaiting their end), saving the
+    newest id only once linking is done. Bambuddy off or failing: nothing happens and the saved id stays."""
+    from lab import bambuddy
+    from lab.loop.commands import all_experiments
+    from lab.loop.linking import link_entries
+    from lab.records.store import atomic_write_json
+    try:
+        entries = bambuddy.print_log()
+    except Exception:
+        entries = None
+    if entries is None:
+        return []
+    state = paths.root / "bambuddy-seen.json"
+    try:
+        last_id = int(json.loads(state.read_text())["last_id"])
+    except (OSError, ValueError, KeyError, TypeError):
+        last_id = 0
+    waiting = {r["bambuddy"]["print"] for e in all_experiments(paths).values() for r in e.get("print_runs") or []
+               if (r.get("bambuddy") or {}).get("print") is not None and not r["bambuddy"].get("snapshot_at")}
+    due = sorted((x for x in entries if x.get("id") is not None and (x["id"] > last_id or x["id"] in waiting)),
+                 key=lambda x: x["id"])
+    plans: dict = {}
+
+    def planned(archive_id):
+        if archive_id not in plans:
+            a = bambuddy.archive(archive_id) if archive_id is not None else None
+            plans[archive_id] = (a or {}).get("print_time_seconds")
+        return plans[archive_id]
+    events = link_entries(paths, due, planned)
+    newest = max([last_id, *(x["id"] for x in entries if x.get("id") is not None)])
+    if newest != last_id or not state.exists():
+        atomic_write_json(state, {"last_id": newest})
+    say = {"linked": "linked to", "created": "opened a run on", "snapshot": "ended; evidence saved on",
+           "skipped": "not linked:"}
+    return [{"id": f"link-{ev['print']}", "status": "applied",
+             "message": ev["message"] or f"Bambuddy print #{ev['print']} {say[ev['action']]} "
+                                         f"{ev['experiment']} {ev['run'] or ''}".strip()}
+            for ev in events]
+
+
 def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]:
     pdir = Path(pdir)
     base = (base or os.environ.get("LAB_LOCALAI_URL") or BASE).rstrip("/")
     key = _key()
     applied = apply_pending(pdir, base, key, timeout)
+    try:
+        applied += link_new_prints(ProjectPaths(pdir))
+    except Exception as e:  # linking must never stop the rest of the pull
+        print(f"lab pull: linking Bambuddy prints failed: {e}", file=sys.stderr)
     event = check_active_print(ProjectPaths(pdir), base, timeout)
     if any(r.get("status") == "applied" for r in applied) or event:
         from lab.page import refresh

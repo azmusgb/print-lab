@@ -90,6 +90,35 @@ def cmd_exp_usage(args) -> int:
     return 0
 
 
+def cmd_exp_link(args) -> int:
+    from lab import bambuddy
+    from lab.loop.linking import link_by_hand
+    log = bambuddy.print_log() or []
+    entry = next((x for x in log if x.get("id") == args.print), None)
+    if entry is None:
+        print(f"Bambuddy print #{args.print} isn't in its print log (or Bambuddy isn't reachable).", file=sys.stderr)
+        return 1
+    a = bambuddy.archive(entry["archive_id"]) if entry.get("archive_id") is not None else None
+    try:
+        run = link_by_hand(_paths(args), args.id, args.build, entry, (a or {}).get("print_time_seconds"))
+    except ValueError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    print(f"Linked Bambuddy print #{entry['id']} to {args.id} {run['id']} ({run['bambuddy']['status']})")
+    return 0
+
+
+def cmd_exp_unlink(args) -> int:
+    from lab.loop.linking import unlink
+    try:
+        run = unlink(_paths(args), args.run_id)
+    except ValueError as e:
+        print(str(e), file=sys.stderr)
+        return 1
+    print(f"Unlinked {run['id']} from Bambuddy print #{(run.get('bambuddy') or {}).get('print', '')}".rstrip(" #"))
+    return 0
+
+
 def cmd_exp_verify(args) -> int:
     from lab.loop.verify import format_verify_text, verify_artifact
     paths = _paths(args)
@@ -525,6 +554,16 @@ def register(sub) -> None:
     u.add_argument("--grams", type=float)
     u.add_argument("--project", default="hex-tile")
     u.set_defaults(fn=cmd_exp_usage)
+    lk = es.add_parser("link", help="attach a Bambuddy print to a build's run (a renamed print, or one sent by hand)")
+    lk.add_argument("id", help="experiment ID")
+    lk.add_argument("build", help="build ID, e.g. BLD-023-01")
+    lk.add_argument("--print", type=int, required=True, help="Bambuddy print-log id")
+    lk.add_argument("--project", default="hex-tile")
+    lk.set_defaults(fn=cmd_exp_link)
+    ul = es.add_parser("unlink", help="drop a run's Bambuddy link and the facts taken from that print")
+    ul.add_argument("run_id")
+    ul.add_argument("--project", default="hex-tile")
+    ul.set_defaults(fn=cmd_exp_unlink)
     vf = es.add_parser("verify", help="verify a candidate 3MF file matches the approved build artifact before printing")
     vf.add_argument("id", help="experiment ID")
     vf.add_argument("file", help="candidate 3MF or G-code file")

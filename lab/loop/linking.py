@@ -118,11 +118,11 @@ def link_entries(paths: ProjectPaths, entries: list[dict],
         if entry.get("id") is None:
             continue
         eid, done = linked.get(entry["id"], (None, False))
-        planned = (planned_seconds(entry.get("archive_id"))
-                   if entry.get("status") == "failed" and not done else None)
+        wants_plan = entry.get("status") == "failed" and not done
         if eid:  # linked before, by name or by hand: only its snapshot can be due
             if done:
                 continue
+            planned = planned_seconds(entry.get("archive_id")) if wants_plan else None
             with record_lock(paths.locks, eid, f"lab pull: {_mark(entry['id'])}"):
                 e = load_experiment(paths, eid)
                 before = e["status"]
@@ -141,6 +141,9 @@ def link_entries(paths: ProjectPaths, entries: list[dict],
             event("skipped", None, None, entry, f"{entry['print_name']} names no experiment in {paths.name}; "
                                                 "treated as outside the lab.")
             continue
+        planned = None
+        if wants_plan and any(b["id"] == bid for b in load_experiment(paths, eid).get("builds") or []):
+            planned = planned_seconds(entry.get("archive_id"))  # a lab print only; checked again under the lock
         with record_lock(paths.locks, eid, f"lab pull: {_mark(entry['id'])}"):
             e = load_experiment(paths, eid)
             if not any(b["id"] == bid for b in e.get("builds") or []):
@@ -193,8 +196,8 @@ def unlink(paths: ProjectPaths, run_id: str) -> dict:
         raise ValueError(f"{run_id} isn't linked to a Bambuddy print.")
     with record_lock(paths.locks, e["id"], f"lab exp unlink {run_id}"):
         e = load_experiment(paths, e["id"])
-        run = next(r for r in e["print_runs"] if r["id"] == run_id)
-        if not run.get("bambuddy"):  # unlinked meanwhile
+        run = next((r for r in e["print_runs"] if r["id"] == run_id), None)
+        if not run or not run.get("bambuddy"):  # unlinked meanwhile (a run the link opened is gone)
             raise ValueError(f"{run_id} isn't linked to a Bambuddy print.")
         before = e["status"]
         link = run.pop("bambuddy")
