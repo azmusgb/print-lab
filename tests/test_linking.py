@@ -156,11 +156,12 @@ def test_estimate_clamps_and_tolerates_missing_plan(tmp_path):
     assert run(p)["bambuddy"]["failed_at_estimate"] is None
 
 
-def test_cancelled_is_snapshotted_but_not_a_failure(paths):
+def test_cancelled_returns_to_built_but_is_not_a_failure(paths):
     link_entries(paths, [entry(15, status="cancelled", failure_reason=None)], no_plan)
     r = run(paths)
     assert r["bambuddy"]["status"] == "cancelled" and r["bambuddy"]["snapshot_at"]
-    assert r["failed"] is None and load_experiment(paths, "E-023")["status"] == "printing"
+    assert r["bambuddy"]["minutes"] == 20.0 and r["usage"]["usage_source"] == "bambuddy"
+    assert r["failed"] is None and load_experiment(paths, "E-023")["status"] == "built"
 
 
 def test_started_at_is_utc(paths):
@@ -256,3 +257,92 @@ def test_answered_experiment_status_is_unchanged(tmp_path):
     link_entries(p, [entry(15, status="completed", failure_reason=None)], no_plan)
     e = load_experiment(p, "E-023")
     assert e["status"] == "answered" and e["print_runs"][0]["bambuddy"]["print"] == 15
+
+
+def test_owner_failure_first_still_ends_built(paths):
+    from lab.loop.commands import record_usage
+    record_usage(paths, "PR-023-01", failed_at_pct=30)  # the owner's failure: built
+    link_entries(paths, [entry(15)], lambda _: 3000.0)  # links (printing), then the failed snapshot
+    e = load_experiment(paths, "E-023")
+    assert e["status"] == "built"
+    assert e["print_runs"][0]["failed"] == {"at_fraction": 0.3, "note": None}
+    assert e["print_runs"][0]["bambuddy"]["failed_at_estimate"] == 0.4
+
+
+def test_unlink_removes_the_run_it_opened_and_restores_the_status(tmp_path):
+    p = built_project(tmp_path, "approved")
+    link_entries(p, [entry(15, status="printing", completed_at=None, duration_seconds=None)], no_plan)
+    assert load_experiment(p, "E-023")["status"] == "printing"
+    unlink(p, "PR-023-01")
+    e = load_experiment(p, "E-023")
+    assert e["print_runs"] == [] and e["status"] == "approved"
+    assert ledger.spent(minimal_question("Q-023", ("E-023",)), {"E-023": e}) == {"minutes": 0.0, "g": 0.0}
+
+
+def test_unlink_keeps_an_opened_run_with_the_owners_facts(tmp_path):
+    from lab.loop.commands import save_experiment
+    p = built_project(tmp_path)
+    link_entries(p, [entry(15, status="printing", completed_at=None, duration_seconds=None)], no_plan)
+    e = load_experiment(p, "E-023")
+    e["print_runs"][0]["photos"] = ["photos/PR-023-01.jpg"]
+    save_experiment(p, e)
+    r = unlink(p, "PR-023-01")
+    e = load_experiment(p, "E-023")
+    assert [x["id"] for x in e["print_runs"]] == ["PR-023-01"] and "bambuddy" not in r
+    assert e["status"] == "built"  # the status the link moved goes back: no other run is open
+
+
+def test_unlink_rechecks_the_link_under_the_lock(paths, monkeypatch):
+    from lab.loop import linking
+    link_entries(paths, [entry(15, status="printing", completed_at=None, duration_seconds=None)], no_plan)
+    stale = linking.find_run(paths, "PR-023-01")
+    unlink(paths, "PR-023-01")
+    monkeypatch.setattr(linking, "find_run", lambda *_: stale)  # read before another unlink got there
+    with pytest.raises(ValueError, match="isn't linked"):
+        unlink(paths, "PR-023-01")
+
+
+def test_planned_time_is_asked_outside_the_lock(paths):
+    from lab.records.store import record_lock
+
+    def plan(_archive_id):
+        with record_lock(paths.locks, "E-023", "probe", timeout_s=0.2):
+            return 3000.0
+    link_entries(paths, [entry(15)], plan)
+    assert run(paths)["failed"]["at_fraction"] == 0.4
+
+
+def test_status_change_refreshes_derived_fields(tmp_path, monkeypatch):
+    from lab.loop import linking
+    p = built_project(tmp_path)
+    link_entries(p, [entry(15, status="printing", completed_at=None, duration_seconds=None)], no_plan)
+    calls = []
+    monkeypatch.setattr(linking, "refresh_derived", lambda paths, e: calls.append(e["status"]) or e)
+    link_entries(p, [entry(15)], lambda _: 3000.0)  # failed: printing -> built
+    assert calls == ["built"]
+
+
+def test_already_printing_with_an_open_run_stays_printing(paths):
+    link_entries(paths, [entry(15, status="printing", completed_at=None, duration_seconds=None)], no_plan)
+    e = load_experiment(paths, "E-023")
+    assert e["status"] == "printing" and "prior_status" not in e["print_runs"][0]["bambuddy"]
+
+
+def test_needs_approval_moves_to_printing(tmp_path):
+    p = built_project(tmp_path, "needs_approval")
+    link_entries(p, [entry(15, status="printing", completed_at=None, duration_seconds=None)], no_plan)
+    assert load_experiment(p, "E-023")["status"] == "printing"
+
+
+def test_abandoned_experiment_status_is_unchanged(tmp_path):
+    p = built_project(tmp_path, "abandoned")
+    link_entries(p, [entry(15)], lambda _: 3000.0)
+    assert load_experiment(p, "E-023")["status"] == "abandoned"
+
+
+def test_fixture_durations_agree_with_timestamps():
+    from datetime import datetime
+    for x in LOG:
+        if x["completed_at"]:
+            span = datetime.fromisoformat(x["completed_at"]) - datetime.fromisoformat(x["started_at"])
+            assert abs(span.total_seconds() - x["duration_seconds"]) < 1, x["id"]
