@@ -86,5 +86,59 @@
     "sha256": "8039cf51a1695ef8cb006618cfa7b6a660e35290f93958e25ab7099a45e0746b",
     "source": "downloads",
     "note": "v51 as delivered 20 Oct 2026 00:04 UTC (file saved 19 Oct 20:06 EDT), recovered from ~/dev/_archive/downloads-2026-10-25/hex-tile; unchanged. Plate 2 holds three 6\" pairs; the 20 Oct 6\" print's plate count is not recorded. Settings: X2D 0.4, 0.20mm Standard, Generic PLA, outer 80 mm/s, inner 250, 3 walls, 210/60 C, 10 mm outer brim. SCAD: sources/scad/hex_wall_tile_v51.scad"
+  },
+  {
+    "path": "sources/hexagon_v64_cuttable.stl",
+    "sha256": "2fe8c653cdb6699133869ebd2d0fab9cbfe903c0c4c6e69e7e9463c77f67cef1",
+    "source": "downloads",
+    "note": "v64 6\" pair as delivered (Downloads, 26 Oct 21:08 EDT); unchanged. One body, 24.2 x 152.4 x 132.0 mm, 49012 mm3. No SCAD or 3MF kept."
+  },
+  {
+    "path": "sources/scad/hexagon_v70_reviewed.scad",
+    "sha256": "7420b31e1a93cd75d870de30a7be2af0658787e7b7fb45acef25d5b419a91cf4",
+    "source": "downloads",
+    "note": "v70 SCAD as delivered (Downloads, 27 Oct 00:44 EDT); unchanged. Back-to-back pair 2.0 mm apart, joined by cuttable root+neck tabs (pitch 12 mm) with per-pair layer-event limits; open back ring, top flange omitted. The STL that printed is not kept. Owner, 27 Oct ~05:30 UTC: v70 'worked way better than the slew of recent ones we tried'."
+  },
+  {
+    "path": "sources/hex_tile_v70_process.json",
+    "sha256": "4605a1b76faefb0309dbe17d6faa9cf7e3e9d6873a849fcea0888953404c5db7",
+    "source": "downloads",
+    "note": "v70 process preset as delivered; inherits 0.20mm Standard @BBL X2D, X2D 0.4 nozzle, 0.20 layer, 3 walls, outer wall 80/50 mm/s."
+  },
+  {
+    "path": "sources/hex_tile_v70_filament.json",
+    "sha256": "cd2051d73273568d44f46201aa92dc58bc488017378853ce8514eb65847f7e8e",
+    "source": "downloads",
+    "note": "v70 filament preset as delivered; Kexcelled K5 Matte Terracotta, inherits Bambu PLA Matte @BBL X2D 0.4, 210 C."
+  },
+  {
+    "path": "sources/scad/HEX_TILE_v71.scad",
+    "sha256": "d206383208fd5acf946b7363becd086175504115068f61374abd437e37e412db",
+    "source": "derived",
+    "derived_from": "sources/scad/hexagon_v70_reviewed.scad",
+    "change": "v70 plus six tape lands (30 x 15 mm, one centred on each hex edge) coplanar with the 6 mm back flange",
+    "note": "v71 SCAD as delivered (27 Oct 01:13 EDT); unchanged."
+  },
+  {
+    "path": "sources/HEX_TILE_v71.stl",
+    "sha256": "64cfecae5d5f9b24ac2bfcee3ec1c3a29e0e1fefc018dd6d07106b9c16151fe6",
+    "source": "downloads",
+    "derived_from": "sources/scad/HEX_TILE_v71.scad",
+    "note": "v71 STL as delivered (27 Oct 01:14 EDT); unchanged. 53316 mm3."
+  },
+  {
+    "path": "sources/scad/HEX_TILE_v72.scad",
+    "sha256": "c337c747a8654d3f05ec9347dce7cdb6f6364229f99c4003d10fe738c56804f5",
+    "source": "derived",
+    "derived_from": "sources/scad/HEX_TILE_v71.scad",
+    "change": "v71's six tape lands removed; back flange widened 6 -> 15 mm all round for 1/2 in foam tape; top flange still omitted for upright printing",
+    "note": "v72 SCAD as delivered (27 Oct 01:19 EDT); unchanged."
+  },
+  {
+    "path": "sources/HEX_TILE_v72.stl",
+    "sha256": "2db1354262bc32e405c9bde63279489d782b4fa76e0f3ed8a08b97556c1d26d4",
+    "source": "downloads",
+    "derived_from": "sources/scad/HEX_TILE_v72.scad",
+    "note": "v72 STL as delivered (27 Oct 01:19 EDT); unchanged. 55709 mm3. Owner started printing it ~27 Oct 05:30 UTC, outside the lab's build flow (no experiment record)."
   }
 ]
