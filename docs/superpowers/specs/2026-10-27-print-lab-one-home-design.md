@@ -19,13 +19,14 @@ The Local AI print lab page is where the owner looks, on the phone and in a desk
 Mac. The static `page.html` stops being a second interface.
 
 The owner uses `page.html` today at the Mac while running `lab` commands (27 Oct, option 2). Local AI's page already
-has everything `page.html` has (Needs you with commands to copy, questions, notebook, Earlier, records the Mac can't
-read) plus buttons, live print, camera and photos. Two things are missing:
+has most of what `page.html` has (Needs you with commands to copy, questions, notebook, Earlier, records the Mac can't
+read) plus buttons, live print, camera and photos. Missing:
 
 - **It doesn't update itself.** Every `lab` command already pushes to Local AI in the background, but the open page
   only changes after a reload.
-- **No spool colours.** `page.html` draws each experiment's spool swatch from Bambuddy's colours; `lab sync` doesn't
-  send them.
+- **Things only `page.html` shows** (found comparing the two, 27 Oct): the spool colour (Local AI's sync drops
+  `colours`), a question's plans, each strip's grade, a sweep's finding, AI readings, and the wipe between a test's
+  first photo and its reference's.
 
 **Done means:** after a `lab` command, an open Local AI page shows the result within about 5 seconds without a reload;
 the desktop layout serves at the Mac as `page.html` did (commands to copy, problems, spool colours); `lab page` no
@@ -62,7 +63,21 @@ longer writes a page anyone opens.
   "Can't reach Local AI" until a check succeeds.
 - The existing live-print and camera polling are unchanged.
 
-## 2. Retiring page.html
+## 2. What only page.html shows, on the Local AI page
+
+Same data, same words as `lab/page.py` today (all already in the synced index except colours):
+
+- **Spool colour:** a swatch on each experiment card and its left edge (`--spine`), by print-lab's `spool_colour` rule:
+  the longest colour name found in the filament text wins, only `#rrggbb` values count, neutral `#8698b1` otherwise.
+- **Plans** on a question card: "After {after}, if {if}: {next}", one per plan, under a "Plans" label.
+- **Strip grade** after each variant row: "… · {grade}".
+- **Finding** on a sweep's card: "Finding: {finding}".
+- **AI readings:** "AI reading ({confidence × 100, rounded}% sure[, unconfirmed]): {assessment}", one per observation.
+- **Reference wipe:** when a test names `reference_variants` and the referenced experiment (the id before the last
+  `-`) has photos, its first photo under this test's first photo with a range input (0–100, default 50, labelled
+  "Drag between {ref} and {id}") to move the cut. Photos come from Local AI's photo route, as thumbnails do.
+
+## 3. Retiring page.html
 
 ### print-lab (Mac)
 
@@ -74,14 +89,12 @@ longer writes a page anyone opens.
 - `lab sync` sends `colours` (from `page.json`, or `{}` when there is none) with the index.
 - The HTML builder in `lab/page.py` is deleted (`build` and its HTML/CSS helpers, about 300 of 403 lines).
   `bambuddy_colours`, `spool_colour`, `write` (now page.json only), `refresh`, `cmd_page` and `register` stay.
-- `projects/hex-tile/page.html` is removed from git and `page.html` is added to `.gitignore`.
+- `page.html` is already git-ignored; `write` deletes a stale `page.html` beside `page.json` so an old one can't mislead.
 - Docstrings that say "page.json is what sync pushes" are corrected: sync pushes `build_index` plus colours.
 
 ### Local AI
 
-- `sync()` stores `colours` with the project; the project GET returns it.
-- Experiment cards draw the spool swatch with the same rule as print-lab's `spool_colour`: the longest colour name
-  found in the filament text wins, only `#rrggbb` values are used, neutral `#8698b1` when nothing matches.
+- `sync()` stores `colours` with the project (today it drops them); the project GET returns them.
 - Commands to copy stay visible at desktop width as now (Copy button; "Run it on the Mac instead" where a button
   exists).
 
@@ -92,14 +105,15 @@ longer writes a page anyone opens.
   removed with the builder.
 - **Local AI:** refresh logic: unchanged fingerprint does nothing, changed one re-renders; held while a sheet is open
   and applied on close; scroll, open `<details>` and focus kept; paused while hidden; three failures show "Can't reach
-  Local AI". Swatch matching (longest name, invalid hex ignored, neutral fallback). UI test at 390px and 1440px: a sync
+  Local AI". Swatch matching (longest name, invalid hex ignored, neutral fallback); plans, grades, finding, AI readings and the wipe rendered from a fixture. UI test at 390px and 1440px: a sync
   while the page is open updates it without a reload; axe clean.
 
 ## Delivery
 
-Two PRs, each usable alone:
+Three steps, in order, so the Mac never loses a view:
 
-- **A (print-lab):** colours in sync, `page.html` retired. Safe first: Local AI ignores the extra field until B.
-- **B (Local AI):** quiet auto-refresh and spool swatches. Built on Local AI `main` at the time (after the open
-  print-lab PRs such as Record what happened land, to avoid conflicts in `app/public/print-lab.js`). The owner ships
-  it with `npm run ship`.
+- **A (print-lab):** `lab sync` sends `colours`. Harmless alone: Local AI drops the field until B.
+- **B (Local AI):** stores colours, the section 2 parity items, quiet auto-refresh. Built on Local AI `main` after the
+  open print-lab PR #411 (Record what happened) lands, to avoid conflicts in `app/public/print-lab.js`. The owner
+  ships it with `npm run ship`.
+- **C (print-lab):** retire `page.html`, only after B is live.
