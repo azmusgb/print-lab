@@ -1,0 +1,149 @@
+{
+  "items": [
+    {
+      "id": 26,
+      "archive_id": 26,
+      "print_name": "HEX_TILE_v74_textured",
+      "status": "printing",
+      "started_at": "2026-10-26T14:10:00.000000",
+      "completed_at": null,
+      "duration_seconds": null,
+      "filament_used_grams": null,
+      "cost": null,
+      "failure_reason": null
+    },
+    {
+      "id": 25,
+      "archive_id": 25,
+      "print_name": "HEX_TILE_v74_textured",
+      "status": "completed",
+      "started_at": "2026-10-26T08:10:00.000000",
+      "completed_at": "2026-10-26T11:40:00.000000",
+      "duration_seconds": 12600,
+      "filament_used_grams": 61.5,
+      "cost": null,
+      "failure_reason": null
+    },
+    {
+      "id": 24,
+      "archive_id": 24,
+      "print_name": "HEX_TILE_v74_textured",
+      "status": "completed",
+      "started_at": "2026-10-25T14:10:00.000000",
+      "completed_at": "2026-10-25T17:40:00.000000",
+      "duration_seconds": 12600,
+      "filament_used_grams": 61.5,
+      "cost": null,
+      "failure_reason": null
+    },
+    {
+      "id": 23,
+      "archive_id": 23,
+      "print_name": "HEX_TILE_v72_strip26",
+      "status": "completed",
+      "started_at": "2026-10-25T08:10:00.000000",
+      "completed_at": "2026-10-25T11:40:00.000000",
+      "duration_seconds": 12600,
+      "filament_used_grams": 61.5,
+      "cost": null,
+      "failure_reason": null
+    },
+    {
+      "id": 22,
+      "archive_id": 22,
+      "print_name": "HEX_TILE_v74_textured",
+      "status": "completed",
+      "started_at": "2026-10-24T14:10:00.000000",
+      "completed_at": "2026-10-24T17:40:00.000000",
+      "duration_seconds": 12600,
+      "filament_used_grams": 61.5,
+      "cost": null,
+      "failure_reason": null
+    },
+    {
+      "id": 21,
+      "archive_id": 21,
+      "print_name": "hexagon_v62r_X2D_0.6nozzle",
+      "status": "completed",
+      "started_at": "2026-10-24T08:10:00.000000",
+      "completed_at": "2026-10-24T11:40:00.000000",
+      "duration_seconds": 12600,
+      "filament_used_grams": 61.5,
+      "cost": null,
+      "failure_reason": null
+    },
+    {
+      "id": 20,
+      "archive_id": 20,
+      "print_name": "HEX_TILE_v74_textured",
+      "status": "cancelled",
+      "started_at": "2026-10-23T14:10:00.000000",
+      "completed_at": "2026-10-23T17:40:00.000000",
+      "duration_seconds": 900,
+      "filament_used_grams": 6.1,
+      "cost": null,
+      "failure_reason": null
+    },
+    {
+      "id": 19,
+      "archive_id": 19,
+      "print_name": "HEX_TILE_v73_textured",
+      "status": "completed",
+      "started_at": "2026-10-23T08:10:00.000000",
+      "completed_at": "2026-10-23T11:40:00.000000",
+      "duration_seconds": 12600,
+      "filament_used_grams": 61.5,
+      "cost": null,
+      "failure_reason": null
+    },
+    {
+      "id": 18,
+      "archive_id": 18,
+      "print_name": "HEX_TILE_v73_cool_plate",
+      "status": "completed",
+      "started_at": "2026-10-22T14:10:00.000000",
+      "completed_at": "2026-10-22T17:40:00.000000",
+      "duration_seconds": 12600,
+      "filament_used_grams": 61.5,
+      "cost": null,
+      "failure_reason": null
+    },
+    {
+      "id": 17,
+      "archive_id": 17,
+      "print_name": "HEX_TILE_v73_textured",
+      "status": "completed",
+      "started_at": "2026-10-22T08:10:00.000000",
+      "completed_at": "2026-10-22T11:40:00.000000",
+      "duration_seconds": 12600,
+      "filament_used_grams": 61.5,
+      "cost": null,
+      "failure_reason": null
+    },
+    {
+      "id": 16,
+      "archive_id": 16,
+      "print_name": "hex-tile_E-024_BLD-024-01",
+      "status": "completed",
+      "started_at": "2026-10-21T09:15:03.551207",
+      "completed_at": "2026-10-21T10:01:40.102934",
+      "duration_seconds": 2797,
+      "filament_used_grams": 14.2,
+      "cost": null,
+      "failure_reason": null
+    },
+    {
+      "id": 15,
+      "archive_id": 15,
+      "print_name": "hex-tile_E-023_BLD-023-01",
+      "status": "failed",
+      "started_at": "2026-10-20T14:02:11.204518",
+      "completed_at": "2026-10-20T14:22:11.913020",
+      "duration_seconds": 1200,
+      "filament_used_grams": 8.4,
+      "cost": null,
+      "failure_reason": "Spaghetti detected"
+    }
+  ],
+  "total": 12
+}

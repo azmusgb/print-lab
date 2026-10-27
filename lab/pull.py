@@ -269,7 +269,7 @@ def check_active_print(paths: ProjectPaths, base: str | None = None, timeout: fl
 
     last_run = runs[-1]
     usage = last_run.get("usage")
-    if usage and usage.get("usage_source") in ("telemetry", "manual", "printer_log", "finished_unknown"):
+    if usage and usage.get("usage_source") in ("telemetry", "manual", "printer_log", "finished_unknown", "bambuddy"):
         return None
 
     try:

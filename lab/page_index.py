@@ -90,7 +90,7 @@ def _due_at(e: dict) -> str | None:
     return (datetime.fromisoformat(r["started_at"]) + timedelta(minutes=float(est))).isoformat(timespec="seconds")
 
 
-OBSERVED = ("telemetry", "manual", "printer_log")
+OBSERVED = ("telemetry", "manual", "printer_log", "bambuddy")
 
 
 def _source(sources: set[str]) -> str:
