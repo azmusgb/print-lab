@@ -79,6 +79,11 @@ def test_promotion_needs_an_owner_review_and_an_existing_checker(tmp_path):
     review_case(paths, "CASE-001", level="reproduced", reason="owner")
     res = promote_case_to_rule(paths, "CASE-001", reason="owner endorses the 1.0 mm gap rule")
     assert res["status"] == "promoted" and res["rule_file"] == "lab/checks/part_gap.py"
+    assert not res["already_promoted"]
+    again = promote_case_to_rule(paths, "CASE-001", reason="a second reason")
+    assert again["already_promoted"] and again["promoted_at"] == res["promoted_at"]
+    from lab.loop.cases import load_cases
+    assert next(c for c in load_cases(paths) if c["id"] == "CASE-001")["promotion_reason"] == "owner endorses the 1.0 mm gap rule"
 
 
 def test_a_rule_check_reports_coverage_not_precision(tmp_path):

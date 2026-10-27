@@ -75,12 +75,12 @@ def test_cases_cli(capsys, real_project_copy):
     rc = main(["case", "review", "CASE-001", "--level", "reproduced", "--reason", "E-008 and E-012 fused"])
     assert rc == 0
     capsys.readouterr()
+    before = (real_project_copy / "cases" / "CASE-001.json").read_text()
     rc = main(["case", "promote", "CASE-001", "--reason", "owner endorses"])
     assert rc == 0
     out = capsys.readouterr().out
-    assert "✓ Promoted CASE-001 to active rule" in out
-    assert "minimum_back_gap" in out
-    assert "promoted" in (real_project_copy / "cases" / "CASE-001.json").read_text()
+    assert "CASE-001 was already promoted to 'minimum_back_gap'" in out  # the real CASE-001 was promoted on 26 Oct
+    assert (real_project_copy / "cases" / "CASE-001.json").read_text() == before  # first endorsement's time and reason kept
 
 
 def test_promote_refuses_candidate(tmp_path):

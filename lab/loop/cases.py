@@ -278,16 +278,19 @@ def promote_case_to_rule(paths: ProjectPaths, case_id: str, *, reason: str) -> d
     if not target_file or not (repo / target_file).exists():
         raise ValueError(f"No checker exists for the rule '{prop['rule_name']}'; write and test it before promoting.")
 
-    c["status"] = "promoted"
-    c["promotion_reason"] = reason.strip()
-    c["promoted_at"] = now()
-    c["promoted_rule"] = prop["rule_name"]
-    c["target_file"] = target_file
-
-    cdir = cases_dir(paths)
-    atomic_write_json(cdir / f"{c['id']}.json", c)
+    # Promoting again keeps the first endorsement: its time and reason are the record of when the owner endorsed it.
+    already = c.get("status") == "promoted" and c.get("promoted_rule") == prop["rule_name"]
+    if not already:
+        c["status"] = "promoted"
+        c["promotion_reason"] = reason.strip()
+        c["promoted_at"] = now()
+        c["promoted_rule"] = prop["rule_name"]
+        c["target_file"] = target_file
+        atomic_write_json(cases_dir(paths) / f"{c['id']}.json", c)
 
     return {
+        "already_promoted": already,
+        "promoted_at": c["promoted_at"],
         "case_id": case_id,
         "rule_name": prop["rule_name"],
         "confidence": c["confidence"],

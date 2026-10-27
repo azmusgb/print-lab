@@ -207,6 +207,8 @@ def cmd_case(args) -> int:
         res = promote_case_to_rule(paths, args.id, reason=args.reason or "")
         if args.json:
             print(json.dumps(res, indent=2))
+        elif res["already_promoted"]:
+            print(f"{res['case_id']} was already promoted to '{res['rule_name']}' at {res['promoted_at']}; nothing changed.")
         else:
             print(f"✓ Promoted {res['case_id']} to active rule '{res['rule_name']}':")
             print(f"  Confidence: {res['confidence']} (Level {res['ladder_step']} of 5)")
