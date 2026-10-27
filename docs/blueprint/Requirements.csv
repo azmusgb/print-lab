@@ -1,0 +1,35 @@
+ID,Priority,Requirement,Acceptance criterion
+R-01,P0,Explicit test project root,Tests fail before a write if destination is outside the temporary project; no default real-project CLI calls.
+R-02,P0,Source-preserving observations,"Every observation has source type, author, specimen/run IDs, recorded time and revision."
+R-03,P0,Unknown is first-class,Missing lighting/nozzle/time/grade remains null or unknown; no diagnostic or clean defaults.
+R-04,P0,Claims separate from observations,AI cannot save an interpretation into an owner-observation field.
+R-05,P0,Evidence-based claim transitions,Counts alone cannot promote a claim; contradictory or mismatched evidence requires review.
+R-06,P0,Immutable approved artifact,Dispatch and telemetry cannot modify a frozen archive; any changed bytes create a different artifact.
+R-07,P0,Approval scoped to digest and exceptions,"New build, criteria revision or unresolved hard block invalidates eligibility; only explicitly listed exceptions are covered."
+R-08,P0,Idempotent request application,Crash/retry at every boundary produces one logical mutation and the same receipt.
+R-09,P0,Explicit verdict submission,No prefilled clean/yes outcome; incomplete answers are rejected with field-specific messages.
+R-10,P1,Independent provenance fields,Imported prospective experiments retain both origin=imported and planning=prospective.
+R-11,P1,Run-bound presentation,Current run displays its build/configuration rather than the experiment's newest build.
+R-12,P1,Realized-factor verification,A requested factor has declared capability evidence and measurable realized delta or fails check.
+R-13,P1,Representative test contract,"Every test states preserved conditions, changes, answerable question and transfer limits."
+R-14,P1,Run identity ladder,"Exact bytes, content-equivalent, owner-confirmed and unknown are distinct statuses."
+R-15,P1,Separate physical state,Completion never follows only from elapsed estimate; starting sender never starts a run.
+R-16,P1,Field-level quantity provenance,Minutes and grams each have value/unit/source/precision; one manual quantity does not relabel the other.
+R-17,P1,Reservations and budgets,"Observed, estimated terminal, reserved and proposed amounts are separately shown and summed once."
+R-18,P1,Event timestamp integrity,Store UTC offset/instant and display local zone; occurred_at may be unknown independently of recorded_at.
+R-19,P1,Specimen identity,Every grade/photo references a physical specimen or explicitly says unidentified.
+R-20,P1,Separate acceptance dimensions,"Face, separation, damage, mounting and overall decision can disagree without overwriting each other."
+R-21,P1,Corrections remain auditable,"Old values retained, new revision points to predecessor, reason and affected claims visible."
+R-22,P1,Historical reconciliation,Conflicting summaries remain visible until linked original evidence supports a resolution.
+R-23,P1,Baseline package,"Reproducible recipe includes geometry, resolved settings, sliced bytes, tool versions and scope."
+R-24,P1,Preset export round trip,Import + reference slice comparison passes before export is labelled validated.
+R-25,P1,Durable phone drafts,Failed upload or stale revision preserves user's draft and already-uploaded attachments.
+R-26,P1,Request status clarity,Pending/applied/rejected/conflict displayed with authoritative receipt and last worker heartbeat.
+R-27,P1,Deterministic projection,CLI and UI consume the same domain projection and meaning of every total/state.
+R-28,P1,Controlled automatic stops,"Distinguish budget, owner stop, integrity block and review-needed; useful failures are not automatically worthless."
+R-29,P1,Accessible interaction,"Keyboard paths, focus restoration, semantic inputs, labels, errors, contrast and reduced motion pass the validation matrix."
+R-30,P1,Backup and restore,"Restore records, original photos, artifacts and receipts into an isolated project and verify hashes."
+R-31,P2,Prior-attempt retrieval,Planner searches structure/material/nozzle/layout/purpose and shows similarity limitations.
+R-32,P2,Rule evaluation,Executable rule evaluated against labelled positive and negative cases; coverage is not called precision.
+R-33,P2,Production usefulness,Report usable yield and total labor/material per accepted tile with uncertainty.
+R-34,P2,Optional telemetry,Missing camera or cloud-only control does not block manual observation workflows.

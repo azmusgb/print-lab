@@ -1,0 +1,1715 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc 3.12.1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Print Lab — Product and Engineering Blueprint</title>
+  <style>
+
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+  <style type="text/css">@page{size:A4;margin:17mm 16mm 18mm}*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;color:#172337;max-width:1040px;margin:50px auto;line-height:1.55;font-size:15px;padding:0 32px}h1{font-size:58px;letter-spacing:-2px;margin:0;color:#102d4b;border-top:9px solid #3b92e5;padding-top:30px}h2{font-size:27px;letter-spacing:-.6px;color:#163c62;margin-top:46px;border-bottom:1px solid #ccd8e5;padding-bottom:10px}h3{font-size:19px;color:#24577c;margin-top:28px}p,li{orphans:3;widows:3}a{color:#136da9;text-decoration:none}table{border-collapse:collapse;width:100%;font-size:12px;margin:20px 0;table-layout:auto}th{text-align:left;background:#173956;color:white;font-weight:600}td,th{padding:9px 10px;border-bottom:1px solid #dce4eb;vertical-align:top}tr:nth-child(even) td{background:#f0f5f8}td:first-child{font-weight:600}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#eff4f8;border-left:3px solid #3b92e5;padding:16px;font-size:11px}code{font-size:.9em;overflow-wrap:anywhere}nav{background:#f0f5f8;padding:24px;margin:35px 0}nav ul{list-style:none;padding-left:0}nav ul ul{display:none}nav li{margin:4px 0}blockquote{border-left:4px solid #3b92e5;padding:0 20px;color:#435a70}header{display:none}@media print{body{font-size:10pt;max-width:none;margin:0;padding:0;line-height:1.4}h1{font-size:44pt}h2{font-size:20pt;break-before:page;margin-top:0}h1+h2{break-before:auto;font-size:22pt;margin-top:20px}h3{font-size:13pt;break-after:avoid}table{font-size:8pt}td,th{padding:6px}tr{break-inside:avoid}thead{display:table-header-group}pre{font-size:8pt;break-inside:avoid}nav{break-after:page;font-size:9pt}nav h2{break-before:auto}a{color:#163c62}p{margin:8px 0}}
+</style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Print Lab — Product and Engineering Blueprint</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#print-lab" id="toc-print-lab">Print Lab</a>
+<ul>
+<li><a href="#product-requirements-system-design-evidence-recovery-and-delivery-blueprint" id="toc-product-requirements-system-design-evidence-recovery-and-delivery-blueprint">Product
+requirements, system design, evidence recovery and delivery
+blueprint</a></li>
+<li><a href="#executive-decision" id="toc-executive-decision">1.
+Executive decision</a></li>
+<li><a href="#evidence-basis-and-current-implementation" id="toc-evidence-basis-and-current-implementation">2. Evidence basis and
+current implementation</a></li>
+<li><a href="#scope-ownership-and-non-goals" id="toc-scope-ownership-and-non-goals">3. Scope, ownership and
+non-goals</a></li>
+<li><a href="#user-journeys" id="toc-user-journeys">4. User
+journeys</a></li>
+<li><a href="#functional-requirements-and-acceptance-criteria" id="toc-functional-requirements-and-acceptance-criteria">5. Functional
+requirements and acceptance criteria</a></li>
+<li><a href="#domain-model-and-evidence-contract" id="toc-domain-model-and-evidence-contract">6. Domain model and evidence
+contract</a></li>
+<li><a href="#state-machines-and-lifecycle" id="toc-state-machines-and-lifecycle">7. State machines and
+lifecycle</a></li>
+<li><a href="#target-architecture" id="toc-target-architecture">8.
+Target architecture</a></li>
+<li><a href="#artifact-identity-and-verification" id="toc-artifact-identity-and-verification">9. Artifact identity and
+verification</a></li>
+<li><a href="#transportapi-contract" id="toc-transportapi-contract">10.
+Transport/API contract</a></li>
+<li><a href="#budget-and-time-semantics" id="toc-budget-and-time-semantics">11. Budget and time
+semantics</a></li>
+<li><a href="#experimental-design-and-tile-recovery" id="toc-experimental-design-and-tile-recovery">12. Experimental design
+and tile recovery</a></li>
+<li><a href="#ux-and-information-architecture" id="toc-ux-and-information-architecture">13. UX and information
+architecture</a></li>
+<li><a href="#visual-design-and-figma-handoff" id="toc-visual-design-and-figma-handoff">14. Visual design and Figma
+handoff</a></li>
+<li><a href="#accessibility-responsiveness-and-interaction-contract" id="toc-accessibility-responsiveness-and-interaction-contract">15.
+Accessibility, responsiveness and interaction contract</a></li>
+<li><a href="#reliability-performance-privacy-and-operations" id="toc-reliability-performance-privacy-and-operations">16. Reliability,
+performance, privacy and operations</a></li>
+<li><a href="#migration-and-rollback" id="toc-migration-and-rollback">17. Migration and rollback</a></li>
+<li><a href="#verification-and-traceability" id="toc-verification-and-traceability">18. Verification and
+traceability</a></li>
+<li><a href="#delivery-plan" id="toc-delivery-plan">19. Delivery
+plan</a></li>
+<li><a href="#risks-decisions-and-release-gate" id="toc-risks-decisions-and-release-gate">20. Risks, decisions and
+release gate</a></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="print-lab">Print Lab</h1>
+<h2 id="product-requirements-system-design-evidence-recovery-and-delivery-blueprint">Product
+requirements, system design, evidence recovery and delivery
+blueprint</h2>
+<p><strong>Prepared for Bill • 26 October 2026 • Design proposal
+v1.0</strong></p>
+<p><strong>Mission:</strong> turn a physical printing problem into a
+traceable observation, a defensible next decision, and a repeatable
+usable part.</p>
+<p><strong>Figma:</strong>
+https://www.figma.com/design/ZDNyoPD0ZQRLEWw6NtmFPi</p>
+<p>This is a specification for an incremental improvement of the
+existing project, not a claim that the proposed capabilities have been
+implemented. Figma examples are explicitly illustrative. No printer
+settings, experimental observations, production records or repository
+code were changed to prepare this document.</p>
+<h2 id="executive-decision">1. Executive decision</h2>
+<p>Keep the current Python engine, Bambu Studio adapter, Mac-owned JSON
+records and Local AI phone interface. Stabilize their boundaries and
+evidence semantics before adding more automation. The next release
+should earn trust in four ways:</p>
+<ol type="1">
+<li>Tests cannot touch real experiments.</li>
+<li>Every claim links to observations and remains scoped to its
+evidence.</li>
+<li>Approval, dispatch, printer execution and physical acceptance are
+distinct.</li>
+<li>The phone shows what is known, what is uncertain and the one useful
+next action.</li>
+</ol>
+<p>The hex-tile recovery is the first acceptance case. It must recover
+earlier successes, reproduce a reference and improve separation without
+losing face quality. It must not assume v51, ribs, tacks, a nozzle size
+or a chamber-control theory is already the answer.</p>
+<h3 id="outcomes-and-measures">Outcomes and measures</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Outcome</th>
+<th>Measure</th>
+<th>Release expectation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Safe development</td>
+<td>Writes outside test project roots</td>
+<td>Zero during automated tests</td>
+</tr>
+<tr>
+<td>Trustworthy interpretation</td>
+<td>Claims without cited observation revisions</td>
+<td>Zero promoted claims</td>
+</tr>
+<tr>
+<td>Reliable physical identity</td>
+<td>Run identity status visible</td>
+<td>Every run: verified, owner-confirmed or unknown</td>
+</tr>
+<tr>
+<td>Lower operational burden</td>
+<td>Phone observation submission</td>
+<td>One guided flow; no terminal command required</td>
+</tr>
+<tr>
+<td>Useful history</td>
+<td>Previous relevant attempts retrieved</td>
+<td>Reference set accessible before planning</td>
+</tr>
+<tr>
+<td>Repeatable tile</td>
+<td>Full pairs passing declared criteria</td>
+<td>Initial gate: three independent runs; limited to tested
+conditions</td>
+</tr>
+<tr>
+<td>Useful cost</td>
+<td>Minutes/material/cleanup per accepted tile</td>
+<td>Report source and uncertainty; do not silently substitute zero</td>
+</tr>
+</tbody>
+</table>
+<p>Three runs are an initial engineering gate, not statistical proof of
+production reliability. Increase sampling for the intended volume,
+material lots and size variants.</p>
+<h2 id="evidence-basis-and-current-implementation">2. Evidence basis and
+current implementation</h2>
+<h3 id="inspection-scope">Inspection scope</h3>
+<p>Read the supplied 15,596-line transcript, then inspected selected
+current source in <code>/Users/billrahe/dev/print-lab</code> and the
+existing Local AI stylesheet conventions. Source snapshot HEAD:
+<code>9ebe53687c82a58893a300daf110c1245bc5ddcb</code>. The working tree
+contains uncommitted changes; HEAD alone does not identify all inspected
+bytes. The accompanying source manifest records hashes of the inspected
+files. No test suite was run because a test visibly invokes a
+production-targeting command.</p>
+<p>This is static code inspection, not a runtime certification, complete
+security audit, or independent examination of the historical specimens.
+LocalAI release status and printer telemetry were not verified in this
+task.</p>
+<h3 id="code-backed-findings">Code-backed findings</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Source / symbol</th>
+<th>Finding</th>
+<th>Consequence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>F-01</td>
+<td><code>tests/test_cases.py:test_cases_cli</code></td>
+<td>Calls default <code>main([&quot;case&quot;, &quot;promote&quot;, &quot;CASE-001&quot;])</code>
+without a temporary project.</td>
+<td>A test can mutate the real case record. Isolate before suite
+execution.</td>
+</tr>
+<tr>
+<td>F-02</td>
+<td><code>lab/loop/cases.py:evaluate_confidence</code></td>
+<td>Confidence increases with answered-record count; two answers plus
+any full/scaled part and diagnostic lighting can become
+<code>proven_for_part</code>.</td>
+<td>Does not establish that observations support the claim, are
+independent, or even agree.</td>
+</tr>
+<tr>
+<td>F-03</td>
+<td><code>lab/loop/cases.py:generate_cases_from_experiments</code></td>
+<td>Hardcodes a 0.6 mm nozzle / 0.75 mm fusion claim and a wall-speed
+ratio claim against named experiment IDs.</td>
+<td>Claims require re-evaluation against actual settings and
+observations; do not activate automatically.</td>
+</tr>
+<tr>
+<td>F-04</td>
+<td><code>lab/loop/cases.py:check_rule_against_history</code></td>
+<td>Flags versions &gt;=42 and describes them as prevented fusion
+failures.</td>
+<td>Version-number coverage is not validated predictive precision.</td>
+</tr>
+<tr>
+<td>F-05</td>
+<td><code>lab/loop/cases.py:promote_case_to_rule</code></td>
+<td>Writes promoted status and a target-file name.</td>
+<td>A promotion record is not proof an executable checker was
+implemented or validated.</td>
+</tr>
+<tr>
+<td>F-06</td>
+<td><code>lab/records/schema.py</code></td>
+<td><code>prospective</code>, <code>migrated</code>,
+<code>post_hoc</code> are mutually exclusive provenance values.</td>
+<td>Import origin and planning timing cannot be accurately represented
+independently.</td>
+</tr>
+<tr>
+<td>F-07</td>
+<td><code>lab/loop/ledger.py:run_usage</code>, <code>spent</code>;
+<code>lab/page_index.py:_usage</code></td>
+<td>Ledger counts all started runs with fallback estimates; page omits a
+currently running run from displayed usage.</td>
+<td>Shared code does not guarantee identical displayed concepts.
+Explicit observed/reserved/projected fields are needed.</td>
+</tr>
+<tr>
+<td>F-08</td>
+<td><code>lab/page_index.py:_due_at</code>, <code>_variants</code></td>
+<td>Projection uses the latest successful build for some presentation
+fields.</td>
+<td>A run-bound view should resolve its own build, even after a later
+rebuild.</td>
+</tr>
+<tr>
+<td>F-09</td>
+<td><code>lab/loop/send.py:send</code></td>
+<td>Tags the sliced archive after checking and silently ignores tagging
+exceptions.</td>
+<td>Approved-byte identity can change during dispatch; failure may be
+hidden.</td>
+</tr>
+<tr>
+<td>F-10</td>
+<td><code>lab/loop/verify.py:verify_artifact</code></td>
+<td>Candidate can match a fresh hash of the current on-disk sliced
+file.</td>
+<td>Exact equality to mutable current bytes alone does not establish
+equality to approved bytes.</td>
+</tr>
+<tr>
+<td>F-11</td>
+<td><code>lab/pull.py:apply_pending</code></td>
+<td>Applies mutation, then appends handled request ID and acknowledges
+remotely.</td>
+<td>Crash after mutation but before durable deduplication can cause
+retry ambiguity.</td>
+</tr>
+<tr>
+<td>F-12</td>
+<td><code>lab/pull.py:apply_pending</code></td>
+<td>Missing verdict lighting defaults to diagnostic.</td>
+<td>Missing user evidence is filled with an affirmative assumption.</td>
+</tr>
+</tbody>
+</table>
+<p>The existing canonical-content hash explicitly ignores selected lab
+metadata. Preserve this useful concept, but version the normalization
+policy and distinguish it from exact-byte identity. Static inspection
+does not establish that every exploit or failure above is reachable in
+every deployed environment.</p>
+<h3 id="transcript-derived-issues-requiring-reconciliation">Transcript-derived
+issues requiring reconciliation</h3>
+<p>v51 is described both as separating with clean faces and as part of a
+history in which only early tabs separated successfully. E-012’s
+unprinted/failed specimen was initially swept into separation
+conclusions. E-020’s good faces coexist with very difficult separation
+and backing damage. E-021/022 demonstrate reported ridges under repeat
+conditions, not an established root cause. Reconstructed presets were
+not import-validated in the transcript.</p>
+<h2 id="scope-ownership-and-non-goals">3. Scope, ownership and
+non-goals</h2>
+<h3 id="in-scope">In scope</h3>
+<ul>
+<li>Test and record isolation; transactional command handling; schema
+migration.</li>
+<li>Observation, interpretation, claim, acceptance and correction
+workflows.</li>
+<li>Artifact manifests, dispatch receipts, identity matching and usage
+accounting.</li>
+<li>Historical recovery, reference recipes and representative test
+plans.</li>
+<li>Desktop evidence workspace and phone operations/judging.</li>
+<li>Accessible states, request receipts and recovery from
+offline/conflicting edits.</li>
+<li>Validated preset export and repeatable full-pair acceptance.</li>
+</ul>
+<h3 id="outside-this-release">Outside this release</h3>
+<ul>
+<li>Autonomous remote print start, unattended geometry changes or
+firmware modification.</li>
+<li>A new slicer, CAD kernel migration, speculative FEA or universal
+print-quality predictor.</li>
+<li>LLM weight training, broad agents marketplace integration or a new
+dashboard framework.</li>
+<li>Replacing Local AI authentication or migrating authority to the
+PC.</li>
+<li>Automatically deciding a physical specimen is accepted from an
+image.</li>
+<li>Claiming that success at one tile size proves the other sizes.</li>
+</ul>
+<h3 id="responsibilities">Responsibilities</h3>
+<p>Bill owns product acceptance, physical observations and explicit
+budget exceptions. The application owns deterministic validation,
+immutable artifacts and state transitions. AI proposes interpretations
+and tests, preserves source attribution, and may draft changes; it does
+not manufacture observations. Printer adapters report only capabilities
+and telemetry actually available.</p>
+<p>One implementation owner per branch and experiment. Parallel work
+uses separate worktrees and declared files. Never clean, reset or
+overwrite the existing dirty tree as part of starting this plan.</p>
+<h2 id="user-journeys">4. User journeys</h2>
+<h3 id="j1-recover-an-earlier-success">J1 — Recover an earlier
+success</h3>
+<p>Open History → select v51 → see original report and conflicting
+summaries → attach matching source/artifact/photo → mark identity
+confidence → create a correction → choose whether it is eligible as a
+reference. If source files are missing, retain the useful observation
+with an explicit reconstruction warning.</p>
+<h3 id="j2-plan-a-useful-test">J2 — Plan a useful test</h3>
+<p>Choose a question and purpose → review relevant attempts → select
+reference → state controlled conditions, dependent adjustments and
+confounders → choose representative specimen → define observations and
+decision branches → build → inspect realized changes → approve only
+exceptions that are actually needed.</p>
+<h3 id="j3-print-the-approved-artifact">J3 — Print the approved
+artifact</h3>
+<p>Inspect frozen build → open sender → user chooses actual
+printer/filament mapping and starts → record owner confirmation → match
+job if available → show last-seen status → completion confirmed or
+remains unknown. Opening the app never means printing began.</p>
+<h3 id="j4-judge-beside-the-printer">J4 — Judge beside the printer</h3>
+<p>Open current run → identify each specimen → capture/attach photos →
+report appearance, separation and damage independently → select viewing
+conditions → submit. With the Mac offline, the request remains pending.
+The user sees an applied receipt only after authoritative commit.</p>
+<h3 id="j5-correct-an-observation-or-interpretation">J5 — Correct an
+observation or interpretation</h3>
+<p>Open evidence → select correction → enter reason → preview affected
+claims and decisions → commit a superseding revision. Preserve original
+text and attachments. Dependent claims become review-required rather
+than silently remaining validated.</p>
+<h3 id="j6-establish-a-production-recipe">J6 — Establish a production
+recipe</h3>
+<p>Select accepted full-pair runs → verify artifact/configuration scope
+→ assess mounting and cleanup → declare size/material/nozzle conditions
+→ record repeatability evidence → release a reference recipe. A deadline
+exception remains distinct from production validation.</p>
+<h2 id="functional-requirements-and-acceptance-criteria">5. Functional
+requirements and acceptance criteria</h2>
+<p>Priority P0 protects evidence; P1 completes reliable daily operation;
+P2 improves efficiency after the core works.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>ID</th>
+<th>Priority</th>
+<th>Requirement</th>
+<th>Acceptance criterion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R-01</td>
+<td>P0</td>
+<td>Explicit test project root</td>
+<td>Tests fail before a write if destination is outside the temporary
+project; no default real-project CLI calls.</td>
+</tr>
+<tr>
+<td>R-02</td>
+<td>P0</td>
+<td>Source-preserving observations</td>
+<td>Every observation has source type, author, specimen/run IDs,
+recorded time and revision.</td>
+</tr>
+<tr>
+<td>R-03</td>
+<td>P0</td>
+<td>Unknown is first-class</td>
+<td>Missing lighting/nozzle/time/grade remains null or unknown; no
+diagnostic or clean defaults.</td>
+</tr>
+<tr>
+<td>R-04</td>
+<td>P0</td>
+<td>Claims separate from observations</td>
+<td>AI cannot save an interpretation into an owner-observation
+field.</td>
+</tr>
+<tr>
+<td>R-05</td>
+<td>P0</td>
+<td>Evidence-based claim transitions</td>
+<td>Counts alone cannot promote a claim; contradictory or mismatched
+evidence requires review.</td>
+</tr>
+<tr>
+<td>R-06</td>
+<td>P0</td>
+<td>Immutable approved artifact</td>
+<td>Dispatch and telemetry cannot modify a frozen archive; any changed
+bytes create a different artifact.</td>
+</tr>
+<tr>
+<td>R-07</td>
+<td>P0</td>
+<td>Approval scoped to digest and exceptions</td>
+<td>New build, criteria revision or unresolved hard block invalidates
+eligibility; only explicitly listed exceptions are covered.</td>
+</tr>
+<tr>
+<td>R-08</td>
+<td>P0</td>
+<td>Idempotent request application</td>
+<td>Crash/retry at every boundary produces one logical mutation and the
+same receipt.</td>
+</tr>
+<tr>
+<td>R-09</td>
+<td>P0</td>
+<td>Explicit verdict submission</td>
+<td>No prefilled clean/yes outcome; incomplete answers are rejected with
+field-specific messages.</td>
+</tr>
+<tr>
+<td>R-10</td>
+<td>P1</td>
+<td>Independent provenance fields</td>
+<td>Imported prospective experiments retain both origin=imported and
+planning=prospective.</td>
+</tr>
+<tr>
+<td>R-11</td>
+<td>P1</td>
+<td>Run-bound presentation</td>
+<td>Current run displays its build/configuration rather than the
+experiment’s newest build.</td>
+</tr>
+<tr>
+<td>R-12</td>
+<td>P1</td>
+<td>Realized-factor verification</td>
+<td>A requested factor has declared capability evidence and measurable
+realized delta or fails check.</td>
+</tr>
+<tr>
+<td>R-13</td>
+<td>P1</td>
+<td>Representative test contract</td>
+<td>Every test states preserved conditions, changes, answerable question
+and transfer limits.</td>
+</tr>
+<tr>
+<td>R-14</td>
+<td>P1</td>
+<td>Run identity ladder</td>
+<td>Exact bytes, content-equivalent, owner-confirmed and unknown are
+distinct statuses.</td>
+</tr>
+<tr>
+<td>R-15</td>
+<td>P1</td>
+<td>Separate physical state</td>
+<td>Completion never follows only from elapsed estimate; starting sender
+never starts a run.</td>
+</tr>
+<tr>
+<td>R-16</td>
+<td>P1</td>
+<td>Field-level quantity provenance</td>
+<td>Minutes and grams each have value/unit/source/precision; one manual
+quantity does not relabel the other.</td>
+</tr>
+<tr>
+<td>R-17</td>
+<td>P1</td>
+<td>Reservations and budgets</td>
+<td>Observed, estimated terminal, reserved and proposed amounts are
+separately shown and summed once.</td>
+</tr>
+<tr>
+<td>R-18</td>
+<td>P1</td>
+<td>Event timestamp integrity</td>
+<td>Store UTC offset/instant and display local zone; occurred_at may be
+unknown independently of recorded_at.</td>
+</tr>
+<tr>
+<td>R-19</td>
+<td>P1</td>
+<td>Specimen identity</td>
+<td>Every grade/photo references a physical specimen or explicitly says
+unidentified.</td>
+</tr>
+<tr>
+<td>R-20</td>
+<td>P1</td>
+<td>Separate acceptance dimensions</td>
+<td>Face, separation, damage, mounting and overall decision can disagree
+without overwriting each other.</td>
+</tr>
+<tr>
+<td>R-21</td>
+<td>P1</td>
+<td>Corrections remain auditable</td>
+<td>Old values retained, new revision points to predecessor, reason and
+affected claims visible.</td>
+</tr>
+<tr>
+<td>R-22</td>
+<td>P1</td>
+<td>Historical reconciliation</td>
+<td>Conflicting summaries remain visible until linked original evidence
+supports a resolution.</td>
+</tr>
+<tr>
+<td>R-23</td>
+<td>P1</td>
+<td>Baseline package</td>
+<td>Reproducible recipe includes geometry, resolved settings, sliced
+bytes, tool versions and scope.</td>
+</tr>
+<tr>
+<td>R-24</td>
+<td>P1</td>
+<td>Preset export round trip</td>
+<td>Import + reference slice comparison passes before export is labelled
+validated.</td>
+</tr>
+<tr>
+<td>R-25</td>
+<td>P1</td>
+<td>Durable phone drafts</td>
+<td>Failed upload or stale revision preserves user’s draft and
+already-uploaded attachments.</td>
+</tr>
+<tr>
+<td>R-26</td>
+<td>P1</td>
+<td>Request status clarity</td>
+<td>Pending/applied/rejected/conflict displayed with authoritative
+receipt and last worker heartbeat.</td>
+</tr>
+<tr>
+<td>R-27</td>
+<td>P1</td>
+<td>Deterministic projection</td>
+<td>CLI and UI consume the same domain projection and meaning of every
+total/state.</td>
+</tr>
+<tr>
+<td>R-28</td>
+<td>P1</td>
+<td>Controlled automatic stops</td>
+<td>Distinguish budget, owner stop, integrity block and review-needed;
+useful failures are not automatically worthless.</td>
+</tr>
+<tr>
+<td>R-29</td>
+<td>P1</td>
+<td>Accessible interaction</td>
+<td>Keyboard paths, focus restoration, semantic inputs, labels, errors,
+contrast and reduced motion pass the validation matrix.</td>
+</tr>
+<tr>
+<td>R-30</td>
+<td>P1</td>
+<td>Backup and restore</td>
+<td>Restore records, original photos, artifacts and receipts into an
+isolated project and verify hashes.</td>
+</tr>
+<tr>
+<td>R-31</td>
+<td>P2</td>
+<td>Prior-attempt retrieval</td>
+<td>Planner searches structure/material/nozzle/layout/purpose and shows
+similarity limitations.</td>
+</tr>
+<tr>
+<td>R-32</td>
+<td>P2</td>
+<td>Rule evaluation</td>
+<td>Executable rule evaluated against labelled positive and negative
+cases; coverage is not called precision.</td>
+</tr>
+<tr>
+<td>R-33</td>
+<td>P2</td>
+<td>Production usefulness</td>
+<td>Report usable yield and total labor/material per accepted tile with
+uncertainty.</td>
+</tr>
+<tr>
+<td>R-34</td>
+<td>P2</td>
+<td>Optional telemetry</td>
+<td>Missing camera or cloud-only control does not block manual
+observation workflows.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="domain-model-and-evidence-contract">6. Domain model and evidence
+contract</h2>
+<p>Retain JSON and git for the current scale. Add explicit typed records
+and a schema version rather than introducing a second writable database.
+Large photos/artifacts remain file-backed and backed up outside git as
+appropriate.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Entity</th>
+<th>Identity and essential fields</th>
+<th>Invariant</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Project</td>
+<td>ID, acceptance profile, equipment references, policy version</td>
+<td>Scope and acceptance policy are versioned.</td>
+</tr>
+<tr>
+<td>Question</td>
+<td>ID, purpose, budget, state, linked questions</td>
+<td>A changed research question creates a linked successor.</td>
+</tr>
+<tr>
+<td>Experiment</td>
+<td>ID, plan revision, hypothesis, design, factor list, decision
+branches</td>
+<td>The plan is frozen for each build; multi-factor designs declare
+interactions.</td>
+</tr>
+<tr>
+<td>Variant</td>
+<td>ID, source manifest, factor levels, role</td>
+<td>A variant is not a physical specimen.</td>
+</tr>
+<tr>
+<td>Build</td>
+<td>ID, plan revision, source hashes, resolved settings, tool versions,
+realized deltas</td>
+<td>Successful build artifacts never change in place.</td>
+</tr>
+<tr>
+<td>Run</td>
+<td>ID, build ID, dispatch/job identity, physical state, event
+history</td>
+<td>Each actual attempt is independent, including cancelled
+attempts.</td>
+</tr>
+<tr>
+<td>Specimen</td>
+<td>ID, run ID, variant ID, physical label, identity status</td>
+<td>Missing specimen does not imply a separation failure.</td>
+</tr>
+<tr>
+<td>Observation</td>
+<td>ID/revision, source, author, subject, value, method, timestamps,
+attachments</td>
+<td>Original owner words retained; interpretation stored
+separately.</td>
+</tr>
+<tr>
+<td>Claim</td>
+<td>ID/revision, statement, scope, supporting/contradicting observation
+revisions, review</td>
+<td>Confidence reflects evidence quality and scope, not record
+counts.</td>
+</tr>
+<tr>
+<td>Acceptance</td>
+<td>specimen/run, policy revision, dimensions, disposition,
+exceptions</td>
+<td>Accepted-with-defects is distinct from validated recipe.</td>
+</tr>
+<tr>
+<td>Approval</td>
+<td>build digest, plan/criteria revision, exception codes, author,
+reason, time</td>
+<td>Cannot waive integrity blocks or owner stops.</td>
+</tr>
+<tr>
+<td>Request</td>
+<td>UUID, actor, expected revision, command, digest, submitted time</td>
+<td>Same ID + same payload returns original result; changed payload
+rejected.</td>
+</tr>
+<tr>
+<td>Receipt</td>
+<td>request UUID, status, authoritative revision, applied time,
+reason</td>
+<td>Applied only after durable commit.</td>
+</tr>
+<tr>
+<td>Recipe</td>
+<td>ID/revision, accepted scope, exact artifact references,
+limitations</td>
+<td>Derived from identified accepted runs, not model filename.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="observation-envelope">Observation envelope</h3>
+<p>Use a value envelope per measure:
+<code>{value, unit, source, precision, occurred_at, recorded_at, author, evidence_refs}</code>.
+Allowed sources include <code>owner_report</code>,
+<code>instrument</code>, <code>slicer_estimate</code>,
+<code>derived_estimate</code>, <code>image_interpretation</code>,
+<code>unknown</code>. Null requires an assessment reason such as
+<code>not_assessed</code>, <code>not_applicable</code>,
+<code>specimen_failed</code> or <code>identity_unknown</code>.</p>
+<p>Do not equate G-code feed rates with observed physical speed. Call
+them commanded/sliced speeds. Acceleration and firmware behavior are
+outside that measurement unless actual telemetry is available.</p>
+<h3 id="claim-review">Claim review</h3>
+<p>States: draft hypothesis → supported within scope → replicated within
+scope → validated operating rule. Any state can become disputed,
+review-required or retired. A repeat must be independent enough for the
+declared purpose; a second record pointing to the same run is not
+replication. A counterexample outside scope prompts scope review; one
+inside scope blocks automatic promotion. No numeric probability is
+invented from a qualitative label.</p>
+<p>Rule activation additionally requires implemented checker code,
+labelled regression cases, false-positive review, a bounded
+applicability predicate and an exact reviewed release. Marking a JSON
+case promoted is not activation.</p>
+<h2 id="state-machines-and-lifecycle">7. State machines and
+lifecycle</h2>
+<p>Experiment orchestration: draft → planned → building → build_failed
+OR built → checking → blocked OR ready OR approval_required → approved
+where required. Build eligibility is derived from current policy, digest
+and approval rather than stored as an unquestioned stale label.</p>
+<p>Run lifecycle: dispatch_prepared → sender_opened → start_unconfirmed
+→ printing → completed/failed/cancelled. A missing heartbeat changes the
+observation freshness, not the physical fact to completed. Completion
+can be owner-confirmed. Unknown physical state remains recoverable.</p>
+<p>Judging lifecycle: unassessed → draft → submitted_pending → applied
+OR rejected/conflict → corrected by superseding revision. A run can be
+completed without a verdict and accepted without supporting a causal
+claim.</p>
+<p>Request lifecycle: queued → applying → applied → acknowledged;
+terminal rejected and conflict states preserve reason and draft. A
+transient network failure remains retryable. Retrying an acknowledgement
+never repeats the business mutation.</p>
+<h3 id="transition-rules">Transition rules</h3>
+<ul>
+<li><code>send</code> opens the frozen artifact only; writes a separate
+receipt when appropriate.</li>
+<li><code>start</code> requires owner confirmation or attributable
+printer event, not merely a copied command in chat.</li>
+<li>Nozzle/setup unknown is shown explicitly; policy determines whether
+it blocks the particular experiment.</li>
+<li>A failed specimen can receive a failure observation while separation
+remains not applicable.</li>
+<li>A new criteria revision after printing is labelled retrospective; do
+not silently redefine success.</li>
+<li>A parent owner-stop blocks new dispatch; recording outcomes and
+corrections remains allowed.</li>
+<li>Abandoning an experiment never deletes runs, costs, photos or
+observations.</li>
+</ul>
+<h2 id="target-architecture">8. Target architecture</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode mermaid"><code class="sourceCode mermaid"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">flowchart</span> <span class="cn">TD</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Phone</span>[<span class="st">&quot;Phone / Local AI UI&quot;</span>] <span class="pp">--&gt;</span> <span class="dt">Queue</span>[<span class="st">&quot;Authenticated request queue&quot;</span>]</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Queue</span> <span class="pp">--&gt;</span> <span class="dt">Worker</span>[<span class="st">&quot;Mac request worker&quot;</span>]</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">CLI</span>[<span class="st">&quot;CLI / AI-assisted workflow&quot;</span>] <span class="pp">--&gt;</span> <span class="dt">Commands</span>[<span class="st">&quot;Application commands&quot;</span>]</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Worker</span> <span class="pp">--&gt;</span> <span class="dt">Commands</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Commands</span> <span class="pp">--&gt;</span> <span class="dt">Store</span>[<span class="st">&quot;Validated JSON + operation journal&quot;</span>]</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Store</span> <span class="pp">--&gt;</span> <span class="dt">Projection</span>[<span class="st">&quot;Versioned read projection&quot;</span>]</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Projection</span> <span class="pp">--&gt;</span> <span class="dt">Phone</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Commands</span> <span class="pp">--&gt;</span> <span class="dt">Build</span>[<span class="st">&quot;Geometry / slicer adapters&quot;</span>]</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Build</span> <span class="pp">--&gt;</span> <span class="dt">Artifacts</span>[<span class="st">&quot;Immutable artifact store&quot;</span>]</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Artifacts</span> <span class="pp">--&gt;</span> <span class="dt">Sender</span>[<span class="st">&quot;Bambu Connect handoff&quot;</span>]</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="dt">Telemetry</span>[<span class="st">&quot;Optional printer observations&quot;</span>] <span class="pp">--&gt;</span> <span class="dt">Commands</span></span></code></pre></div>
+<p>Local AI stores a read projection, staged attachments and
+request/receipt transport. It never independently decides experiment
+outcomes or edits authoritative records. The Mac applies all business
+mutations through shared application services. CLI commands and phone
+requests call those same services.</p>
+<h3 id="proposed-module-boundaries">Proposed module boundaries</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Existing area</th>
+<th>Target responsibility</th>
+<th>Change approach</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>lab/records</code></td>
+<td>Versioned schemas, repository, path confinement, locks, atomic
+commits</td>
+<td>Extend incrementally; keep legacy reader during migration.</td>
+</tr>
+<tr>
+<td><code>lab/loop/commands.py</code></td>
+<td>Application command handlers</td>
+<td>Extract transactions and actor context without a wholesale
+rewrite.</td>
+</tr>
+<tr>
+<td><code>lab/loop/outcome.py</code></td>
+<td>Scoped comparison and interpretation eligibility</td>
+<td>Keep pure; separate acceptance from inference.</td>
+</tr>
+<tr>
+<td><code>lab/loop/ledger.py</code></td>
+<td>Source-aware usage and reservations</td>
+<td>One budget projection shared by every interface.</td>
+</tr>
+<tr>
+<td><code>lab/loop/cases.py</code></td>
+<td>Claims, evidence links and review</td>
+<td>Replace hardcoded experiment-to-rule templates.</td>
+</tr>
+<tr>
+<td><code>lab/loop/send.py</code>, <code>verify.py</code></td>
+<td>Frozen artifact handoff and identity classification</td>
+<td>Remove post-check mutation; use stored approved manifests.</td>
+</tr>
+<tr>
+<td><code>lab/pull.py</code></td>
+<td>Transport + replay-safe request handling</td>
+<td>Move mutation/deduplication into one durable operation.</td>
+</tr>
+<tr>
+<td><code>lab/page_index.py</code></td>
+<td>Stable view-model contract</td>
+<td>Resolve selected run/build; include freshness and source.</td>
+</tr>
+<tr>
+<td>Local AI Print Lab modules</td>
+<td>Render, gather drafts, submit requests</td>
+<td>No separate domain calculations.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="crash-safe-application-without-a-new-database">Crash-safe
+application without a new database</h3>
+<p>Use a project mutation lock and a durable operation journal. Validate
+request ID, payload digest, actor and expected revision first. Prepare
+an operation containing deterministic target revisions, previous hashes,
+intended writes and resulting receipt. Atomically write and fsync the
+prepared journal. Apply idempotent atomic replacements, then mark the
+operation committed and persist its receipt. Recovery completes a
+prepared operation from intended bytes or detects a hash conflict; it
+never reruns arbitrary command logic. Publish projection and remote
+acknowledgement after commit. Retain receipts long enough to cover all
+retry windows; archiving must preserve deduplication identity.</p>
+<p>This is a small transaction mechanism, not a general event-sourcing
+platform. Fault-injection tests are required before enabling remote
+approvals.</p>
+<h2 id="artifact-identity-and-verification">9. Artifact identity and
+verification</h2>
+<p>Build manifest records exact archive SHA-256, individual G-code
+member hashes, source and settings digests, slicer executable/version,
+generator version, plate/layout data, and canonical-content hash plus
+normalization-policy version. Archive normalization may ignore ZIP
+timestamps and explicitly permitted lab metadata only. It must not strip
+arbitrary comments or commands that might carry slicer/firmware
+semantics.</p>
+<p>Tag before freezing the build, or place dispatch/run metadata in a
+sidecar. If a sender needs a derived package, preserve the original,
+create a distinct derivative, verify unchanged print payload and record
+the relationship. Never silently modify approved bytes and then compute
+a new reference hash from the modified file.</p>
+<p>Verification classes:</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Class</th>
+<th>Meaning</th>
+<th>Permitted claim</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>exact_bytes</td>
+<td>Candidate matches stored frozen digest</td>
+<td>Same archive bytes</td>
+</tr>
+<tr>
+<td>print_payload_equivalent</td>
+<td>Versioned comparison proves relevant payload unchanged</td>
+<td>Equivalent under stated normalization</td>
+</tr>
+<tr>
+<td>settings_match_only</td>
+<td>Selected/resolved settings agree</td>
+<td>Not proof of same G-code</td>
+</tr>
+<tr>
+<td>owner_confirmed</td>
+<td>Owner identifies file/send</td>
+<td>Manual identity evidence</td>
+</tr>
+<tr>
+<td>unknown/mismatch</td>
+<td>Missing evidence or conflicting payload</td>
+<td>No claim of exact execution</td>
+</tr>
+</tbody>
+</table>
+<p>A printer job match additionally requires attributable job evidence.
+File opening, file naming or a screenshot alone is not cryptographic
+execution proof.</p>
+<h2 id="transportapi-contract">10. Transport/API contract</h2>
+<p>Retain the existing <code>/api/lab/{project}/requests</code> family.
+Introduce a versioned request envelope rather than changing existing
+clients in place. Proposed fields: <code>schema</code>,
+<code>request_id</code>, <code>project_id</code>, <code>actor_id</code>,
+<code>kind</code>, <code>target_id</code>,
+<code>expected_revision</code>, <code>build_digest</code>,
+<code>payload</code>, <code>payload_digest</code>,
+<code>submitted_at</code>.</p>
+<p>Commands include submit observation, attach evidence, approve build,
+confirm run event, abandon experiment and correct record. Server
+authenticates the actor; it does not trust an arbitrary actor field
+supplied by the client. Unsupported commands return a
+capability-specific error.</p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Response</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>202 queued</td>
+<td>Show pending; no authoritative record mutation claimed.</td>
+</tr>
+<tr>
+<td>200 applied/duplicate</td>
+<td>Return original receipt and resulting revision.</td>
+</tr>
+<tr>
+<td>409 conflict</td>
+<td>Preserve draft; show current revision and changed fields.</td>
+</tr>
+<tr>
+<td>422 validation</td>
+<td>Structured field errors and reason codes.</td>
+</tr>
+<tr>
+<td>401/403</td>
+<td>Preserve non-sensitive draft; require authentication or explain
+authorization.</td>
+</tr>
+<tr>
+<td>413 attachment limit</td>
+<td>Explain size limit and supported resize route.</td>
+</tr>
+<tr>
+<td>503 worker unavailable</td>
+<td>Queue only if durable acceptance succeeded; otherwise explicitly not
+submitted.</td>
+</tr>
+</tbody>
+</table>
+<p>Attachments are staged by content digest, verified on download,
+type/size checked and referenced only after durable storage. Reject
+traversal paths, malformed identifiers and unexpected archive members.
+Preserve originals; generate bounded-size previews and strip location
+metadata from shareable derivatives. Secrets and device access codes
+never enter reports or Figma.</p>
+<h2 id="budget-and-time-semantics">11. Budget and time semantics</h2>
+<p>For each dimension independently compute: observed completed usage +
+explicitly estimated terminal usage + outstanding reservations +
+proposed new reservation. Unknown terminal usage remains an uncertainty
+item; policy uses a documented conservative reservation/fallback, never
+an invisible zero.</p>
+<p>When a running job reports consumed usage, reserve only its estimated
+remainder, not the entire estimate plus consumption. If actual use
+exceeds estimate, remaining reservation may be zero while observed use
+continues increasing. Cancellation releases remaining reservation but
+preserves observed/estimated consumed amounts. Pending approvals are not
+automatically reservations; reservation occurs at a defined dispatch
+preparation point and expires/reconciles explicitly.</p>
+<p>Approval grants a bounded exception to named limits for an exact
+build and projected context. If other runs materially change that
+context, re-check the exception amount rather than silently treating a
+generic reason as unlimited authority.</p>
+<p>Persist instants with offsets and render America/New_York for Bill
+unless changed in preferences. Distinguish <code>occurred_at</code> from
+<code>recorded_at</code>. Manual Handy duration carries its stated
+precision and source. Time-scaled material estimates remain derived
+estimates; time fraction is not measured extrusion.</p>
+<h2 id="experimental-design-and-tile-recovery">12. Experimental design
+and tile recovery</h2>
+<h3 id="recovery-register">Recovery register</h3>
+<p>Recover v39/v40, v51, v58/E-014, v61s/E-020, v62k/E-021–022. Do not
+run a new print merely to fill a historical gap. Inspect original files
+and owner notes first. Match photos conservatively. Missing evidence
+limits conclusions but does not erase useful observations.</p>
+<h3 id="two-independent-engineering-objectives">Two independent
+engineering objectives</h3>
+<p>Face quality and separation are separate responses. Track backing/rim
+integrity and mounting as additional responses. A print accepted for a
+deadline is not automatically a validated production recipe. Hidden
+damage is assessed against mounting and structural requirements.</p>
+<h3 id="specimen-selection">Specimen selection</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Purpose</th>
+<th>Preserve</th>
+<th>Limit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Joint screening</td>
+<td>Wall construction, contact geometry, separation direction</td>
+<td>Cannot prove full-height stability or total separation effort.</td>
+</tr>
+<tr>
+<td>Surface-feature check</td>
+<td>Local geometry and adjacent walls/toolpaths</td>
+<td>Cropping changes thermal history and support.</td>
+</tr>
+<tr>
+<td>Tall stability</td>
+<td>Height, support conditions and relevant mass/stiffness</td>
+<td>Short rebased strip is insufficient.</td>
+</tr>
+<tr>
+<td>Product acceptance</td>
+<td>Full pair, real mounting surfaces and separation procedure</td>
+<td>Valid only for tested size/configuration.</td>
+</tr>
+</tbody>
+</table>
+<p>Plate sharing is a design choice with interactions, not an automatic
+quality grade. Record object positions, order and layer timing. Same
+settings do not establish same physical conditions. A repeated result
+supports reproducibility under those conditions; it does not uniquely
+establish cause.</p>
+<h3 id="recovery-sequence">Recovery sequence</h3>
+<ol type="1">
+<li>Reconcile v51 and preserve contradicting summaries.</li>
+<li>Finish per-specimen observations for E-021/022, including separation
+and damage.</li>
+<li>Select a reference based on actual associated artifacts; E-020 is a
+recent face reference, not necessarily the best join.</li>
+<li>Reproduce that reference with identified equipment, spool and
+resolved configuration.</li>
+<li>If reproduction fails, investigate changed run/process conditions
+before changing geometry.</li>
+<li>If reproduction succeeds, screen a bounded join change against the
+preserved face configuration.</li>
+<li>Validate full-height pair and mounting; repeat independently.</li>
+</ol>
+<p>Do not prescribe fixed fan settings, a gap threshold or a nozzle
+change from this plan. Chamber behavior is a hypothesis requiring
+firmware-specific evidence and observed conditions. Retain manufacturer
+operating constraints.</p>
+<h3 id="acceptance-protocol">Acceptance protocol</h3>
+<p>Define normal viewing distance/light and diagnostic lighting before a
+validation run. Photograph labelled specimens consistently. Record
+separation method, effort category and approximate time; record damage
+locations. Assess mounting pads and flatness. A failed specimen has
+separation=not_applicable, not separation=no. Keep an exemplar physical
+reference where possible.</p>
+<h2 id="ux-and-information-architecture">13. UX and information
+architecture</h2>
+<p>Primary views: Overview, Experiments, Evidence, History.
+Setup/recipes and technical diagnostics are secondary destinations. Do
+not introduce a new app shell; integrate into Projects → Print Lab and
+reuse Local AI navigation/tokens.</p>
+<h3 id="overview">Overview</h3>
+<p>One active question, one current run, one next useful action. A
+compact attention list contains actionable decisions only. Recent
+accepted-with-defects results stay visible. Budgets distinguish
+observations from reservations. Technical commands are secondary copy
+actions, not the main phone workflow.</p>
+<h3 id="planbuild-detail">Plan/build detail</h3>
+<p>Question and purpose first; test validity second; prior attempts
+alongside; build evidence and exceptions below. Show requested versus
+sliced versus physically observed values with explicit labels. Let the
+user inspect differences without reading raw JSON. Build failures retain
+logs and show recovery action.</p>
+<h3 id="evidence-comparison">Evidence comparison</h3>
+<p>Side-by-side photographs with synchronized optional zoom, visible
+specimen/run labels, lighting and source. Use a wipe only after
+alignment. Annotations are normalized to image coordinates and tied to a
+photo revision. Never draw an inferred measurement without units,
+calibration and uncertainty. A schematic image is visibly labelled and
+cannot be attached as physical evidence.</p>
+<h3 id="historyreconciliation">History/reconciliation</h3>
+<p>Compare versions by outcomes and differences, not only chronology.
+Conflicting summaries display original sources side by side. Correction
+previews list affected claims. “No observation recorded” is not styled
+as failure. A chosen reference package exposes scope and missing
+information.</p>
+<h3 id="phone-judging">Phone judging</h3>
+<p>Identify specimen → add evidence → appearance → separation →
+damage/mounting → viewing conditions → review → submit. No answer
+defaults. Include not assessed/not applicable/unknown with reasons. Do
+not require a photograph for every useful observation, but expose
+evidence completeness. Draft survives navigation and network
+failure.</p>
+<h3 id="approval">Approval</h3>
+<p>Show exact build, source/configuration summary, expected cost,
+projected budget, named exceptions and reason. Disable only for missing
+required input or hard blocks; explain why. Approval does not start the
+printer. A queued phone approval is not active until the Mac applies
+it.</p>
+<h2 id="visual-design-and-figma-handoff">14. Visual design and Figma
+handoff</h2>
+<p>The Figma file contains ten static editable boards (not a wired
+interactive prototype), native text/vector layers, reusable action/state
+components, semantic variables and Figtree text styles. It is a product
+proposal, not a capture of the deployed UI. Schematic specimens are not
+historical photographs. Dark palette follows the existing
+<code>lab/page.py</code> Local AI colors; muted text and supporting
+borders are adjusted for legibility. Map final implementation to
+authoritative shared tokens rather than adding a competing theme.</p>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Board</th>
+<th>Figma node</th>
+<th>Coverage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>01 Overview / Desktop</td>
+<td>2:2</td>
+<td>Current question, honest run state, next decisions, separate budget
+figures</td>
+</tr>
+<tr>
+<td>02 Plan &amp; build / Desktop</td>
+<td>2:3</td>
+<td>Test purpose, validity limits, prior attempts, build evidence</td>
+</tr>
+<tr>
+<td>03 Evidence comparison / Desktop</td>
+<td>2:4</td>
+<td>Labelled schematic comparison and observation/interpretation
+separation</td>
+</tr>
+<tr>
+<td>04 History reconciliation / Desktop</td>
+<td>2:5</td>
+<td>v51 contradiction, reference register, correction trail</td>
+</tr>
+<tr>
+<td>05 Current print / Phone</td>
+<td>2:6</td>
+<td>Completion unconfirmed and physical-result handoff</td>
+</tr>
+<tr>
+<td>06 Record observations / Phone</td>
+<td>2:7</td>
+<td>Explicit grades, specimen identity and required-field state</td>
+</tr>
+<tr>
+<td>07 Approve exact build / Phone</td>
+<td>2:8</td>
+<td>Scoped exceptions, projected costs and reason</td>
+</tr>
+<tr>
+<td>08 States &amp; recovery</td>
+<td>2:9</td>
+<td>Offline worker, artifact mismatch, unknown completion, upload
+failure, conflict</td>
+</tr>
+<tr>
+<td>09 Architecture &amp; delivery</td>
+<td>2:10</td>
+<td>Authority boundaries and milestone sequence</td>
+</tr>
+<tr>
+<td>10 Foundations &amp; components</td>
+<td>2:11</td>
+<td>Typography, palette, component instances and interaction rules</td>
+</tr>
+</tbody>
+</table>
+<p>Desktop target width 1440; phone 390. These are content layouts, not
+fixed-height application requirements. Mobile screens scroll; primary
+submit actions may be sticky only when they do not cover content or the
+keyboard. At 320px the layout remains one column. At 768px evidence can
+remain stacked. At &gt;=1100px use a main evidence column and contextual
+side panel; do not hide essential information solely because of
+width.</p>
+<p>Type: Figtree 40 display, 28 title, 20 section, 16 body, 14 label, 13
+caption; line height approximately 1.4–1.5. Space scale
+4/8/12/16/20/24/32/40/48. Prefer text and subtle dividers over many
+nested cards. Blue is action, amber uncertainty/attention, red blocking
+error, green confirmed success; every state also has text.</p>
+<p>Design components map to proposed rendering functions: ActionButton,
+StateNotice, QuantitySummary, RunIdentity, ObservationField,
+SpecimenHeader, EvidencePair, ClaimSummary, CorrectionTrail and
+RequestReceipt. Only the action/state foundations are instantiated as
+reusable components in this initial Figma set; other patterns are
+composed editable layouts with implementation contracts here. No Code
+Connect mapping is claimed.</p>
+<h2 id="accessibility-responsiveness-and-interaction-contract">15.
+Accessibility, responsiveness and interaction contract</h2>
+<ul>
+<li>Use native buttons, fieldsets/radio groups, labels and details where
+appropriate.</li>
+<li>Minimum 44px touch targets; visible keyboard focus with sufficient
+contrast and no clipping.</li>
+<li>Tab order follows visual/task order. Modal focus is contained;
+Escape closes without losing draft; focus returns to invoker.</li>
+<li>Announce request status changes in a polite live region, not every
+telemetry tick.</li>
+<li>Validation links to the field, explains how to recover and preserves
+entered data.</li>
+<li>Text contrast target 4.5:1; large text 3:1; essential UI
+boundaries/focus 3:1. Validate actual implementation combinations.</li>
+<li>Support 200% text zoom and 320px reflow; no horizontal scroll except
+a deliberately labelled data-table region.</li>
+<li>Never rely on color, hover, drag, animation or a camera image
+alone.</li>
+<li>Photo viewer supports keyboard zoom/reset and labelled controls;
+provide text observation equivalents.</li>
+<li>Respect reduced motion; transitions must not communicate
+indispensable state.</li>
+<li>A stale update cannot steal focus or reorder a form being
+edited.</li>
+<li>Handle browser keyboard/safe-area insets; preserve draft when
+switching tabs or rotating.</li>
+</ul>
+<h2 id="reliability-performance-privacy-and-operations">16. Reliability,
+performance, privacy and operations</h2>
+<p>Proposed performance budgets: initial Print Lab interaction available
+within 2 seconds on the local network with representative records; photo
+previews lazy-load; no full-resolution original in the list view; state
+update rendering below 100ms for the active view; background telemetry
+does not continuously rebuild all cards. Establish a measured baseline
+before tightening these budgets.</p>
+<p>Page freshness includes projection revision/generated time, worker
+heartbeat, and printer observation time separately. Do not imply the
+printer is live because the page recently synced. Cache only a labelled
+read-only snapshot; mutations require authoritative reconciliation.</p>
+<p>Use existing authenticated routes and owner authorization; validate
+payload schemas, filenames, IDs, size limits and archive extraction
+paths. Limit worker concurrency and protect against repeated requests.
+Keep credentials out of JSON experiment records, logs and Figma. Store
+private photos outside public repositories and include them in tested
+backups. Logs carry correlation/request/run IDs with redacted sensitive
+values.</p>
+<p>Operational commands must report structured status and meaningful
+exit codes. Interrupted builds leave diagnosable job logs but no
+published partial artifact. A failed sync is visible and retryable while
+the accepted local mutation remains committed. Restore drills include
+photos and artifacts, not just record JSON.</p>
+<h2 id="migration-and-rollback">17. Migration and rollback</h2>
+<ol type="1">
+<li>Inventory dirty/unpushed work; identify owner and hash files.
+Snapshot records and attachments without modifying them.</li>
+<li>Isolate test roots and disable automatic promotion paths before
+running broad tests.</li>
+<li>Add v2 readers/writers behind a feature flag; retain v1 read
+support.</li>
+<li>Dry-run migration into a new directory. Produce per-record mappings,
+warnings and counts.</li>
+<li>Split legacy provenance into origin/planning; map unavailable
+distinctions to unknown. Do not fabricate owner observations, actual
+times or validated claims.</li>
+<li>Import existing cases as historical claims requiring review,
+retaining original language and source revision.</li>
+<li>Compare derived totals with explicit explanations for changed
+semantics. Do not force equality by hiding unknowns.</li>
+<li>Validate every migrated record, resolve references and verify
+attachment/artifact hashes.</li>
+<li>Switch writer only after a restore test; publish projection v2 while
+old UI remains compatible or explicitly read-only.</li>
+<li>Rollback restores the previous snapshot and writer version. Preserve
+v2-only events in an export for later replay; do not silently discard
+them or allow two live writers.</li>
+</ol>
+<p>A migration does not change historical approval or verdict text. New
+interpretations are separate revisions. Partial failures remain
+resumable with an operation manifest.</p>
+<h2 id="verification-and-traceability">18. Verification and
+traceability</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Test ID</th>
+<th>Requirements</th>
+<th>Scenario / pass condition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T-01</td>
+<td>R-01</td>
+<td>Run all CLI tests in isolated project; pre/post real-tree hashes
+unchanged.</td>
+</tr>
+<tr>
+<td>T-02</td>
+<td>R-02–05, R-10</td>
+<td>Imported prospective observation retained; two contradictory answers
+cannot promote a claim.</td>
+</tr>
+<tr>
+<td>T-03</td>
+<td>R-06–08, R-14</td>
+<td>Modify current disk slice after approval; verification fails against
+frozen digest.</td>
+</tr>
+<tr>
+<td>T-04</td>
+<td>R-08, R-26</td>
+<td>Kill worker after mutation preparation, after file replacement and
+before acknowledgement; retry applies once.</td>
+</tr>
+<tr>
+<td>T-05</td>
+<td>R-09, R-19–20</td>
+<td>Failed specimen with separation not applicable accepted; missing
+grade never becomes clean/no.</td>
+</tr>
+<tr>
+<td>T-06</td>
+<td>R-11, R-15</td>
+<td>Rebuild after run begins; run still displays original build; elapsed
+estimate does not complete run.</td>
+</tr>
+<tr>
+<td>T-07</td>
+<td>R-16–18</td>
+<td>Partial manual actuals, running reservation and cancelled unknown
+usage produce correctly sourced totals.</td>
+</tr>
+<tr>
+<td>T-08</td>
+<td>R-12–13</td>
+<td>Real slicer rejects ignored factors; cropped strip labelled
+insufficient for full-height claim.</td>
+</tr>
+<tr>
+<td>T-09</td>
+<td>R-21–23</td>
+<td>Correct v51 interpretation; original source retained and affected
+claims flagged for review.</td>
+</tr>
+<tr>
+<td>T-10</td>
+<td>R-24</td>
+<td>Import exported presets, resolve configuration and compare reference
+slice.</td>
+</tr>
+<tr>
+<td>T-11</td>
+<td>R-25–29</td>
+<td>Offline/conflict/upload retry flows preserve drafts; keyboard and
+screen reader complete judging.</td>
+</tr>
+<tr>
+<td>T-12</td>
+<td>R-30</td>
+<td>Restore isolated backup; records, receipts, photos and artifacts
+verify.</td>
+</tr>
+<tr>
+<td>T-13</td>
+<td>R-31–33</td>
+<td>Similar-history retrieval shows scope; rule negatives measured;
+usable-tile cost includes cleanup.</td>
+</tr>
+<tr>
+<td>T-14</td>
+<td>R-34</td>
+<td>No camera/telemetry available; manual run observation and acceptance
+still work.</td>
+</tr>
+</tbody>
+</table>
+<p>Use unit tests for pure calculations, schema/property tests for
+invalid values and transitions, integration tests for real slicer
+adapters, fault-injection tests for persistence and browser tests for
+the phone journeys. Real-slicer tests run on fixtures in isolated
+folders, not real experiment outputs. Golden artifacts pin tool version
+and explain intentional changes. Test counts never substitute for these
+scenarios.</p>
+<h2 id="delivery-plan">19. Delivery plan</h2>
+<p>Estimates below are planning ranges in focused engineering days, not
+promises. Re-estimate after M0 because the current dirty work may
+already contain overlapping changes. Roles can be performed by one
+engineer; concurrent agents are optional and require explicit
+coordination.</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>Milestone</th>
+<th>Scope</th>
+<th>Dependencies</th>
+<th>Estimate</th>
+<th>Exit gate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M0 Protect</td>
+<td>Test isolation, current-state inventory, promotion quarantine,
+source snapshot</td>
+<td>None</td>
+<td>1–2 days</td>
+<td>Real records unchanged by suite; unsafe promotion blocked</td>
+</tr>
+<tr>
+<td>M1 Correct</td>
+<td>v2 schemas, observations/claims/acceptance, corrections, migration
+dry run</td>
+<td>M0</td>
+<td>3–5 days</td>
+<td>T-02/T-05/T-09 pass on migrated fixture</td>
+</tr>
+<tr>
+<td>M2 Trust</td>
+<td>Immutable artifacts, run identity, request transactions, usage/time
+projection</td>
+<td>M0; integrates M1</td>
+<td>3–5 days</td>
+<td>Crash/retry and artifact mutation tests pass</td>
+</tr>
+<tr>
+<td>M3 Use</td>
+<td>Phone judging/approval, desktop evidence/history, state
+recovery</td>
+<td>M1/M2 contracts</td>
+<td>4–6 days</td>
+<td>Core journeys pass on phone and desktop</td>
+</tr>
+<tr>
+<td>M4 Recover</td>
+<td>Reference reconstruction, presets, bounded physical validation</td>
+<td>M1/M2; physical specimens</td>
+<td>2–4 engineering days + print time</td>
+<td>Verified reference and independent full-pair results</td>
+</tr>
+<tr>
+<td>M5 Release</td>
+<td>Restore drill, integrated revision checks, pilot and
+documentation</td>
+<td>M3/M4</td>
+<td>1–2 days</td>
+<td>Exact integrated release meets acceptance matrix</td>
+</tr>
+</tbody>
+</table>
+<p>Approximate engineering effort: 14–24 focused days before accounting
+for overlap, unexpected device constraints or expanded production
+validation. Keep this bounded; ship useful intermediate improvements
+rather than withholding all work for the final milestone.</p>
+<h3 id="suggested-pr-sequence">Suggested PR sequence</h3>
+<ol type="1">
+<li><code>test: isolate project fixtures and prohibit production writes</code>
+— no schema redesign.</li>
+<li><code>fix: quarantine unsupported case promotion</code> — preserve
+old records; require review.</li>
+<li><code>feat: introduce versioned observation and acceptance records</code>
+— dual readers.</li>
+<li><code>feat: add claim evidence references and correction trail</code>
+— no automatic causal promotion.</li>
+<li><code>fix: freeze approved artifacts and separate dispatch metadata</code>.</li>
+<li><code>feat: durable request receipts and crash recovery</code>.</li>
+<li><code>fix: unify run-bound state and budget projection</code>.</li>
+<li><code>feat: phone observation drafts and explicit submission</code>.</li>
+<li><code>feat: desktop evidence and historical reconciliation</code>.</li>
+<li><code>feat: validated recipe/preset export and migration tooling</code>.</li>
+<li><code>test: integrated acceptance and restore certification</code>.</li>
+</ol>
+<p>Each PR includes trigger/before-after behavior, affected
+requirements, meaningful validation and known limits. Test the
+integrated merge revision, not only branch heads. Do not silently raise
+size budgets or refresh visual baselines without inspecting the intended
+change.</p>
+<h2 id="risks-decisions-and-release-gate">20. Risks, decisions and
+release gate</h2>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Risk</th>
+<th>Mitigation</th>
+<th>Trigger for reconsideration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Old evidence unavailable</td>
+<td>Preserve uncertainty; reference reconstruction labelled</td>
+<td>Cannot associate original geometry/settings</td>
+</tr>
+<tr>
+<td>Uncommitted overlapping work</td>
+<td>Isolated worktrees and explicit ownership</td>
+<td>Same critical module changed concurrently</td>
+</tr>
+<tr>
+<td>Slicer/firmware drift</td>
+<td>Pin tool/config manifests; rerun capability fixtures</td>
+<td>Version or printer profile changes</td>
+</tr>
+<tr>
+<td>Mac sleeping</td>
+<td>Visible queued status and heartbeat</td>
+<td>Unacceptable delay in normal phone use</td>
+</tr>
+<tr>
+<td>JSON multi-file partial commit</td>
+<td>Operation journal + recovery tests</td>
+<td>Complexity exceeds reliable maintenance; then evaluate SQLite</td>
+</tr>
+<tr>
+<td>Physical variability</td>
+<td>Independent repetitions and scoped claims</td>
+<td>Baseline cannot reproduce</td>
+</tr>
+<tr>
+<td>Overbuilt GUI</td>
+<td>One primary decision, technical detail disclosed progressively</td>
+<td>User must navigate multiple screens to submit a simple result</td>
+</tr>
+</tbody>
+</table>
+<h3 id="decisions-made-in-this-proposal">Decisions made in this
+proposal</h3>
+<p>Keep Mac authority and Local AI presentation. Keep Python and current
+adapters. Use native editable Figma layouts aligned to existing
+typography. Keep historical records; migrate without inventing
+information. Treat firmware cooling changes as separate hypotheses. Do
+not expand the printer-control surface in this release.</p>
+<h3 id="decisions-to-settle-during-implementation">Decisions to settle
+during implementation</h3>
+<p>Exact mounting tolerance and allowable cleanup effort; physical
+reference availability; whether original images may be shared beyond the
+local system; the authoritative current nozzle/spool state; acceptable
+worker-offline delay; final light-theme mappings; retention duration for
+request receipts and full-resolution photos. These do not block the
+specification or initial stabilization work.</p>
+<h3 id="final-release-gate">Final release gate</h3>
+<p>The release is complete when the exact integrated revision passes the
+traceability matrix; migrated records retain sources and uncertainty; no
+test mutates real data; approved files remain immutable; queued requests
+cannot pretend to be applied; estimates cannot pretend to be
+measurements; the phone supports complete judging without terminal use;
+and a reference tile recipe has explicit, independently observed
+acceptance evidence. No unverified claim is labelled proven merely
+because the system has many records or many passing tests.</p>
+</body>
+</html>

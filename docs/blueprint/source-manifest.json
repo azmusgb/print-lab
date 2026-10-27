@@ -1,0 +1,74 @@
+{
+  "captured_at": "2026-10-26T16:23:16.131956-04:00",
+  "scope": "Selected files inspected statically; hashes captured at handoff, not runtime certification. No tests run. No repository writes performed.",
+  "repository": "/Users/billrahe/dev/print-lab",
+  "head": "6d0a82228d025feb986665943aec6dd2fa92ed13",
+  "working_tree": " M lab/adapters/threemf.py\n M lab/cli_loop.py\n M lab/loop/builders.py\n M lab/loop/guards.py\n M lab/loop/send.py\n M lab/loop/verify.py\n M projects/hex-tile/cases/CASE-001.json\n M projects/hex-tile/prints/hex-tile_E-021_BLD-021-02.3mf\n M projects/hex-tile/prints/hex-tile_E-022_BLD-022-01.3mf\n M tests/test_adapters.py\n M tests/test_verify.py\n",
+  "files": [
+    {
+      "path": "/Users/billrahe/dev/print-lab/README.md",
+      "sha256": "c956b7a118f3d0c08224f2b3abf00798890476893add41926635661e8c824530",
+      "size_bytes": 2026
+    },
+    {
+      "path": "/Users/billrahe/dev/print-lab/lab/records/schema.py",
+      "sha256": "c44a85a3efb40fa182b5ad1f807debf40758c2df08b309b4abba6dbea8591b3f",
+      "size_bytes": 8455
+    },
+    {
+      "path": "/Users/billrahe/dev/print-lab/lab/loop/ledger.py",
+      "sha256": "3d4fa470f4b8a7949f00e1f20a615cf131ec4460fa0963c33f66b0d5f8f32e82",
+      "size_bytes": 4210
+    },
+    {
+      "path": "/Users/billrahe/dev/print-lab/lab/loop/outcome.py",
+      "sha256": "2875749fc0fbaba9db18a27a30511bc8b85f0a9e142ec435ea41cedee9fff9cc",
+      "size_bytes": 10003
+    },
+    {
+      "path": "/Users/billrahe/dev/print-lab/lab/page_index.py",
+      "sha256": "54bd4be2664f311b2dc593d08c761efd2f0762aaf047133a90cad680b556655c",
+      "size_bytes": 11812
+    },
+    {
+      "path": "/Users/billrahe/dev/print-lab/lab/page.py",
+      "sha256": "d0899826daf7db459a0088b095f1565230fcc2774043f469e6a158e9b79c446a",
+      "size_bytes": 22761
+    },
+    {
+      "path": "/Users/billrahe/dev/print-lab/tests/test_cases.py",
+      "sha256": "7372a026fca0508492417542c9dd9a1c87837cc24e7dfbedda9dace7359c7c56",
+      "size_bytes": 3121
+    },
+    {
+      "path": "/Users/billrahe/dev/print-lab/lab/loop/cases.py",
+      "sha256": "9388db5dd6e671f3db08f084739e6067fee6d7460df7085daed52548b5d19bc1",
+      "size_bytes": 9481
+    },
+    {
+      "path": "/Users/billrahe/dev/print-lab/lab/pull.py",
+      "sha256": "102b9ba81284b562c397d84fc24f510c6e1416db83bb3bdb62296b09bd7d8aa6",
+      "size_bytes": 11016
+    },
+    {
+      "path": "/Users/billrahe/dev/print-lab/lab/loop/send.py",
+      "sha256": "ffa9f49377e4cb6b31107fd19dd024bfd7ff8ad6bcb40e12e9974667316e7ece",
+      "size_bytes": 2573
+    },
+    {
+      "path": "/Users/billrahe/dev/print-lab/lab/loop/verify.py",
+      "sha256": "c9fd90ca0d8cc7157f36e709f4a6a32f1fb39d6716c75546e0b79029f6cf0f57",
+      "size_bytes": 9527
+    },
+    {
+      "path": "/Users/billrahe/dev/print-lab/lab/adapters/threemf.py",
+      "sha256": "2501193ab14dfb908ec85ad8f8f86c96e3bc708ac72173e80f94f5213ac2186d",
+      "size_bytes": 17141
+    },
+    {
+      "path": "/Users/billrahe/Downloads/chat-hex-tile-2026-10-26.md",
+      "sha256": "e76a8e58ad076c2e2529d46beae0fcc97905e8d2151336ef897412ac503e817f",
+      "size_bytes": 793759
+    }
+  ]
+}
