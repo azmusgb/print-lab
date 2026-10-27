@@ -298,7 +298,10 @@ def check_active_print(paths: ProjectPaths, base: str | None = None, timeout: fl
 
 def link_new_prints(paths: ProjectPaths) -> list[dict]:
     """Link Bambuddy prints newer than the last one seen (plus linked ones still awaiting their end), saving the
-    newest id only once linking is done. Bambuddy off or failing: nothing happens and the saved id stays."""
+    newest id only once linking is done. Bambuddy off or failing: nothing happens and the saved id stays.
+    Limits: the print log is read 100 entries deep, so more than 100 new prints between pulls leaves the oldest
+    unlinked; the first run (no state file) scans the newest 100; and a reset or deleted state file can re-link a
+    print the owner had unlinked (it is new again by id). Skipped prints are not reported."""
     from lab import bambuddy
     from lab.loop.commands import all_experiments
     from lab.loop.linking import link_entries
@@ -334,7 +337,7 @@ def link_new_prints(paths: ProjectPaths) -> list[dict]:
     return [{"id": f"link-{ev['print']}", "status": "applied",
              "message": ev["message"] or f"Bambuddy print #{ev['print']} {say[ev['action']]} "
                                          f"{ev['experiment']} {ev['run'] or ''}".strip()}
-            for ev in events]
+            for ev in events if ev["action"] != "skipped"]
 
 
 def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]:
@@ -342,10 +345,17 @@ def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]
     base = (base or os.environ.get("LAB_LOCALAI_URL") or BASE).rstrip("/")
     key = _key()
     applied = apply_pending(pdir, base, key, timeout)
+    lock_fd = open(pdir / ".pull.lock", "a")
     try:
-        applied += link_new_prints(ProjectPaths(pdir))
-    except Exception as e:  # linking must never stop the rest of the pull
-        print(f"lab pull: linking Bambuddy prints failed: {e}", file=sys.stderr)
+        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)  # one pull links at a time; a busy lock skips linking
+        try:
+            applied += link_new_prints(ProjectPaths(pdir))
+        except Exception as e:  # linking must never stop the rest of the pull
+            print(f"lab pull: linking Bambuddy prints failed: {e}", file=sys.stderr)
+    except OSError:
+        pass
+    finally:
+        lock_fd.close()  # releases the lock
     event = check_active_print(ProjectPaths(pdir), base, timeout)
     if any(r.get("status") == "applied" for r in applied) or event:
         from lab.page import refresh

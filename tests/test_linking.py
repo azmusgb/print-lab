@@ -364,3 +364,44 @@ def test_a_failed_print_outside_the_lab_never_asks_for_the_planned_time(paths):
     link_entries(paths, [entry(15, print_name="benchy"), entry(15, print_name="hex-tile_E-999_BLD-999-01")],
                  lambda a: asked.append(a))
     assert asked == []
+
+
+def test_a_stale_view_does_not_link_a_print_twice(paths, monkeypatch):
+    from lab.loop import linking
+    e15 = entry(15, status="printing", completed_at=None, duration_seconds=None)
+    link_entries(paths, [e15], no_plan)
+    monkeypatch.setattr(linking, "all_experiments", lambda _p: {})  # a pull that read before the first one wrote
+    assert link_entries(paths, [e15], no_plan) == []
+    assert len(load_experiment(paths, "E-023")["print_runs"]) == 1
+
+
+def test_hand_link_rechecks_under_the_lock(paths, monkeypatch):
+    from lab.loop import linking
+    e15 = entry(15, status="printing", completed_at=None, duration_seconds=None)
+    link_by_hand(paths, "E-023", "BLD-023-01", e15, None)
+    monkeypatch.setattr(linking, "all_experiments", lambda _p: {})
+    with pytest.raises(ValueError, match="already linked"):
+        link_by_hand(paths, "E-023", "BLD-023-01", e15, None)
+
+
+def test_the_already_linked_hint_parses(paths, monkeypatch):
+    import re
+    from lab import cli, cli_loop
+    got = []
+    monkeypatch.setattr(cli_loop, "cmd_exp_unlink", lambda a: got.append(a.run_id) or 0)
+    link_entries(paths, [entry(15, status="printing", completed_at=None, duration_seconds=None)], no_plan)
+    with pytest.raises(ValueError) as err:
+        link_by_hand(paths, "E-023", "BLD-023-01", entry(15), None)
+    cmd = re.search(r"`lab (.+?)`", str(err.value)).group(1).split()
+    assert cli.main(cmd) == 0 and got == ["PR-023-01"]
+
+
+def test_missing_bambuddy_grams_keep_the_existing_figure(paths):
+    from lab.loop.commands import save_experiment
+    e = load_experiment(paths, "E-023")
+    e["print_runs"][0]["usage"] = {"actual_minutes": 50.0, "actual_g": 20.0, "usage_source": "telemetry",
+                                   "completion_fraction": None}
+    save_experiment(paths, e)
+    link_entries(paths, [entry(25, filament_used_grams=None)], no_plan)
+    u = run(paths)["usage"]
+    assert u["usage_source"] == "bambuddy" and u["actual_g"] == 20.0 and u["actual_minutes"] == 210.0

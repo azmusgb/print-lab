@@ -577,3 +577,17 @@ def test_pull_with_bambuddy_down_keeps_last_id(lab023, monkeypatch, failure):
     assert out == [] and checked == [1]
     assert _seen(lab023) == {"last_id": 20}
     assert load_experiment(lab023, "E-023")["print_runs"][0].get("bambuddy") is None
+
+
+def test_pull_does_not_report_or_sync_skipped_prints(lab023, monkeypatch):
+    synced = []
+    monkeypatch.setattr("lab.sync.sync", lambda *a, **k: synced.append(1))
+    out, _ = _run_pull(lab023, monkeypatch, [_entry(25, print_name="hex-tile_E-999_BLD-999-01")])
+    assert out == [] and synced == []
+
+
+def test_pull_skips_linking_while_another_pull_holds_the_lock(lab023, monkeypatch):
+    with open(lab023.root / ".pull.lock", "a") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        out, _ = _run_pull(lab023, monkeypatch, [_entry(25)])
+    assert out == [] and not (lab023.root / "bambuddy-seen.json").exists()

@@ -96,7 +96,7 @@ def cmd_exp_link(args) -> int:
     log = bambuddy.print_log() or []
     entry = next((x for x in log if x.get("id") == args.print), None)
     if entry is None:
-        print(f"Bambuddy print #{args.print} isn't in its print log (or Bambuddy isn't reachable).", file=sys.stderr)
+        print(f"Bambuddy print #{args.print} isn't among Bambuddy's newest 100 prints (or Bambuddy isn't reachable).", file=sys.stderr)
         return 1
     a = bambuddy.archive(entry["archive_id"]) if entry.get("archive_id") is not None else None
     try:

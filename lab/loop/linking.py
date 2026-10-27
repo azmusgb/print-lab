@@ -87,7 +87,10 @@ def _snapshot(e: dict, run: dict, entry: dict, planned: float | None) -> bool:
         if current:
             run.setdefault("usage_revisions", []).append({**current, "replaced_at": b["snapshot_at"],
                                                           "reason": _mark(n)})
-        run["usage"] = {"actual_minutes": b["minutes"], "actual_g": b["grams"], "usage_source": "bambuddy",
+        keep = current or {}  # a figure Bambuddy doesn't have stays what it was
+        run["usage"] = {"actual_minutes": b["minutes"] if b["minutes"] is not None else keep.get("actual_minutes"),
+                        "actual_g": b["grams"] if b["grams"] is not None else keep.get("actual_g"),
+                        "usage_source": "bambuddy",
                         "completion_fraction": (run.get("failed") or {}).get("at_fraction") if status == "failed"
                         else None}
     return True
@@ -146,6 +149,8 @@ def link_entries(paths: ProjectPaths, entries: list[dict],
             planned = planned_seconds(entry.get("archive_id"))  # a lab print only; checked again under the lock
         with record_lock(paths.locks, eid, f"lab pull: {_mark(entry['id'])}"):
             e = load_experiment(paths, eid)
+            if any((r.get("bambuddy") or {}).get("print") == entry["id"] for r in e["print_runs"]):
+                continue  # another pull linked it since the view above was read
             if not any(b["id"] == bid for b in e.get("builds") or []):
                 event("skipped", eid, None, entry, f"{entry['print_name']}: {eid} has no {bid}; treated as "
                                                    "outside the lab.")
@@ -168,9 +173,13 @@ def link_by_hand(paths: ProjectPaths, exp_id: str, build_id: str, print_entry: d
         for r in e.get("print_runs") or []:
             if (r.get("bambuddy") or {}).get("print") == print_entry["id"]:
                 raise ValueError(f"{_mark(print_entry['id'])} is already linked to {e['id']} {r['id']}. "
-                                 f"Unlink it first: `lab exp unlink {e['id']} {r['id']}`.")
+                                 f"Unlink it first: `lab exp unlink {r['id']}`.")
     with record_lock(paths.locks, exp_id, f"lab exp link {exp_id} {build_id}"):
         e = load_experiment(paths, exp_id)
+        for r in e["print_runs"]:
+            if (r.get("bambuddy") or {}).get("print") == print_entry["id"]:
+                raise ValueError(f"{_mark(print_entry['id'])} is already linked to {e['id']} {r['id']}. "
+                                 f"Unlink it first: `lab exp unlink {r['id']}`.")
         builds = [b["id"] for b in e.get("builds") or []]
         if build_id not in builds:
             raise ValueError(f"{exp_id} has no {build_id}. Builds: {', '.join(builds) or 'none yet'}")
