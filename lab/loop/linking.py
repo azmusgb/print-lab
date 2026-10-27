@@ -88,11 +88,17 @@ def _snapshot(e: dict, run: dict, entry: dict, planned: float | None) -> bool:
             run.setdefault("usage_revisions", []).append({**current, "replaced_at": b["snapshot_at"],
                                                           "reason": _mark(n)})
         keep = current or {}  # a figure Bambuddy doesn't have stays what it was
-        run["usage"] = {"actual_minutes": b["minutes"] if b["minutes"] is not None else keep.get("actual_minutes"),
-                        "actual_g": b["grams"] if b["grams"] is not None else keep.get("actual_g"),
-                        "usage_source": "bambuddy",
-                        "completion_fraction": (run.get("failed") or {}).get("at_fraction") if status == "failed"
-                        else None}
+        usage = {"actual_minutes": b["minutes"] if b["minutes"] is not None else keep.get("actual_minutes"),
+                 "actual_g": b["grams"] if b["grams"] is not None else keep.get("actual_g"),
+                 "usage_source": "bambuddy",
+                 "completion_fraction": (run.get("failed") or {}).get("at_fraction") if status == "failed"
+                 else None}
+        # A figure kept because Bambuddy has none is still what it was, so it keeps its own source.
+        if b["minutes"] is None and keep.get("actual_minutes") is not None:
+            usage["minutes_source"] = keep.get("minutes_source", keep.get("usage_source"))
+        if b["grams"] is None and keep.get("actual_g") is not None:
+            usage["g_source"] = keep.get("g_source", keep.get("usage_source"))
+        run["usage"] = usage
     return True
 
 

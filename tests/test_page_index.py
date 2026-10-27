@@ -195,3 +195,52 @@ def test_question_status_estimates_from_the_last_good_build(tmp_path):
                                      {"id": "BLD-009-02", "ok": False, "error": "slicer failed", "estimate": None}])
     p = make_project(tmp_path, minimal_question(), [e])
     assert "40" in question_status(p, "Q-009")
+
+
+def _linked(tmp_path, usage=None, bambuddy=None):
+    e = started(minimal_experiment("E-009"), minutes=60.0, g=20.0)
+    r = e["print_runs"][0]
+    if usage is not None:
+        r["usage"] = usage
+    if bambuddy is not None:
+        r["bambuddy"] = bambuddy
+    p = make_project(tmp_path, minimal_question(), [e])
+    return page_index.build_index(p.root)["experiments"][0]["runs"][0]
+
+
+def test_a_linked_run_carries_its_print_and_an_unlinked_one_none(tmp_path):
+    b = {"print": 25, "archive": 19, "linked": "auto", "at": "2026-10-26T12:00:00+00:00", "status": "failed",
+         "started": None, "ended": None, "minutes": 20.0, "grams": 8.4, "failure_reason": "Spaghetti",
+         "failed_at_estimate": 0.4, "snapshot_at": "2026-10-26T12:00:00+00:00"}
+    r = _linked(tmp_path, bambuddy=b)
+    assert r["print"] == {"id": 25, "status_word": "Failed", "minutes": 20.0, "grams": 8.4,
+                          "failed_at_estimate": 0.4, "failure_reason": "Spaghetti", "linked": "auto"}
+    (tmp_path / "x").mkdir()
+    assert _linked(tmp_path / "x")["print"] is None
+
+
+def test_a_linked_print_still_running_says_printing(tmp_path):
+    b = {"print": 26, "archive": 26, "linked": "hand", "at": "2026-10-26T12:00:00+00:00", "snapshot_at": None}
+    assert _linked(tmp_path, bambuddy=b)["print"]["status_word"] == "Printing"
+
+
+def test_entered_on_mac_when_the_usage_source_is_manual(tmp_path):
+    u = {"actual_minutes": 5.0, "actual_g": 1.0, "usage_source": "manual", "completion_fraction": None}
+    assert _linked(tmp_path, usage=u)["entered_on_mac"] is True
+    (tmp_path / "b").mkdir()
+    assert _linked(tmp_path / "b", usage={**u, "usage_source": "bambuddy"})["entered_on_mac"] is False
+
+
+def test_each_usage_figure_is_judged_by_its_own_source(tmp_path):
+    e = started(minimal_experiment("E-009"), minutes=60.0, g=20.0)
+    e["print_runs"][0]["usage"] = {"actual_minutes": 51.0, "actual_g": 9.0, "usage_source": "bambuddy",
+                                   "g_source": "slicer_estimate", "completion_fraction": None}
+    p = make_project(tmp_path, minimal_question(), [e])
+    u = page_index.build_index(p.root)["experiments"][0]["usage"]
+    assert u["minutes_source"] == "observed" and u["g_source"] == "estimate"
+    e["print_runs"][0]["usage"] = {"actual_minutes": 51.0, "actual_g": 9.0, "usage_source": "bambuddy",
+                                   "minutes_source": "slicer_estimate", "completion_fraction": None}
+    (tmp_path / "two").mkdir()
+    p2 = make_project(tmp_path / "two", minimal_question(), [e])
+    u = page_index.build_index(p2.root)["experiments"][0]["usage"]
+    assert u["minutes_source"] == "estimate" and u["g_source"] == "observed"

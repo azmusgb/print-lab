@@ -13,6 +13,7 @@ import json
 import os
 import re
 import urllib.request
+from datetime import timezone
 from pathlib import Path
 
 from lab import bambuddy
@@ -50,7 +51,20 @@ def spool_colour(filament: str, colours: dict) -> str:
     return NEUTRAL
 
 
-def write(pdir: Path, colours: dict | None = None) -> Path:
+def _utc(s):
+    t = bambuddy.parse_time(s)
+    return t.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ") if t else None
+
+
+def outside_prints(log: list[dict], linked: set) -> list[dict]:
+    """The 20 newest print-log entries no run in the project is linked to."""
+    return [{"print": e["id"], "archive": e.get("archive_id"), "name": e.get("print_name"),
+             "status_word": bambuddy.status_word(e.get("status")), "started": _utc(e.get("started_at")),
+             "ended": _utc(e.get("completed_at"))}
+            for e in log if e.get("id") is not None and e["id"] not in linked][:20]
+
+
+def write(pdir: Path, colours: dict | None = None, outside: list | None = None) -> Path:
     """page.json (the index and the spool colours); a page.html left from before is removed so it can't mislead."""
     pdir = Path(pdir)
     if colours is None:
@@ -62,6 +76,17 @@ def write(pdir: Path, colours: dict | None = None) -> Path:
             colours = {}
     ix = build_index(pdir)
     ix["colours"] = colours
+    if outside is None:
+        log = bambuddy.print_log()
+        if log is not None:
+            linked = {r["print"]["id"] for e in ix["experiments"] for r in e["runs"] if r.get("print")}
+            outside = outside_prints(log, linked)
+    if outside is None:  # Bambuddy didn't answer: keep the saved list
+        try:
+            outside = json.loads((pdir / "page.json").read_text()).get("outside") or []
+        except (OSError, ValueError):
+            outside = []
+    ix["outside"] = outside
     out = pdir / "page.json"
     out.write_text(json.dumps(ix, indent=1))
     (pdir / "page.html").unlink(missing_ok=True)
@@ -74,10 +99,10 @@ def refresh(pdir: Path) -> None:
     if not (pdir / "page.json").exists():
         return
     try:
-        colours = json.loads((pdir / "page.json").read_text()).get("colours") or {}
+        saved = json.loads((pdir / "page.json").read_text())
     except (OSError, ValueError):
-        colours = {}
-    write(pdir, colours)
+        saved = {}
+    write(pdir, saved.get("colours") or {}, saved.get("outside") or [])
 
 
 def page_url() -> str:

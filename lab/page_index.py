@@ -9,6 +9,7 @@ import json
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from lab import bambuddy
 from lab.loop import ledger
 from lab.loop.outcome import comparison_validity, criteria_finding, prediction_outcome, sweep_finding
 from lab.records.project import ProjectPaths, project_settings
@@ -112,11 +113,12 @@ def _usage(e: dict) -> dict | None:
         rm, rg = ledger.run_usage(r, builds.get(r.get("build_id")))
         m, g = m + rm, g + rg
         u = r.get("usage") or {}
-        seen = u.get("usage_source") in OBSERVED
+        seen_m = u.get("minutes_source", u.get("usage_source")) in OBSERVED  # a kept figure keeps its own source
+        seen_g = u.get("g_source", u.get("usage_source")) in OBSERVED
         fallback = ("none" if r.get("build_id") not in builds else
                     "scaled_estimate" if (r.get("failed") or {}).get("at_fraction") is not None else "estimate")
-        m_src.add("observed" if seen and u.get("actual_minutes") is not None else fallback)
-        g_src.add("observed" if seen and u.get("actual_g") is not None else fallback)
+        m_src.add("observed" if seen_m and u.get("actual_minutes") is not None else fallback)
+        g_src.add("observed" if seen_g and u.get("actual_g") is not None else fallback)
     return {"minutes": round(m, 1), "g": round(g, 1), "minutes_source": _source(m_src), "g_source": _source(g_src)}
 
 
@@ -127,6 +129,17 @@ def _reserved(e: dict) -> dict | None:
     b = next((b for b in e.get("builds") or [] if r and b["id"] == r.get("build_id")), None)
     est = (b or {}).get("estimate") or {}
     return {"minutes": est.get("minutes"), "g": est.get("g")} if r and est else None
+
+
+def _print(r: dict) -> dict | None:
+    """The run's Bambuddy print as the page shows it, or None when it isn't linked. Before the snapshot the print is
+    still on the printer, so it reads as Printing."""
+    b = r.get("bambuddy")
+    if not b:
+        return None
+    return {"id": b.get("print"), "status_word": bambuddy.status_word(b.get("status") or "printing"),
+            "minutes": b.get("minutes"), "grams": b.get("grams"), "failed_at_estimate": b.get("failed_at_estimate"),
+            "failure_reason": b.get("failure_reason"), "linked": b.get("linked")}
 
 
 def _photos(e: dict, root: Path) -> list[dict]:
@@ -206,7 +219,8 @@ def _experiment(e: dict, exps: dict, root: Path, tol: float, production, at: str
         "run": (e.get("print_runs") or [{}])[-1].get("id"),
         "approval": e.get("approval"), "abandoned_reason": e.get("abandoned_reason"),
         "filament": (e.get("controlled") or {}).get("filament"),
-        "runs": [{"id": r["id"], "started_at": r.get("started_at"), "baseline_missing": r.get("baseline_missing") or []}
+        "runs": [{"id": r["id"], "started_at": r.get("started_at"), "baseline_missing": r.get("baseline_missing") or [],
+                  "print": _print(r), "entered_on_mac": (r.get("usage") or {}).get("usage_source") == "manual"}
                  for r in e.get("print_runs") or []],
         **_finding(e, root), "photos": _photos(e, root), "ai_observations": e.get("ai_observations") or [], "due_at": _due_at(e), "needs": _needs(e, at)}
 

@@ -64,3 +64,39 @@ def test_a_bambuddy_that_doesnt_answer_keeps_the_saved_colours(tmp_path, monkeyp
     (p.root / "page.json").write_text(json.dumps({"colours": {"terracotta": "#c0623a"}}))
     assert main(["page"]) == 0
     assert json.loads((p.root / "page.json").read_text())["colours"] == {"terracotta": "#c0623a"}
+
+
+def _prints(*ids, linked=()):
+    return [{"id": i, "archive_id": i + 100, "print_name": f"p{i}", "status": "completed",
+             "started_at": "2026-10-26T08:10:00.000000", "completed_at": "2026-10-26T11:40:00",
+             "duration_seconds": 1, "filament_used_grams": 1.0} for i in ids]
+
+
+def _linked_project(tmp_path, print_id=7):
+    from loop_fixtures import minimal_experiment, started
+    e = started(minimal_experiment("E-009"), minutes=60.0, g=20.0)
+    e["print_runs"][0]["bambuddy"] = {"print": print_id, "archive": 1, "linked": "auto", "at": "2026-10-26T12:00:00+00:00",
+                                      "snapshot_at": None}
+    return make_project(tmp_path, minimal_question(), [e])
+
+
+def test_outside_lists_the_newest_twenty_unlinked_prints_with_utc_times(tmp_path, monkeypatch):
+    monkeypatch.setattr(page.bambuddy, "print_log", lambda *a, **k: _prints(*range(30, 0, -1)))
+    p = _linked_project(tmp_path, print_id=30)
+    page.write(p.root, colours={})
+    out = json.loads((p.root / "page.json").read_text())["outside"]
+    assert len(out) == 20 and [o["print"] for o in out][:2] == [29, 28] and 30 not in [o["print"] for o in out]
+    assert out[0] == {"print": 29, "archive": 129, "name": "p29", "status_word": "Finished",
+                      "started": "2026-10-26T08:10:00Z", "ended": "2026-10-26T11:40:00Z"}
+
+
+def test_a_silent_bambuddy_keeps_the_saved_outside_and_refresh_reuses_it(tmp_path, monkeypatch):
+    p = _linked_project(tmp_path)
+    saved = [{"print": 3, "archive": 3, "name": "x", "status_word": "Finished", "started": None, "ended": None}]
+    (p.root / "page.json").write_text(json.dumps({"colours": {}, "outside": saved}))
+    monkeypatch.setattr(page.bambuddy, "print_log", lambda *a, **k: None)
+    page.write(p.root, colours={})
+    assert json.loads((p.root / "page.json").read_text())["outside"] == saved
+    monkeypatch.setattr(page.bambuddy, "print_log", lambda *a, **k: (_ for _ in ()).throw(AssertionError("asked")))
+    page.refresh(p.root)
+    assert json.loads((p.root / "page.json").read_text())["outside"] == saved

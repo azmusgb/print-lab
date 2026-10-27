@@ -405,3 +405,25 @@ def test_missing_bambuddy_grams_keep_the_existing_figure(paths):
     link_entries(paths, [entry(25, filament_used_grams=None)], no_plan)
     u = run(paths)["usage"]
     assert u["usage_source"] == "bambuddy" and u["actual_g"] == 20.0 and u["actual_minutes"] == 210.0
+
+
+def test_a_kept_figure_keeps_its_own_source(paths):
+    from lab.loop.commands import save_experiment
+    e = load_experiment(paths, "E-023")
+    e["print_runs"][0]["usage"] = {"actual_minutes": 50.0, "actual_g": 20.0, "usage_source": "telemetry",
+                                   "completion_fraction": None}
+    save_experiment(paths, e)
+    link_entries(paths, [entry(25, filament_used_grams=None)], no_plan)
+    u = run(paths)["usage"]
+    assert u["g_source"] == "telemetry" and "minutes_source" not in u and u["usage_source"] == "bambuddy"
+
+
+def test_a_kept_minutes_figure_keeps_its_own_source(paths):
+    from lab.loop.commands import save_experiment
+    e = load_experiment(paths, "E-023")
+    e["print_runs"][0]["usage"] = {"actual_minutes": 50.0, "actual_g": 20.0, "usage_source": "finished_unknown",
+                                   "completion_fraction": None}
+    save_experiment(paths, e)
+    link_entries(paths, [entry(25, duration_seconds=None)], no_plan)
+    u = run(paths)["usage"]
+    assert u["minutes_source"] == "finished_unknown" and "g_source" not in u
