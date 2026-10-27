@@ -18,6 +18,7 @@ from pathlib import Path
 
 from lab import bambuddy
 from lab.page_index import build_index
+from lab.records.store import atomic_write_json
 
 NEUTRAL = "#8698b1"
 
@@ -89,7 +90,7 @@ def write(pdir: Path, colours: dict | None = None, outside: list | None = None, 
     outside = [o for o in outside if o.get("print") not in linked]  # a print linked since is no longer outside
     ix["outside"] = outside
     out = pdir / "page.json"
-    out.write_text(json.dumps(ix, indent=1))
+    atomic_write_json(out, ix)  # a concurrent refresh or sync never reads it half-written
     (pdir / "page.html").unlink(missing_ok=True)
     return out
 

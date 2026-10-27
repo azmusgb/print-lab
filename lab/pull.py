@@ -301,7 +301,8 @@ def link_new_prints(paths: ProjectPaths, seen: dict | None = None) -> list[dict]
     newest id only once linking is done. Bambuddy off or failing: nothing happens and the saved id stays.
     Limits: the print log is read 100 entries deep, so more than 100 new prints between pulls leaves the oldest
     unlinked; the first run (no state file) scans the newest 100; and a reset or deleted state file can re-link a
-    print the owner had unlinked (it is new again by id). Skipped prints are not reported."""
+    print the owner had unlinked (it is new again by id). Skipped prints are not reported.
+    TODO: the spec's "no longer in Bambuddy" state for a linked print deleted from Bambuddy isn't implemented yet."""
     from lab import bambuddy
     from lab.loop.commands import all_experiments
     from lab.loop.linking import link_entries
@@ -360,18 +361,20 @@ def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]
     finally:
         lock_fd.close()  # releases the lock
     event = check_active_print(ProjectPaths(pdir), base, timeout)
+    entries = seen.get("entries")
     outside_changed = False
-    if seen.get("entries") is not None and (pdir / "page.json").exists():
-        from lab.page import refresh
-        try:
-            before = json.loads((pdir / "page.json").read_text()).get("outside")
-            refresh(pdir, seen["entries"])
-            outside_changed = (before or []) != (json.loads((pdir / "page.json").read_text()).get("outside") or [])
+    if entries is not None and (pdir / "page.json").exists():
+        from lab.page import outside_prints
+        from lab.page_index import build_index
+        try:  # refresh only when the list differs from the saved one: an unchanged pull leaves page.json alone
+            saved = json.loads((pdir / "page.json").read_text()).get("outside") or []
+            linked = {r["print"]["id"] for e in build_index(pdir)["experiments"] for r in e["runs"] if r.get("print")}
+            outside_changed = outside_prints(entries, linked) != saved
         except (OSError, ValueError):
             pass
     if any(r.get("status") == "applied" for r in applied) or event or outside_changed:
         from lab.page import refresh
-        refresh(pdir)
+        refresh(pdir, entries)
         from lab.sync import sync
         sync(pdir, base, timeout)
     if event:

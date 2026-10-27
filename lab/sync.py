@@ -70,8 +70,8 @@ def sync(pdir: Path, base: str | None = None, timeout: float = 10) -> dict:
         ix["colours"] = saved.get("colours") or {}
         ix["outside"] = saved.get("outside") or []
         if ix["outside"]:  # Local AI skips a push whose fingerprint it has, so the list is part of it
-            ids = json.dumps([o.get("print") for o in ix["outside"]])
-            ix["fingerprint"] += ":o" + hashlib.sha256(ids.encode()).hexdigest()[:12]
+            whole = json.dumps(ix["outside"], sort_keys=True)  # ids and statuses both: a status change must show
+            ix["fingerprint"] += ":o" + hashlib.sha256(whole.encode()).hexdigest()[:12]
         project = ix["project"]
         _, have = _call(base, "GET", f"/api/lab/{project}/photos", key, timeout)
         have = set(have.get("have") or [])

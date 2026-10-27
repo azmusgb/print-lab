@@ -25,6 +25,13 @@ def _mark(print_id: int) -> str:
     return f"bambuddy print #{print_id}"
 
 
+def _is_mark(reason, print_id: int) -> bool:
+    """A revision reason that starts with this print's mark ("bambuddy print #15", maybe with a note after it),
+    but not another print's (#150)."""
+    mark = _mark(print_id)
+    return isinstance(reason, str) and reason.startswith(mark) and not reason[len(mark):][:1].isdigit()
+
+
 def failed_at_estimate(duration_s, planned_s) -> float | None:
     """How far a failed print got: its time over the archive's planned time, clamped 0-1. Only an estimate (a slow
     first layer reads as less progress); None when either time is missing."""
@@ -97,7 +104,9 @@ def _snapshot(e: dict, run: dict, entry: dict, planned: float | None) -> bool:
         if b["minutes"] is None and keep.get("actual_minutes") is not None:
             usage["minutes_source"] = keep.get("minutes_source", keep.get("usage_source"))
         if b["grams"] is None and keep.get("actual_g") is not None:
-            usage["g_source"] = keep.get("g_source", keep.get("usage_source"))
+            g_src = keep.get("g_source", keep.get("usage_source"))
+            # Telemetry grams were the slicer's estimate (apply_telemetry now records none): say so.
+            usage["g_source"] = "slicer_estimate" if g_src == "telemetry" else g_src
         run["usage"] = usage
     return True
 
@@ -221,7 +230,7 @@ def unlink(paths: ProjectPaths, run_id: str) -> dict:
             run["failed"] = None
         if (run.get("usage") or {}).get("usage_source") == "bambuddy":
             revs = run.get("usage_revisions") or []
-            if revs and revs[-1].get("reason") == _mark(n):
+            if revs and _is_mark(revs[-1].get("reason"), n):
                 prior = revs.pop()
                 run["usage"] = {k: v for k, v in prior.items() if k not in ("replaced_at", "reason")}
                 if not revs:

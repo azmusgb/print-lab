@@ -643,3 +643,38 @@ def test_sync_sends_outside_and_it_changes_the_fingerprint(lab023, monkeypatch):
         posts = [c[3] for c in fake.calls if c[0] == "POST" and "/sync" in c[1]]
     assert posts[0]["outside"] == [] and [o["print"] for o in posts[1]["outside"]] == [9]
     assert posts[0]["fingerprint"] != posts[1]["fingerprint"]
+
+
+def test_a_second_pull_with_an_unchanged_log_leaves_page_json_alone(lab023, monkeypatch):
+    import time
+    log = [_entry(25, print_name="hex-tile_E-999_BLD-999-01")]
+    monkeypatch.setattr("lab.sync.sync", lambda *a, **k: None)
+    _saved_outside(lab023, [])
+    _run_pull(lab023, monkeypatch, log)
+    f = lab023.root / "page.json"
+    before, mtime = f.read_text(), f.stat().st_mtime_ns
+    time.sleep(0.02)
+    _run_pull(lab023, monkeypatch, log)
+    assert f.read_text() == before and f.stat().st_mtime_ns == mtime
+
+
+def test_a_status_change_of_an_outside_print_is_a_change(lab023, monkeypatch):
+    synced = []
+    monkeypatch.setattr("lab.sync.sync", lambda *a, **k: synced.append(1))
+    _saved_outside(lab023, [])
+    other = dict(print_name="hex-tile_E-999_BLD-999-01")
+    _run_pull(lab023, monkeypatch, [_entry(25, status="printing", completed_at=None, **other)])
+    synced.clear()
+    _run_pull(lab023, monkeypatch, [_entry(25, status="completed", **other)])
+    assert synced == [1] and _outside(lab023)[0]["status_word"] == "Finished"
+
+
+def test_sync_fingerprint_changes_when_only_an_outside_status_changes(lab023, monkeypatch):
+    row = {"print": 9, "archive": 9, "name": "n", "status_word": "Printing", "started": None, "ended": None}
+    _saved_outside(lab023, [row])
+    with FakeLocalAI() as fake:
+        sync.sync(lab023.root, base=fake.base)
+        _saved_outside(lab023, [{**row, "status_word": "Finished"}])
+        sync.sync(lab023.root, base=fake.base)
+        posts = [c[3] for c in fake.calls if c[0] == "POST" and "/sync" in c[1]]
+    assert posts[0]["fingerprint"] != posts[1]["fingerprint"]

@@ -415,7 +415,7 @@ def test_a_kept_figure_keeps_its_own_source(paths):
     save_experiment(paths, e)
     link_entries(paths, [entry(25, filament_used_grams=None)], no_plan)
     u = run(paths)["usage"]
-    assert u["g_source"] == "telemetry" and "minutes_source" not in u and u["usage_source"] == "bambuddy"
+    assert u["g_source"] == "slicer_estimate" and "minutes_source" not in u and u["usage_source"] == "bambuddy"
 
 
 def test_a_kept_minutes_figure_keeps_its_own_source(paths):
@@ -427,3 +427,41 @@ def test_a_kept_minutes_figure_keeps_its_own_source(paths):
     link_entries(paths, [entry(25, duration_seconds=None)], no_plan)
     u = run(paths)["usage"]
     assert u["minutes_source"] == "finished_unknown" and "g_source" not in u
+
+
+def test_telemetry_grams_kept_by_a_snapshot_are_labelled_a_slicer_estimate(paths):
+    from lab.loop.commands import record_usage
+    from lab.page_index import OBSERVED
+    record_usage(paths, "PR-023-01", minutes=31, grams=12.5, usage_source="telemetry")
+    link_entries(paths, [entry(15, status="completed", failure_reason=None, filament_used_grams=None)], no_plan)
+    u = run(paths)["usage"]
+    assert u["actual_g"] == 12.5 and u["g_source"] == "slicer_estimate" and u["usage_source"] == "bambuddy"
+    assert "slicer_estimate" not in OBSERVED
+
+
+def test_a_manual_gram_figure_keeps_its_own_source(paths):
+    from lab.loop.commands import record_usage
+    record_usage(paths, "PR-023-01", minutes=31, grams=12.5, usage_source="finished_unknown")
+    link_entries(paths, [entry(15, status="completed", failure_reason=None, filament_used_grams=None)], no_plan)
+    assert run(paths)["usage"]["g_source"] == "finished_unknown"
+
+
+def test_unlink_restores_a_revision_whose_reason_extends_the_mark(paths):
+    from lab.loop.commands import record_usage, save_experiment
+    record_usage(paths, "PR-023-01", minutes=31, grams=None, usage_source="telemetry")
+    link_entries(paths, [entry(15, status="completed", failure_reason=None)], no_plan)
+    e = load_experiment(paths, "E-023")
+    e["print_runs"][0]["usage_revisions"][-1]["reason"] = "bambuddy print #15 re-snapshot"
+    save_experiment(paths, e)
+    r = unlink(paths, "PR-023-01")
+    assert r["usage"]["usage_source"] == "telemetry" and r["usage"]["actual_minutes"] == 31
+
+
+def test_unlink_does_not_restore_a_revision_for_another_print(paths):
+    from lab.loop.commands import record_usage, save_experiment
+    record_usage(paths, "PR-023-01", minutes=31, grams=None, usage_source="telemetry")
+    link_entries(paths, [entry(15, status="completed", failure_reason=None)], no_plan)
+    e = load_experiment(paths, "E-023")
+    e["print_runs"][0]["usage_revisions"][-1]["reason"] = "bambuddy print #150"  # a different print, same digits
+    save_experiment(paths, e)
+    assert unlink(paths, "PR-023-01")["usage"] is None

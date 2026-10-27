@@ -105,3 +105,15 @@ def test_archive(monkeypatch):
     assert seen["req"].full_url == "http://bambuddy.test/api/v1/archives/9"
     _stub(monkeypatch, exc=OSError("down"))
     assert bambuddy.archive(9) is None
+
+
+def test_a_naive_midnight_adjacent_time_is_read_as_utc_not_local(monkeypatch):
+    import time
+    monkeypatch.setenv("TZ", "America/New_York")
+    time.tzset()
+    try:
+        t = bambuddy.parse_time("2026-10-28T02:30:00")  # 22:30 EDT on the 27th if it were local
+        assert t.isoformat() == "2026-10-28T02:30:00+00:00"
+    finally:
+        monkeypatch.undo()
+        time.tzset()

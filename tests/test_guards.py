@@ -124,6 +124,17 @@ def test_retry_limit(proj):
     assert "retry_limit" in codes(r, "needs_approval") and "adhesion" in r.text
 
 
+def test_retry_limit_with_an_unknown_failure_point_does_not_crash(proj):
+    eid = built(proj)
+    fr = [None, 0.4]
+    edit(proj, eid, lambda e: e.update(print_runs=[
+        {"id": f"PR-{eid[2:]}-0{i}", "build_id": f"BLD-{eid[2:]}-01", "failed": {"at_fraction": f, "note": None}}
+        for i, f in zip((1, 2), fr)]))
+    r = check_experiment(proj, eid)
+    assert "retry_limit" in codes(r, "needs_approval")
+    assert "at an unknown point" in r.text and "at 40%" in r.text
+
+
 def test_preliminary_plate_mismatch_needs_approval_and_stays_confounded(proj, monkeypatch):
     import lab.loop.realized as realized
     monkeypatch.setattr(realized, "realization", lambda *a: None)  # the fake slicer's G-code is the same file twice

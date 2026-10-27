@@ -151,7 +151,9 @@ def check_experiment(paths: ProjectPaths, exp_id: str) -> CheckResult:
             f"{_n(s['g'])} + {_n(est['g'])} / {_n(b['g'])} g for {q['id']}")
     failed = [r for r in e.get("print_runs") or [] if r.get("failed")]
     add("retry_limit", len(failed) < 2, "needs_approval",
-        "two attempts failed: " + "; ".join(f"{r['id']} at {round(r['failed']['at_fraction'] * 100)}%"
+        "two attempts failed: " + "; ".join(f"{r['id']} " + (f"at {round(r['failed']['at_fraction'] * 100)}%"
+                                                            if r['failed'].get('at_fraction') is not None
+                                                            else "at an unknown point")
                                              + (f" ({r['failed']['note']})" if r['failed'].get('note') else "")
                                              for r in failed) if len(failed) >= 2 else f"{len(failed)} / 2 failed attempts")
     reasons = comparison_validity(e, exps, tol)["reasons"]
