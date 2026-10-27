@@ -10,6 +10,7 @@ from lab.records.project import ProjectPaths
 from lab.records.store import next_local_id, now, record_lock
 
 ENDED = ("completed", "failed", "cancelled")
+NOT_YET_PRINTED = ("built", "ready", "needs_approval", "approved")
 REPLACEABLE = (None, "telemetry", "finished_unknown")  # a figure Bambuddy's own measurement is better than
 
 
@@ -39,7 +40,11 @@ def _link(entry: dict, how: str) -> dict:
 
 def _attach(e: dict, build_id: str, entry: dict, how: str) -> tuple[dict, str, str | None]:
     """Link `entry` to the build's newest run without a link, or open a run for it: (run, "linked" | "created",
-    message). Opening a run checks nothing and leaves the experiment's status alone: the print already happened."""
+    message). Opening a run checks nothing: the print already happened. An experiment not yet printed becomes
+    `printing`, so a finished print asks for its verdict (a failed one goes back to `built` in the snapshot);
+    answered and abandoned ones stay as they are."""
+    if e["status"] in NOT_YET_PRINTED:
+        e["status"] = "printing"
     open_runs = [r for r in e["print_runs"] if r.get("build_id") == build_id and not r.get("bambuddy")]
     if open_runs:
         run = open_runs[-1]

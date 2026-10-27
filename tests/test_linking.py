@@ -56,16 +56,6 @@ def test_creates_a_run_when_none_is_open(paths):
     assert new["bambuddy"]["print"] == 16 and new["bambuddy"]["archive"] == 15
 
 
-def test_created_run_leaves_status_alone(paths):
-    e = load_experiment(paths, "E-023")
-    e["print_runs"][0]["bambuddy"] = {"print": 9, "archive": 9, "linked": "hand"}
-    e["status"] = "built"
-    from lab.loop.commands import save_experiment
-    save_experiment(paths, e)
-    link_entries(paths, [entry(15, status="printing", completed_at=None, duration_seconds=None)], no_plan)
-    assert load_experiment(paths, "E-023")["status"] == "built"
-
-
 def test_newest_of_two_open_runs_wins_and_says_so(paths):
     from lab.loop.commands import save_experiment
     e = load_experiment(paths, "E-023")
@@ -229,3 +219,40 @@ def test_a_linked_run_validates(paths):
     e["print_runs"][0]["bambuddy"] = "25"
     with pytest.raises(Exception):
         validate(e, "experiment", "E-023.json")
+
+
+def built_project(tmp_path, status="built"):
+    """hex-tile with E-023 built (BLD-023-01) and never started."""
+    e = started(minimal_experiment("E-023", "Q-023"))
+    e["print_runs"], e["status"] = [], status
+    return make_project(tmp_path, minimal_question("Q-023", ("E-023",)), [e])
+
+
+def test_created_run_for_a_live_print_makes_it_printing(tmp_path):
+    p = built_project(tmp_path)
+    events = link_entries(p, [entry(15, status="printing", completed_at=None, duration_seconds=None)], no_plan)
+    assert [x["action"] for x in events] == ["created"]
+    assert load_experiment(p, "E-023")["status"] == "printing"
+
+
+def test_created_run_for_a_finished_print_asks_for_the_verdict(tmp_path):
+    from lab import page_index
+    p = built_project(tmp_path, "approved")
+    link_entries(p, [entry(15, status="completed", failure_reason=None)], no_plan)
+    e = load_experiment(p, "E-023")
+    assert e["status"] == "printing"
+    assert page_index._needs(e, "2026-10-27T12:00:00+00:00")["action"] == "Judge the print"
+
+
+def test_created_run_for_a_failed_print_ends_built(tmp_path):
+    p = built_project(tmp_path, "ready")
+    link_entries(p, [entry(15)], lambda _: 3000.0)
+    e = load_experiment(p, "E-023")
+    assert e["status"] == "built" and e["print_runs"][0]["failed"]["at_fraction"] == 0.4
+
+
+def test_answered_experiment_status_is_unchanged(tmp_path):
+    p = built_project(tmp_path, "answered")
+    link_entries(p, [entry(15, status="completed", failure_reason=None)], no_plan)
+    e = load_experiment(p, "E-023")
+    assert e["status"] == "answered" and e["print_runs"][0]["bambuddy"]["print"] == 15
