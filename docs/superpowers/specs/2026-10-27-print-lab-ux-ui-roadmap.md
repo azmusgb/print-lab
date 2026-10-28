@@ -39,7 +39,15 @@ flowchart LR
 
 ---
 
-### Phase 2: Mobile Information Density & Field Workflow (Phone 390w)
+### Phase 2: Operator Experience & Safety *(Shipped & Verified)*
+- [x] **HMS Error Code Translation Dictionary**: Comprehensive lookup map across 40+ Bambu HMS error codes (XCAM vision, motion controller, toolhead, cutter, extruder, AMS feed slots) in `app/public/print-lab.js` with clear troubleshooting guidance and module fallbacks (`.lab-live__hms`).
+- [x] **Interactive Curtain Wipe (Slider) Comparison Mode**: Added dual-mode segmented selector in `#labCompare` (`[Side by side] [Curtain slider]`) with draggable range curtain wipe (`.lab-wipe`) to inspect 0.1 mm surface artifacts directly across runs in `app/public/print-lab-photos.js`.
+- [x] **Host Loopback Device Authorization**: In `app/server.js`, direct loopback requests authenticate automatically as local operator device (`dev-mac-local`), eliminating 401 Unauthorized errors on pending requests and camera feed while strictly preserving Mac key mutation security.
+- [x] **Destructive Action Safety**: Verified two-step confirmation on the Drop/Abandon sheet (`labDropSheet`) preventing accidental cancellation of sliced plates.
+
+---
+
+### Phase 3: Mobile Information Density & Field Workflow (Phone 390w)
 *Target: Phone-in-hand field operations at the printer bed (Figma Boards 05, 06).*
 
 1. **Sticky Jump Anchors & Context Sub-Bar**:
