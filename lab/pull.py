@@ -1,5 +1,6 @@
 """`lab pull`: fetch and apply pending phone requests (verdicts, photos) from Local AI."""
 import fcntl
+import hashlib
 import json
 import os
 import plistlib
@@ -7,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -86,9 +88,49 @@ def _post_result(target: Target, project: str, req_id: str, status: str, message
                          json.dumps({"status": status, "message": message}).encode())
         if st != 200:
             print(f"lab pull: {target.name} wouldn't take the result for {req_id}: {_error(body, st)}", file=sys.stderr)
-    except (OSError, ValueError) as e:
+    except Exception as e:  # one result post never stops the loop
         print(f"lab pull: couldn't tell {target.name} the result for {req_id} ({getattr(e, 'reason', None) or e})",
               file=sys.stderr)
+
+
+SHA_RE = re.compile(r"[0-9a-f]{64}")  # a photo's name is the SHA-256 of its bytes; nothing else reaches a URL or path
+MAX_PHOTOS = 50  # Pi Hub's caps
+MAX_TAB = 16
+MAX_PHOTO_BYTES = 8 * 1024 * 1024
+
+
+def _apply_photos(paths: ProjectPaths, project: str, run_id, payload: dict, target: Target,
+                  timeout: float) -> tuple[str, str]:
+    """Check the request's shape, download each photo (size-capped, hash-checked), add them to the run.
+    Returns (status, message); a download failure raises OSError/HTTPError for the caller to turn into `error`."""
+    photos = payload.get("photos")
+    if not isinstance(photos, list) or not 1 <= len(photos) <= MAX_PHOTOS:
+        return "refused", f"A photos request needs 1 to {MAX_PHOTOS} photos."
+    for p in photos:
+        if not (isinstance(p, dict) and isinstance(p.get("sha256"), str) and SHA_RE.fullmatch(p["sha256"])
+                and isinstance(p.get("tab"), str) and len(p["tab"]) <= MAX_TAB):
+            return "refused", f"A photo in the request isn't a SHA-256 name with a tab of up to {MAX_TAB} characters."
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            files, tabs = [], []
+            for p in photos:
+                sha = p["sha256"]
+                req_obj = urllib.request.Request(f"{target.base}/api/lab/{project}/incoming/{sha}.jpg", method="GET",
+                                                 headers={target.header: target.key})
+                with _open(req_obj, timeout, target.context) as resp:
+                    data = resp.read(MAX_PHOTO_BYTES + 1)
+                if len(data) > MAX_PHOTO_BYTES:
+                    return "refused", f"A photo is over {MAX_PHOTO_BYTES // (1024 * 1024)} MB."
+                if hashlib.sha256(data).hexdigest() != sha:
+                    return "refused", f"A photo didn't match its name ({sha[:12]}), so none were added."
+                tmp_path = Path(td) / f"{sha}.jpg"
+                tmp_path.write_bytes(data)
+                files.append(tmp_path)
+                tabs.append(p["tab"])
+            add_photos(paths, run_id, files, tabs=tabs)
+            return "applied", f"{len(files)} photos added"
+    except ValueError as e:
+        return "refused", str(e)
 
 
 def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]:
@@ -176,30 +218,16 @@ def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]
                     status = "refused"
                     message = str(e)
             elif kind == "photos":
-                photo_list = payload.get("photos", [])
                 try:
-                    with tempfile.TemporaryDirectory() as td:
-                        tmp_dir = Path(td)
-                        files = []
-                        tabs = []
-                        for p in photo_list:
-                            sha = p.get("sha256")
-                            tab = p.get("tab")
-                            photo_url = f"{target.base}/api/lab/{project}/incoming/{sha}.jpg"
-                            req_obj = urllib.request.Request(photo_url, method="GET",
-                                                             headers={target.header: target.key})
-                            with _open(req_obj, timeout, target.context) as resp:
-                                data = resp.read()
-                            tmp_path = tmp_dir / f"{sha}.jpg"
-                            tmp_path.write_bytes(data)
-                            files.append(tmp_path)
-                            tabs.append(tab)
-                        add_photos(paths, run_id, files, tabs=tabs)
-                        status = "applied"
-                        message = f"{len(files)} photos added"
-                except ValueError as e:
-                    status = "refused"
-                    message = str(e)
+                    status, message = _apply_photos(paths, project, run_id, payload, target, timeout)
+                except urllib.error.HTTPError as e:
+                    status, message = "error", f"HTTP {e.code}"
+                except (OSError, ValueError) as e:  # URLError, timeout, closed connection
+                    status, message = "error", str(getattr(e, "reason", None) or e)[:200] or type(e).__name__
+                if status == "error":  # not recorded and no result posted: the request is retried on the next run
+                    print(f"lab pull: {target.name}: photos for {req_id} not fetched ({message})", file=sys.stderr)
+                    results.append({"id": req_id, "status": status, "message": message})
+                    continue
             elif kind == "observation":
                 from lab.observe_cli import _check_experiment
                 from lab.records import observations as obs
@@ -392,7 +420,10 @@ def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]
         from lab.page import refresh
         refresh(pdir, entries)
         from lab.sync import sync
-        sync(pdir, timeout=timeout) if base is None else sync(pdir, base, timeout)
+        if base is None:
+            sync(pdir, timeout=timeout)
+        else:
+            sync(pdir, base, timeout)
     if event:
         applied.append({
             "id": f"event-{event['run']}",
