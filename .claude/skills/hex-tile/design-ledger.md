@@ -33,6 +33,7 @@ Reconciled 26 Oct 2026 from every source on the Mac. The full working file, with
 | v59 | Ribs 0.5 mm short (no contact) | – | E-011: faces broke loose from the strip base; owner: "Not good" | terracotta |
 | v61s | 207 tacks, fused into both 1.25 mm backs | owner E-020: "was SUPER hard to seperate them"; AI-photo: one back torn | owner E-020: "face was good and no extra artifaces" | terracotta |
 | v62k | Kiss tacks (fused into one back, 0.15 mm short of the other) | E-021/E-022: not recorded | owner E-021: "really bad in person", "both sides bad" (both strips, including v61s) | terracotta |
+| **C02** | **None: two independent tiles**, 19 mm deep (9 mm bed edge), 2.4 mm skin/walls, 45° roof, U tape land | nothing to separate | owner 28 Oct (Bambuddy #30, 3 h 08 min, settings not captured): "BEST ONE YES - AMAZING - ITS A KEEPER" | tan PLA Matte (AF7933) |
 
 ## What the record supports
 
