@@ -1177,7 +1177,7 @@
         "actual_g": null,
         "usage_source": "manual",
         "completion_fraction": null,
-        "source_note": "minutes from Bambu Handy's print history (shown to 0.1 h, so ±3 min), entered by hand; not printer telemetry; grams not measured (slicer estimate)"
+        "source_note": "minutes from Bambu Handy's print history (shown to 0.1 h, so \u00b13 min), entered by hand; not printer telemetry; grams not measured (slicer estimate)"
       },
       "failed": null,
       "photos": [
@@ -1211,7 +1211,21 @@
           "captured_at": "2026-10-25T03:47:40+00:00",
           "source": "remote-1792900060174533000-6add48c413cb47d79361d6f8ce67d6d0.jpg"
         }
-      ]
+      ],
+      "bambuddy": {
+        "print": 7,
+        "archive": 7,
+        "linked": "auto",
+        "at": "2026-10-27T21:49:51+00:00",
+        "status": "completed",
+        "started": "2026-10-25T01:43:15+00:00",
+        "ended": "2026-10-25T03:27:40+00:00",
+        "minutes": 104.4,
+        "grams": null,
+        "failure_reason": null,
+        "failed_at_estimate": null,
+        "snapshot_at": "2026-10-27T21:49:51+00:00"
+      }
     }
   ],
   "owner_verdict": {
