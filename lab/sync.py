@@ -35,8 +35,17 @@ class Target:
     context: ssl.SSLContext | None
 
 
+def _clean_key(text: str, name: str) -> str:
+    """A key is printable ASCII with no whitespace. Anything else (an inner newline, a control character) would make
+    http.client raise an error that quotes the key, so it is refused here, by file name and never by content."""
+    key = text.strip()
+    if key and not all(0x21 <= ord(c) <= 0x7E for c in key):
+        raise ValueError(f"The {name} key file has characters a key can't contain.")
+    return key
+
+
 def _key() -> str:
-    return Path(os.environ.get("LAB_LOCALAI_KEY_FILE", HOME / "mac.key")).read_text().strip()
+    return _clean_key(Path(os.environ.get("LAB_LOCALAI_KEY_FILE", HOME / "mac.key")).read_text(), "Local AI")
 
 
 def _context(base: str):
@@ -73,7 +82,7 @@ def hub_target() -> Target | None:
     if not ca.is_file():
         raise ValueError("Save the house CA first: curl -o ~/.config/print-lab/home-ca.crt "
                          "https://home.home.arpa/home-ca.crt")
-    key = key_file.read_text().strip()
+    key = _clean_key(key_file.read_text(), "Pi Hub")
     if not key:
         raise ValueError("The Pi Hub key file is empty.")
     try:
@@ -278,7 +287,7 @@ def cmd_sync(args) -> int:
 
 
 def register(sub) -> None:
-    s = sub.add_parser("sync", help="push the lab page's data and new photos to Local AI (read-only there)")
+    s = sub.add_parser("sync", help="push the lab page's data and new photos to Local AI and Pi Hub (read-only there)")
     s.set_defaults(fn=cmd_sync)
 
 

@@ -186,3 +186,50 @@ def test_a_result_post_that_raises_anything_is_printed_and_the_loop_goes_on(proj
     out = pull.apply_pending(project.root, _t("http://127.0.0.1:9"))
     assert [r["status"] for r in out] == ["applied", "applied"]
     assert "boom" in capsys.readouterr().err
+
+
+# ---- final fix wave --------------------------------------------------------------------------------------------
+@pytest.mark.parametrize("photo", [{"sha256": GOOD, "tab": None}, {"sha256": GOOD}], ids=["tab-null", "tab-absent"])
+def test_photo_without_a_tab_is_applied(project, photo):
+    with FakeLocalAI(requests=[req([photo])], incoming={GOOD: PNG}) as fake:
+        out = pull.apply_pending(project.root, _t(fake.base))
+    assert out[0]["status"] == "applied"
+    (entry,) = photos_of(project)
+    assert "tab" not in entry
+
+
+def test_a_dropped_connection_mid_photo_is_an_error_not_a_crash(project):
+    class H(BaseHTTPRequestHandler):
+        def log_message(self, *a):
+            pass
+
+        def do_GET(self):
+            body = json.dumps({"items": [req([{"sha256": GOOD, "tab": None}])]}).encode() \
+                if "/requests" in self.path else PNG[:10]
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(body) if "/requests" in self.path else len(PNG)))  # lies
+            self.end_headers()
+            self.wfile.write(body)
+            self.close_connection = True
+    srv = ThreadingHTTPServer(("127.0.0.1", 0), H)
+    th = threading.Thread(target=srv.serve_forever, daemon=True)
+    th.start()
+    try:
+        out = pull.apply_pending(project.root, _t(f"http://127.0.0.1:{srv.server_port}"))
+    finally:
+        srv.shutdown()
+        srv.server_close()
+        th.join()
+    assert out[0]["status"] == "error"
+    assert handled(project) == []
+
+
+def test_a_local_failure_adding_photos_is_worded_as_local_and_retried(project, monkeypatch):
+    def full(*a, **k):
+        raise OSError("No space left on device")
+    monkeypatch.setattr(pull, "add_photos", full)
+    with FakeLocalAI(requests=[req([{"sha256": GOOD, "tab": "09A"}])], incoming={GOOD: PNG}) as fake:
+        out = pull.apply_pending(project.root, _t(fake.base))
+    assert out[0]["status"] == "error"
+    assert out[0]["message"] == "Couldn't add the photos on the Mac: No space left on device"
+    assert handled(project) == [] and fake.results == {}

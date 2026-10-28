@@ -18,3 +18,4 @@ projects/*/requests.jsonl
 projects/*/bambuddy-seen.json
 projects/*/.pull.lock
 projects/*/telemetry/
+projects/*/.pull-state.json

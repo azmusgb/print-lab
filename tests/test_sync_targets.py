@@ -142,3 +142,29 @@ def test_a_hub_error_reaches_the_sync_message(tmp_path):
         r = sync._sync_to_target(tmp_path, Target("Pi Hub", f.base, "X-Hub-Mac-Key", "k", None),
                                  {"project": "p", "experiments": []})
     assert r["ok"] is False and r["message"] == "Bad Mac key"
+
+
+@pytest.mark.parametrize("bad", ["abc\ndef", "abc\r\ndef", "abc def", "abc\tdef", "abc\x00def", "abc\x7fdef", "abcé"])
+def test_a_key_with_whitespace_or_control_characters_is_refused_without_quoting_it(keys, tmp_path, monkeypatch, bad):
+    keys[1].write_text(bad)
+    keys[0].write_text(bad)
+    monkeypatch.setenv("LAB_HUB_CA", str(_make_ca(tmp_path)))
+    with pytest.raises(ValueError) as h:
+        sync.hub_target()
+    assert "Pi Hub key file has characters a key can't contain" in str(h.value) and "abc" not in str(h.value)
+    with pytest.raises(ValueError) as l:
+        sync.localai_target("http://127.0.0.1:9")
+    assert "Local AI key file has characters a key can't contain" in str(l.value) and "abc" not in str(l.value)
+
+
+def test_a_bad_key_text_never_reaches_sync_json_or_the_target_list(keys, tmp_path, monkeypatch):
+    keys[0].write_text("abc\ndef")
+    monkeypatch.setenv("LAB_HUB_KEY_FILE", str(tmp_path / "absent.key"))
+    ts = sync.targets()
+    assert ts[0][0] == "Local AI" and "abc" not in ts[0][1] and "def" not in ts[0][1]
+    pdir = tmp_path / "proj"
+    pdir.mkdir()
+    sync.sync(pdir)
+    assert "abc" not in (pdir / "sync.json").read_text()
+    r = sync.sync(pdir, "http://127.0.0.1:9")
+    assert "abc" not in json.dumps(r) and "abc" not in (pdir / "sync.json").read_text()

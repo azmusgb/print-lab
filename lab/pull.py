@@ -1,6 +1,7 @@
 """`lab pull`: fetch and apply pending phone requests (verdicts, photos) from Local AI."""
 import fcntl
 import hashlib
+import http.client
 import json
 import os
 import plistlib
@@ -97,6 +98,7 @@ SHA_RE = re.compile(r"[0-9a-f]{64}")  # a photo's name is the SHA-256 of its byt
 MAX_PHOTOS = 50  # Pi Hub's caps
 MAX_TAB = 16
 MAX_PHOTO_BYTES = 8 * 1024 * 1024
+LOCAL_FAIL = "Couldn't add the photos on the Mac: "
 
 
 def _apply_photos(paths: ProjectPaths, project: str, run_id, payload: dict, target: Target,
@@ -108,8 +110,8 @@ def _apply_photos(paths: ProjectPaths, project: str, run_id, payload: dict, targ
         return "refused", f"A photos request needs 1 to {MAX_PHOTOS} photos."
     for p in photos:
         if not (isinstance(p, dict) and isinstance(p.get("sha256"), str) and SHA_RE.fullmatch(p["sha256"])
-                and isinstance(p.get("tab"), str) and len(p["tab"]) <= MAX_TAB):
-            return "refused", f"A photo in the request isn't a SHA-256 name with a tab of up to {MAX_TAB} characters."
+                and (p.get("tab") is None or (isinstance(p["tab"], str) and len(p["tab"]) <= MAX_TAB))):
+            return "refused", f"A photo in the request isn't a SHA-256 name with an optional tab of up to {MAX_TAB} characters."
     try:
         with tempfile.TemporaryDirectory() as td:
             files, tabs = [], []
@@ -119,15 +121,24 @@ def _apply_photos(paths: ProjectPaths, project: str, run_id, payload: dict, targ
                                                  headers={target.header: target.key})
                 with _open(req_obj, timeout, target.context) as resp:
                     data = resp.read(MAX_PHOTO_BYTES + 1)
+                if len(data) <= MAX_PHOTO_BYTES and getattr(resp, "length", None):
+                    # a body shorter than its Content-Length is a dropped connection, not a bad photo: retry, don't refuse
+                    raise http.client.IncompleteRead(data, resp.length)
                 if len(data) > MAX_PHOTO_BYTES:
                     return "refused", f"A photo is over {MAX_PHOTO_BYTES // (1024 * 1024)} MB."
                 if hashlib.sha256(data).hexdigest() != sha:
                     return "refused", f"A photo didn't match its name ({sha[:12]}), so none were added."
                 tmp_path = Path(td) / f"{sha}.jpg"
-                tmp_path.write_bytes(data)
+                try:
+                    tmp_path.write_bytes(data)
+                except OSError as e:
+                    return "error", f"{LOCAL_FAIL}{e}"[:200]
                 files.append(tmp_path)
-                tabs.append(p["tab"])
-            add_photos(paths, run_id, files, tabs=tabs)
+                tabs.append(p.get("tab"))
+            try:
+                add_photos(paths, run_id, files, tabs=tabs)
+            except OSError as e:  # sips missing, disk full: local, kept as `error` so it is retried and not lost
+                return "error", f"{LOCAL_FAIL}{e}"[:200]
             return "applied", f"{len(files)} photos added"
     except ValueError as e:
         return "refused", str(e)
@@ -222,10 +233,11 @@ def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]
                     status, message = _apply_photos(paths, project, run_id, payload, target, timeout)
                 except urllib.error.HTTPError as e:
                     status, message = "error", f"HTTP {e.code}"
-                except (OSError, ValueError) as e:  # URLError, timeout, closed connection
+                except (OSError, http.client.HTTPException) as e:  # URLError, timeout, closed or short connection
                     status, message = "error", str(getattr(e, "reason", None) or e)[:200] or type(e).__name__
                 if status == "error":  # not recorded and no result posted: the request is retried on the next run
-                    print(f"lab pull: {target.name}: photos for {req_id} not fetched ({message})", file=sys.stderr)
+                    what = message if message.startswith(LOCAL_FAIL) else f"not fetched ({message})"
+                    print(f"lab pull: {target.name}: photos for {req_id} {what}", file=sys.stderr)
                     results.append({"id": req_id, "status": status, "message": message})
                     continue
             elif kind == "observation":
@@ -379,19 +391,49 @@ def link_new_prints(paths: ProjectPaths, seen: dict | None = None) -> list[dict]
             for ev in events if ev["action"] != "skipped"]
 
 
+STATE_FILE = ".pull-state.json"  # per project, outside git: each target's last outcome, so a standing failure prints once
+
+
+def _load_state(pdir: Path) -> dict:
+    try:
+        st = json.loads((Path(pdir) / STATE_FILE).read_text())
+        return st if isinstance(st, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _save_state(pdir: Path, state: dict) -> None:
+    from lab.records.store import atomic_write_json
+    try:
+        if _load_state(pdir) != state:
+            atomic_write_json(Path(pdir) / STATE_FILE, state)
+    except OSError as e:  # a log nicety never stops a pull
+        print(f"lab pull: couldn't save {STATE_FILE} ({e})", file=sys.stderr)
+
+
 def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]:
     pdir = Path(pdir)
     applied = []
+    state = _load_state(pdir)
+    last = state.get("targets") if isinstance(state.get("targets"), dict) else {}
+    now_state: dict = {}
     for t in targets(base):
         name = t[0] if isinstance(t, tuple) else t.name
+        now_state[name] = "ok"
         try:
             if isinstance(t, tuple):
                 raise RemoteError(t[1])
             applied += apply_pending(pdir, t, timeout)
         except Exception as e:  # one target's trouble never stops the others
             message = str(e) or type(e).__name__
-            print(f"lab pull: {name}: {message}", file=sys.stderr)
-            applied.append({"id": name, "status": "error", "message": message})
+            now_state[name] = message
+            entry = {"id": name, "status": "error", "message": message}
+            if last.get(name) == message:  # the same failure as last run: still returned, but not printed again
+                entry["repeat"] = True
+            else:
+                print(f"lab pull: {name}: {message}", file=sys.stderr)
+            applied.append(entry)
+    _save_state(pdir, {**state, "targets": now_state})
     seen: dict = {}
     lock_fd = open(pdir / ".pull.lock", "a")
     try:
@@ -503,15 +545,19 @@ def cmd_pull(args) -> int:
             print(f"Failed to uninstall launchd agent: {e}", file=sys.stderr)
             return 1
     applied = pull(pdir)
-    if not applied:
+    shown = [r for r in applied if not r.get("repeat")]  # a failure already printed last run stays out of the log
+    state = _load_state(pdir)
+    idle = not applied
+    if idle and not state.get("idle"):
         print("No pending requests.")
-    for r in applied:
+    for r in shown:
         print(f"{r['id']}: {r['status']} ({r['message']})")
+    _save_state(pdir, {**state, "idle": idle})
     return 1 if any(r["status"] == "error" for r in applied) else 0
 
 
 def register(sub) -> None:
-    s = sub.add_parser("pull", help="fetch and apply pending phone requests (verdicts, photos) from Local AI")
+    s = sub.add_parser("pull", help="fetch and apply pending phone requests (verdicts, photos) from Local AI and Pi Hub")
     s.add_argument("--install", action="store_true", help="install launchd agent for 60s pickup")
     s.add_argument("--uninstall", action="store_true", help="uninstall launchd agent")
     s.set_defaults(fn=cmd_pull)

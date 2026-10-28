@@ -271,3 +271,62 @@ def test_status_shows_each_target():
     assert "✓ Local AI" in text and "✗ Pi Hub: nope" in text
     old = format_status_text({**st, "sync": {"ok": True, "message": "synced", "at": "2026-10-28T10:00:00+00:00"}})
     assert "Sync:    ✓ Synced (" in old
+
+
+# ---- repeated failures are logged once ---------------------------------------------------------------------------
+def _pull_down(project, monkeypatch, capsys, base="http://127.0.0.1:9"):
+    with FakeLocalAI() as a:
+        use(monkeypatch, lai(a.base), hub(base))
+        out = pull.pull(project.root, timeout=1)
+    return out, capsys.readouterr().err
+
+
+def test_a_target_error_prints_once_until_it_changes(project, monkeypatch, capsys):
+    out1, err1 = _pull_down(project, monkeypatch, capsys)
+    out2, err2 = _pull_down(project, monkeypatch, capsys)
+    assert "Pi Hub" in err1 and err2 == ""
+    assert [r["id"] for r in out2 if r["status"] == "error"] == ["Pi Hub"]  # still reported to the caller
+    assert (project.root / ".pull-state.json").exists()
+    # a different failure prints again, and a recovery then a new failure prints again
+    monkeypatch.setattr(pull, "apply_pending", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("different")))
+    _, err3 = _pull_down(project, monkeypatch, capsys)
+    assert "different" in err3
+    monkeypatch.undo()
+    monkeypatch.setattr(pull, "link_new_prints", lambda *a, **k: [])
+    monkeypatch.setattr(pull, "check_active_print", lambda *a, **k: None)
+    monkeypatch.setattr("lab.sync.sync", lambda *a, **k: None)
+    with FakeLocalAI() as a, FakeLocalAI() as b:
+        use(monkeypatch, lai(a.base), hub(b.base))
+        pull.pull(project.root, timeout=1)
+    capsys.readouterr()
+    _, err4 = _pull_down(project, monkeypatch, capsys)
+    assert "Pi Hub" in err4
+
+
+def test_cmd_pull_stays_quiet_on_a_repeat_but_still_exits_1(project, monkeypatch, capsys):
+    monkeypatch.setattr("lab.cli.project_dir", lambda p=None: project.root)
+    args = type("A", (), {"project": None})()
+    with FakeLocalAI() as a:
+        use(monkeypatch, lai(a.base), hub("http://127.0.0.1:9"))
+        assert pull.cmd_pull(args) == 1
+        first = capsys.readouterr()
+        assert pull.cmd_pull(args) == 1
+        second = capsys.readouterr()
+    assert "Pi Hub: error" in first.out and second.out == "" and second.err == ""
+
+
+def test_no_pending_requests_prints_once_while_idle(project, monkeypatch, capsys):
+    monkeypatch.setattr("lab.cli.project_dir", lambda p=None: project.root)
+    args = type("A", (), {"project": None})()
+    with FakeLocalAI() as a:
+        use(monkeypatch, lai(a.base))
+        assert pull.cmd_pull(args) == 0
+        assert capsys.readouterr().out == "No pending requests.\n"
+        assert pull.cmd_pull(args) == 0
+        assert capsys.readouterr().out == ""
+        a.requests.append(VERDICT)
+        assert pull.cmd_pull(args) == 0
+        assert "applied" in capsys.readouterr().out
+        a.requests.clear()
+        assert pull.cmd_pull(args) == 0
+        assert capsys.readouterr().out == "No pending requests.\n"
