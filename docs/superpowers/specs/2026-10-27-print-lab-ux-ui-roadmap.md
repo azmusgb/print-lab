@@ -47,23 +47,17 @@ flowchart LR
 
 ---
 
-### Phase 3: Mobile Information Density & Field Workflow (Phone 390w)
+### Phase 3: Mobile Information Density & Field Workflow (Phone 390w) *(Shipped & Verified)*
 *Target: Phone-in-hand field operations at the printer bed (Figma Boards 05, 06).*
 
-1. **Sticky Jump Anchors & Context Sub-Bar**:
-   - Floating header pill bar with anchor jump targets: `Needs You (3)`, `Live Print`, `Earlier (14)`.
-   - Compact sync pulse indicator showing WebSocket/poll freshness without page reload.
-2. **Touch-Gesture Evidence Viewer (`.lab-viewer`)**:
-   - Add native pinch-to-zoom and horizontal swipe navigation for specimen photos in `app/public/print-lab-photos.js` (replacing reliance solely on chevron buttons).
-   - Double-tap to toggle 100% 1:1 pixel inspection crop.
-3. **Specimen Ribbon Scroll-Snap & Edge-Fade**:
-   - Add CSS scroll-snap and progressive edge-fade gradients to horizontal thumbnail ribbons (`.lab-thumbs`) to hint at off-screen photos without cutting off awkward half-thumbnails.
-4. **Offline & Pending Receipt Drawer**:
-   - Surface an expandable bottom tray showing queued phone requests (`Waiting for Mac: 2`) with optimistic draft caching and clear conflict rollback messages.
+- [x] **Sticky Jump Anchors & Context Sub-Bar**: Floating header pill bar with anchor jump targets (`Needs you`, `Questions`, `Notebook`, `Earlier`) and smooth scroll on mobile viewports (`app/public/print-lab.js`).
+- [x] **Touch-Gesture Evidence Viewer (`.lab-viewer`)**: Added 1:1 natural pixel macro inspection crop on double-tap/double-click with tap centering and smooth animated zoom transitions, native pinch-to-zoom, and horizontal swipe navigation (`app/public/print-lab-photos.js`).
+- [x] **Specimen Ribbon Scroll-Snap & Edge-Fade**: Added CSS horizontal scroll ribbon with scroll-snap (`scroll-snap-type: x mandatory`) and progressive edge-fade CSS mask (`linear-gradient(90deg, #000 calc(100% - 28px), transparent)`) on mobile viewports (`app/public/app.css`).
+- [x] **Offline & Pending Action Indicators**: Queued phone requests (`Waiting for the Mac`) with local draft persistence and refusal message display.
 
 ---
 
-### Phase 3: Real-Time Telemetry & Camera Glanceability (Phone + Desktop)
+### Phase 4: Real-Time Telemetry & Camera Glanceability (Phone + Desktop)
 *Target: Continuous print monitoring and environmental awareness (Figma Board 05).*
 
 1. **Printer HUD & Thermal Indicators**:
