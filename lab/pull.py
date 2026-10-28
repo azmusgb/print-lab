@@ -21,7 +21,7 @@ EXP_ID = re.compile(r"E-\d{3,}")  # a request's ids name record files: nothing e
 RUN_ID = re.compile(r"PR-\d{3,}-\d{2,}")
 from lab.records.project import ProjectPaths
 from lab.records.store import now
-from lab.sync import Target, _call, localai_target
+from lab.sync import RemoteError, Target, _call, _error, _open, localai_base, targets
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -78,6 +78,19 @@ def _act(paths: ProjectPaths, kind: str, eid: str, run_seen, payload: dict) -> s
     return f"{eid} abandoned."
 
 
+def _post_result(target: Target, project: str, req_id: str, status: str, message: str, timeout: float) -> None:
+    """Tell the target what happened. A failure is printed and left: the request is on disk as handled, so the next
+    run answers it `duplicate` and the target stops showing it as pending."""
+    try:
+        st, body = _call(target, "POST", f"/api/lab/{project}/requests/{req_id}/result", timeout,
+                         json.dumps({"status": status, "message": message}).encode())
+        if st != 200:
+            print(f"lab pull: {target.name} wouldn't take the result for {req_id}: {_error(body, st)}", file=sys.stderr)
+    except (OSError, ValueError) as e:
+        print(f"lab pull: couldn't tell {target.name} the result for {req_id} ({getattr(e, 'reason', None) or e})",
+              file=sys.stderr)
+
+
 def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]:
     pdir = Path(pdir)
     lock_file = pdir / ".pull.lock"
@@ -98,19 +111,19 @@ def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]
                 if line.strip():
                     try:
                         handled.add(json.loads(line)["id"])
-                    except Exception:
-                        pass
+                    except (ValueError, KeyError, TypeError) as e:
+                        print(f"lab pull: skipped an unreadable line in requests.jsonl ({e})", file=sys.stderr)
 
         try:
             st, body = _call(target, "GET", f"/api/lab/{project}/requests?status=pending", timeout)
-            if st != 200:
-                return []
-        except (OSError, ValueError):
-            return []
+        except (OSError, ValueError) as e:
+            raise RemoteError(f"{target.name} didn't answer ({getattr(e, 'reason', None) or e})"[:200]) from e
+        if st != 200:
+            raise RemoteError(_error(body, st))
 
         items = body.get("items", body) if isinstance(body, dict) else body
         if not isinstance(items, list):
-            return []
+            raise RemoteError(f"{target.name} sent a pending list this Mac can't read")
 
         items = sorted(items, key=lambda r: r.get("at", ""))
         results = []
@@ -123,8 +136,7 @@ def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]
             if req_id in handled:
                 status = "duplicate"
                 message = "already handled"
-                _call(target, "POST", f"/api/lab/{project}/requests/{req_id}/result", timeout,
-                      json.dumps({"status": status, "message": message}).encode())
+                _post_result(target, project, req_id, status, message, timeout)
                 results.append({"id": req_id, "status": status, "message": message})
                 continue
 
@@ -176,7 +188,7 @@ def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]
                             photo_url = f"{target.base}/api/lab/{project}/incoming/{sha}.jpg"
                             req_obj = urllib.request.Request(photo_url, method="GET",
                                                              headers={target.header: target.key})
-                            with urllib.request.urlopen(req_obj, timeout=timeout, context=target.context) as resp:
+                            with _open(req_obj, timeout, target.context) as resp:
                                 data = resp.read()
                             tmp_path = tmp_dir / f"{sha}.jpg"
                             tmp_path.write_bytes(data)
@@ -226,11 +238,7 @@ def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]
                 f.write(json.dumps(record_entry) + "\n")
             handled.add(req_id)
 
-            try:
-                _call(target, "POST", f"/api/lab/{project}/requests/{req_id}/result", timeout,
-                      json.dumps({"status": status, "message": message}).encode())
-            except Exception:
-                pass
+            _post_result(target, project, req_id, status, message, timeout)
 
             results.append({"id": req_id, "status": status, "message": message})
 
@@ -345,12 +353,17 @@ def link_new_prints(paths: ProjectPaths, seen: dict | None = None) -> list[dict]
 
 def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]:
     pdir = Path(pdir)
-    target = localai_target(base)  # Task 2 runs every target; until then pull talks to Local AI only
     applied = []
-    try:
-        applied += apply_pending(pdir, target, timeout)
-    except Exception:
-        pass
+    for t in targets(base):
+        name = t[0] if isinstance(t, tuple) else t.name
+        try:
+            if isinstance(t, tuple):
+                raise RemoteError(t[1])
+            applied += apply_pending(pdir, t, timeout)
+        except Exception as e:  # one target's trouble never stops the others
+            message = str(e) or type(e).__name__
+            print(f"lab pull: {name}: {message}", file=sys.stderr)
+            applied.append({"id": name, "status": "error", "message": message})
     seen: dict = {}
     lock_fd = open(pdir / ".pull.lock", "a")
     try:
@@ -363,7 +376,7 @@ def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]
         pass
     finally:
         lock_fd.close()  # releases the lock
-    event = check_active_print(ProjectPaths(pdir), base, timeout)
+    event = check_active_print(ProjectPaths(pdir), localai_base(base), timeout)  # telemetry is Local AI's
     entries = seen.get("entries")
     outside_changed = False
     if entries is not None and (pdir / "page.json").exists():
@@ -379,7 +392,7 @@ def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]
         from lab.page import refresh
         refresh(pdir, entries)
         from lab.sync import sync
-        sync(pdir, base, timeout)
+        sync(pdir, timeout=timeout) if base is None else sync(pdir, base, timeout)
     if event:
         applied.append({
             "id": f"event-{event['run']}",
@@ -463,7 +476,7 @@ def cmd_pull(args) -> int:
         print("No pending requests.")
     for r in applied:
         print(f"{r['id']}: {r['status']} ({r['message']})")
-    return 0
+    return 1 if any(r["status"] == "error" for r in applied) else 0
 
 
 def register(sub) -> None:

@@ -30,6 +30,8 @@ class Fake:
 
             def do_GET(self):
                 fake.calls.append(("GET", self.path, self.headers.get("X-LocalAI-Mac-Key"), None))
+                if "/requests" in self.path:
+                    return self._reply(200, {"items": []})
                 self._reply(200, {"have": sorted(fake.have)})
 
             def do_PUT(self):
