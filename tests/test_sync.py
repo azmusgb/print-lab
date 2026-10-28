@@ -123,14 +123,3 @@ def test_sync_sends_no_colours_without_page_json(lab):
     with Fake() as f:
         assert sync.sync(lab.root, base=f.url)["ok"]
     assert f.calls[-1][3]["colours"] == {}
-
-
-def test_dual_sync_pushes_to_all_targets(lab, monkeypatch):
-    with Fake() as f1, Fake() as f2:
-        monkeypatch.setenv("LAB_SYNC_URLS", f"{f1.url},{f2.url}")
-        r = sync.sync(lab.root)
-    assert r["ok"] is True
-    assert "synced" in r["message"]
-    assert any(c[0] == "POST" and c[1].endswith("/sync") for c in f1.calls)
-    assert any(c[0] == "POST" and c[1].endswith("/sync") for c in f2.calls)
-

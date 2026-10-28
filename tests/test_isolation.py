@@ -51,6 +51,8 @@ def test_home_and_local_ai_point_nowhere_real():
     assert Path.home().resolve() != Path(os.environ["PYTEST_REAL_HOME"]).resolve()
     assert os.environ["LAB_LOCALAI_URL"].startswith("http://127.0.0.1:9")
     assert not Path(os.environ["LAB_LOCALAI_KEY_FILE"]).exists()
+    assert not Path(os.environ["LAB_HUB_KEY_FILE"]).exists()
+    assert os.environ["LAB_HUB_URL"].startswith("https://127.0.0.1:9")
     assert not sync.HOME.resolve().is_relative_to(Path(os.environ["PYTEST_REAL_HOME"]).resolve())
 
 
