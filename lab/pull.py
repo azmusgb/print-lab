@@ -21,7 +21,7 @@ EXP_ID = re.compile(r"E-\d{3,}")  # a request's ids name record files: nothing e
 RUN_ID = re.compile(r"PR-\d{3,}-\d{2,}")
 from lab.records.project import ProjectPaths
 from lab.records.store import now
-from lab.sync import BASE, _call, _context, _key
+from lab.sync import BASE, _call, _context, _key, sync_targets
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -345,9 +345,14 @@ def link_new_prints(paths: ProjectPaths, seen: dict | None = None) -> list[dict]
 
 def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]:
     pdir = Path(pdir)
-    base = (base or os.environ.get("LAB_LOCALAI_URL") or BASE).rstrip("/")
+    targets = sync_targets(base)
     key = _key()
-    applied = apply_pending(pdir, base, key, timeout)
+    applied = []
+    for t in targets:
+        try:
+            applied += apply_pending(pdir, t, key, timeout)
+        except Exception:
+            pass
     seen: dict = {}
     lock_fd = open(pdir / ".pull.lock", "a")
     try:
@@ -360,7 +365,7 @@ def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]
         pass
     finally:
         lock_fd.close()  # releases the lock
-    event = check_active_print(ProjectPaths(pdir), base, timeout)
+    event = check_active_print(ProjectPaths(pdir), targets[0], timeout)
     entries = seen.get("entries")
     outside_changed = False
     if entries is not None and (pdir / "page.json").exists():
