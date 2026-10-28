@@ -85,6 +85,8 @@ def _nothing_outside_the_checkout(tmp_path_factory, monkeypatch):
     monkeypatch.setenv("HOME", str(home))
     monkeypatch.setenv("LAB_LOCALAI_URL", "http://127.0.0.1:9")  # the discard port: nothing answers
     monkeypatch.setenv("LAB_LOCALAI_KEY_FILE", str(home / "no-such.key"))
+    monkeypatch.setenv("LAB_HUB_URL", "https://127.0.0.1:9")  # same: the hub can't be reached from a test
+    monkeypatch.setenv("LAB_HUB_KEY_FILE", str(home / "no-such-hub.key"))
     monkeypatch.setattr(sync, "HOME", home / ".claude" / "localai-chat")
     real_run = subprocess.run
 

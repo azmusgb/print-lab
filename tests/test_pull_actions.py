@@ -7,7 +7,7 @@ import pytest
 from lab import pull
 from lab.loop.commands import load_experiment
 from test_guards import built, edit, proj  # noqa: F401  (fixture)
-from test_pull import FakeLocalAI
+from test_pull import FakeLocalAI, _t
 
 
 def req(rid, kind, eid, payload=None, run_seen=None):
@@ -21,7 +21,7 @@ def iso(dt):
 
 def apply(proj, *reqs):
     with FakeLocalAI(requests=list(reqs)) as fake:
-        out = pull.apply_pending(proj.root, fake.base, "k")
+        out = pull.apply_pending(proj.root, _t(fake.base))
         return out, fake
 
 

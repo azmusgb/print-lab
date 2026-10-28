@@ -1,5 +1,7 @@
 """`lab pull`: fetch and apply pending phone requests (verdicts, photos) from Local AI."""
 import fcntl
+import hashlib
+import http.client
 import json
 import os
 import plistlib
@@ -7,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -21,7 +24,7 @@ EXP_ID = re.compile(r"E-\d{3,}")  # a request's ids name record files: nothing e
 RUN_ID = re.compile(r"PR-\d{3,}-\d{2,}")
 from lab.records.project import ProjectPaths
 from lab.records.store import now
-from lab.sync import BASE, _call, _context, _key
+from lab.sync import RemoteError, Target, _call, _error, _open, localai_base, targets
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -78,7 +81,70 @@ def _act(paths: ProjectPaths, kind: str, eid: str, run_seen, payload: dict) -> s
     return f"{eid} abandoned."
 
 
-def apply_pending(pdir: Path, base: str, key: str, timeout: float = 10) -> list[dict]:
+def _post_result(target: Target, project: str, req_id: str, status: str, message: str, timeout: float) -> None:
+    """Tell the target what happened. A failure is printed and left: the request is on disk as handled, so the next
+    run answers it `duplicate` and the target stops showing it as pending."""
+    try:
+        st, body = _call(target, "POST", f"/api/lab/{project}/requests/{req_id}/result", timeout,
+                         json.dumps({"status": status, "message": message}).encode())
+        if st != 200:
+            print(f"lab pull: {target.name} wouldn't take the result for {req_id}: {_error(body, st)}", file=sys.stderr)
+    except Exception as e:  # one result post never stops the loop
+        print(f"lab pull: couldn't tell {target.name} the result for {req_id} ({getattr(e, 'reason', None) or e})",
+              file=sys.stderr)
+
+
+SHA_RE = re.compile(r"[0-9a-f]{64}")  # a photo's name is the SHA-256 of its bytes; nothing else reaches a URL or path
+MAX_PHOTOS = 50  # Pi Hub's caps
+MAX_TAB = 16
+MAX_PHOTO_BYTES = 8 * 1024 * 1024
+LOCAL_FAIL = "Couldn't add the photos on the Mac: "
+
+
+def _apply_photos(paths: ProjectPaths, project: str, run_id, payload: dict, target: Target,
+                  timeout: float) -> tuple[str, str]:
+    """Check the request's shape, download each photo (size-capped, hash-checked), add them to the run.
+    Returns (status, message); a download failure raises OSError/HTTPError for the caller to turn into `error`."""
+    photos = payload.get("photos")
+    if not isinstance(photos, list) or not 1 <= len(photos) <= MAX_PHOTOS:
+        return "refused", f"A photos request needs 1 to {MAX_PHOTOS} photos."
+    for p in photos:
+        if not (isinstance(p, dict) and isinstance(p.get("sha256"), str) and SHA_RE.fullmatch(p["sha256"])
+                and (p.get("tab") is None or (isinstance(p["tab"], str) and len(p["tab"]) <= MAX_TAB))):
+            return "refused", f"A photo in the request isn't a SHA-256 name with an optional tab of up to {MAX_TAB} characters."
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            files, tabs = [], []
+            for p in photos:
+                sha = p["sha256"]
+                req_obj = urllib.request.Request(f"{target.base}/api/lab/{project}/incoming/{sha}.jpg", method="GET",
+                                                 headers={target.header: target.key})
+                with _open(req_obj, timeout, target.context) as resp:
+                    data = resp.read(MAX_PHOTO_BYTES + 1)
+                if len(data) <= MAX_PHOTO_BYTES and getattr(resp, "length", None):
+                    # a body shorter than its Content-Length is a dropped connection, not a bad photo: retry, don't refuse
+                    raise http.client.IncompleteRead(data, resp.length)
+                if len(data) > MAX_PHOTO_BYTES:
+                    return "refused", f"A photo is over {MAX_PHOTO_BYTES // (1024 * 1024)} MB."
+                if hashlib.sha256(data).hexdigest() != sha:
+                    return "refused", f"A photo didn't match its name ({sha[:12]}), so none were added."
+                tmp_path = Path(td) / f"{sha}.jpg"
+                try:
+                    tmp_path.write_bytes(data)
+                except OSError as e:
+                    return "error", f"{LOCAL_FAIL}{e}"[:200]
+                files.append(tmp_path)
+                tabs.append(p.get("tab"))
+            try:
+                add_photos(paths, run_id, files, tabs=tabs)
+            except OSError as e:  # sips missing, disk full: local, kept as `error` so it is retried and not lost
+                return "error", f"{LOCAL_FAIL}{e}"[:200]
+            return "applied", f"{len(files)} photos added"
+    except ValueError as e:
+        return "refused", str(e)
+
+
+def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]:
     pdir = Path(pdir)
     lock_file = pdir / ".pull.lock"
     lock_fd = open(lock_file, "a")
@@ -98,19 +164,19 @@ def apply_pending(pdir: Path, base: str, key: str, timeout: float = 10) -> list[
                 if line.strip():
                     try:
                         handled.add(json.loads(line)["id"])
-                    except Exception:
-                        pass
+                    except (ValueError, KeyError, TypeError) as e:
+                        print(f"lab pull: skipped an unreadable line in requests.jsonl ({e})", file=sys.stderr)
 
         try:
-            st, body = _call(base, "GET", f"/api/lab/{project}/requests?status=pending", key, timeout)
-            if st != 200:
-                return []
-        except (OSError, ValueError):
-            return []
+            st, body = _call(target, "GET", f"/api/lab/{project}/requests?status=pending", timeout)
+        except (OSError, ValueError) as e:
+            raise RemoteError(f"{target.name} didn't answer ({getattr(e, 'reason', None) or e})"[:200]) from e
+        if st != 200:
+            raise RemoteError(_error(body, st))
 
         items = body.get("items", body) if isinstance(body, dict) else body
         if not isinstance(items, list):
-            return []
+            raise RemoteError(f"{target.name} sent a pending list this Mac can't read")
 
         items = sorted(items, key=lambda r: r.get("at", ""))
         results = []
@@ -123,8 +189,7 @@ def apply_pending(pdir: Path, base: str, key: str, timeout: float = 10) -> list[
             if req_id in handled:
                 status = "duplicate"
                 message = "already handled"
-                _call(base, "POST", f"/api/lab/{project}/requests/{req_id}/result", key, timeout,
-                      json.dumps({"status": status, "message": message}).encode())
+                _post_result(target, project, req_id, status, message, timeout)
                 results.append({"id": req_id, "status": status, "message": message})
                 continue
 
@@ -164,30 +229,17 @@ def apply_pending(pdir: Path, base: str, key: str, timeout: float = 10) -> list[
                     status = "refused"
                     message = str(e)
             elif kind == "photos":
-                photo_list = payload.get("photos", [])
                 try:
-                    with tempfile.TemporaryDirectory() as td:
-                        tmp_dir = Path(td)
-                        files = []
-                        tabs = []
-                        for p in photo_list:
-                            sha = p.get("sha256")
-                            tab = p.get("tab")
-                            photo_url = f"{base}/api/lab/{project}/incoming/{sha}.jpg"
-                            req_obj = urllib.request.Request(photo_url, method="GET",
-                                                             headers={"X-LocalAI-Mac-Key": key})
-                            with urllib.request.urlopen(req_obj, timeout=timeout, context=_context(base)) as resp:
-                                data = resp.read()
-                            tmp_path = tmp_dir / f"{sha}.jpg"
-                            tmp_path.write_bytes(data)
-                            files.append(tmp_path)
-                            tabs.append(tab)
-                        add_photos(paths, run_id, files, tabs=tabs)
-                        status = "applied"
-                        message = f"{len(files)} photos added"
-                except ValueError as e:
-                    status = "refused"
-                    message = str(e)
+                    status, message = _apply_photos(paths, project, run_id, payload, target, timeout)
+                except urllib.error.HTTPError as e:
+                    status, message = "error", f"HTTP {e.code}"
+                except (OSError, http.client.HTTPException) as e:  # URLError, timeout, closed or short connection
+                    status, message = "error", str(getattr(e, "reason", None) or e)[:200] or type(e).__name__
+                if status == "error":  # not recorded and no result posted: the request is retried on the next run
+                    what = message if message.startswith(LOCAL_FAIL) else f"not fetched ({message})"
+                    print(f"lab pull: {target.name}: photos for {req_id} {what}", file=sys.stderr)
+                    results.append({"id": req_id, "status": status, "message": message})
+                    continue
             elif kind == "observation":
                 from lab.observe_cli import _check_experiment
                 from lab.records import observations as obs
@@ -226,11 +278,7 @@ def apply_pending(pdir: Path, base: str, key: str, timeout: float = 10) -> list[
                 f.write(json.dumps(record_entry) + "\n")
             handled.add(req_id)
 
-            try:
-                _call(base, "POST", f"/api/lab/{project}/requests/{req_id}/result", key, timeout,
-                      json.dumps({"status": status, "message": message}).encode())
-            except Exception:
-                pass
+            _post_result(target, project, req_id, status, message, timeout)
 
             results.append({"id": req_id, "status": status, "message": message})
 
@@ -343,11 +391,49 @@ def link_new_prints(paths: ProjectPaths, seen: dict | None = None) -> list[dict]
             for ev in events if ev["action"] != "skipped"]
 
 
+STATE_FILE = ".pull-state.json"  # per project, outside git: each target's last outcome, so a standing failure prints once
+
+
+def _load_state(pdir: Path) -> dict:
+    try:
+        st = json.loads((Path(pdir) / STATE_FILE).read_text())
+        return st if isinstance(st, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def _save_state(pdir: Path, state: dict) -> None:
+    from lab.records.store import atomic_write_json
+    try:
+        if _load_state(pdir) != state:
+            atomic_write_json(Path(pdir) / STATE_FILE, state)
+    except OSError as e:  # a log nicety never stops a pull
+        print(f"lab pull: couldn't save {STATE_FILE} ({e})", file=sys.stderr)
+
+
 def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]:
     pdir = Path(pdir)
-    base = (base or os.environ.get("LAB_LOCALAI_URL") or BASE).rstrip("/")
-    key = _key()
-    applied = apply_pending(pdir, base, key, timeout)
+    applied = []
+    state = _load_state(pdir)
+    last = state.get("targets") if isinstance(state.get("targets"), dict) else {}
+    now_state: dict = {}
+    for t in targets(base):
+        name = t[0] if isinstance(t, tuple) else t.name
+        now_state[name] = "ok"
+        try:
+            if isinstance(t, tuple):
+                raise RemoteError(t[1])
+            applied += apply_pending(pdir, t, timeout)
+        except Exception as e:  # one target's trouble never stops the others
+            message = str(e) or type(e).__name__
+            now_state[name] = message
+            entry = {"id": name, "status": "error", "message": message}
+            if last.get(name) == message:  # the same failure as last run: still returned, but not printed again
+                entry["repeat"] = True
+            else:
+                print(f"lab pull: {name}: {message}", file=sys.stderr)
+            applied.append(entry)
+    _save_state(pdir, {**state, "targets": now_state})
     seen: dict = {}
     lock_fd = open(pdir / ".pull.lock", "a")
     try:
@@ -360,7 +446,7 @@ def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]
         pass
     finally:
         lock_fd.close()  # releases the lock
-    event = check_active_print(ProjectPaths(pdir), base, timeout)
+    event = check_active_print(ProjectPaths(pdir), localai_base(base), timeout)  # telemetry is Local AI's
     entries = seen.get("entries")
     outside_changed = False
     if entries is not None and (pdir / "page.json").exists():
@@ -376,7 +462,10 @@ def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]
         from lab.page import refresh
         refresh(pdir, entries)
         from lab.sync import sync
-        sync(pdir, base, timeout)
+        if base is None:
+            sync(pdir, timeout=timeout)
+        else:
+            sync(pdir, base, timeout)
     if event:
         applied.append({
             "id": f"event-{event['run']}",
@@ -456,15 +545,19 @@ def cmd_pull(args) -> int:
             print(f"Failed to uninstall launchd agent: {e}", file=sys.stderr)
             return 1
     applied = pull(pdir)
-    if not applied:
+    shown = [r for r in applied if not r.get("repeat")]  # a failure already printed last run stays out of the log
+    state = _load_state(pdir)
+    idle = not applied
+    if idle and not state.get("idle"):
         print("No pending requests.")
-    for r in applied:
+    for r in shown:
         print(f"{r['id']}: {r['status']} ({r['message']})")
-    return 0
+    _save_state(pdir, {**state, "idle": idle})
+    return 1 if any(r["status"] == "error" for r in applied) else 0
 
 
 def register(sub) -> None:
-    s = sub.add_parser("pull", help="fetch and apply pending phone requests (verdicts, photos) from Local AI")
+    s = sub.add_parser("pull", help="fetch and apply pending phone requests (verdicts, photos) from Local AI and Pi Hub")
     s.add_argument("--install", action="store_true", help="install launchd agent for 60s pickup")
     s.add_argument("--uninstall", action="store_true", help="uninstall launchd agent")
     s.set_defaults(fn=cmd_pull)

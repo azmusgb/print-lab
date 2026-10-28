@@ -98,7 +98,13 @@ def format_status_text(st: dict) -> str:
 
     # Sync line
     s = st.get("sync")
-    if s:
+    if s and s.get("targets"):
+        ago = _rel_time(s.get("at"))
+        for i, (name, t) in enumerate(s["targets"].items()):
+            mark = "✓" if t.get("ok") else "✗"
+            msg = t.get("message") or ("synced" if t.get("ok") else "error")
+            lines.append(f"{'Sync:    ' if i == 0 else '         '}{mark} {name}: {msg} ({ago})")
+    elif s:
         mark = "✓" if s.get("ok") else "✗"
         msg = s.get("message") or ("synced" if s.get("ok") else "error")
         ago = _rel_time(s.get("at"))
