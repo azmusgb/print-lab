@@ -45,6 +45,7 @@ import sys
 from lab.cli import ROOT as LAB_ROOT
 
 _SKIP_DIRS = {".git", ".venv", "__pycache__", ".pytest_cache", ".ruff_cache"}
+_SKIP_FILES = {".pull-state.json", ".pull.lock", ".DS_Store"}
 
 
 def _inside_real_lab(path) -> bool:
@@ -57,6 +58,7 @@ def _snapshot() -> dict:
     out = {}
     for dirpath, dirnames, filenames in os.walk(LAB_ROOT):
         dirnames[:] = [d for d in dirnames if d not in _SKIP_DIRS]
+        filenames = [f for f in filenames if f not in _SKIP_FILES]
         for name in dirnames + filenames:
             p = os.path.join(dirpath, name)
             try:
