@@ -683,3 +683,16 @@ def test_sync_fingerprint_changes_when_only_an_outside_status_changes(lab023, mo
         sync.sync(lab023.root, base=fake.base)
         posts = [c[3] for c in fake.calls if c[0] == "POST" and "/sync" in c[1]]
     assert posts[0]["fingerprint"] != posts[1]["fingerprint"]
+
+
+def test_rotate_log_moves_oversized_log_to_dot_one(tmp_path):
+    log = tmp_path / "print-lab-pull.log"
+    log.write_bytes(b"a" * 100)
+    assert pull.rotate_log(log, max_bytes=200) is False
+    assert log.exists() and not (tmp_path / "print-lab-pull.log.1").exists()
+
+    log.write_bytes(b"b" * 201)
+    assert pull.rotate_log(log, max_bytes=200) is True
+    assert not log.exists()
+    assert (tmp_path / "print-lab-pull.log.1").read_bytes() == b"b" * 201
+

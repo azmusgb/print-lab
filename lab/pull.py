@@ -477,8 +477,27 @@ def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]
     return applied
 
 
+LOG_MAX_BYTES = 1_048_576  # 1 MiB
+
+
+def _log_path() -> Path:
+    return Path.home() / "Library" / "Logs" / "print-lab-pull.log"
+
+
+def rotate_log(path: Path | None = None, max_bytes: int = LOG_MAX_BYTES) -> bool:
+    """Keep the pull log under max_bytes by moving it to .log.1 when it grows past the cap."""
+    p = _log_path() if path is None else Path(path)
+    try:
+        if p.stat().st_size > max_bytes:
+            p.replace(p.with_suffix(".log.1"))
+            return True
+    except OSError:
+        pass
+    return False
+
+
 def plist_text(repo: Path, uv: str) -> str:
-    log_path = str(Path.home() / "Library" / "Logs" / "print-lab-pull.log")
+    log_path = str(_log_path())
     data = {
         "Label": "com.printlab.pull",
         "ProgramArguments": [uv, "run", "--project", str(repo), "lab", "pull"],
@@ -553,11 +572,12 @@ def cmd_pull(args) -> int:
     for r in shown:
         print(f"{r['id']}: {r['status']} ({r['message']})")
     _save_state(pdir, {**state, "idle": idle})
+    rotate_log()
     return 1 if any(r["status"] == "error" for r in applied) else 0
 
 
 def register(sub) -> None:
-    s = sub.add_parser("pull", help="fetch and apply pending phone requests (verdicts, photos) from Local AI and Pi Hub")
+    s = sub.add_parser("pull", help="fetch and apply pending phone requests (verdicts, photos) from Pi Hub")
     s.add_argument("--install", action="store_true", help="install launchd agent for 60s pickup")
     s.add_argument("--uninstall", action="store_true", help="uninstall launchd agent")
     s.set_defaults(fn=cmd_pull)
