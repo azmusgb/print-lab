@@ -494,7 +494,7 @@ def test_pull_reports_a_correction_conflict(project):
            "at": "2026-10-27T10:00:00+00:00"}
     with FakeLocalAI(requests=[req]) as fake:
         out = pull.apply_pending(project.root, _t(fake.base))
-    assert out[0]["status"] == "conflict"
+    assert out[0]["status"] == "refused" and "conflict" in out[0]["message"].lower()
 
 
 def test_pull_refuses_a_malformed_observation_instead_of_crashing(project):

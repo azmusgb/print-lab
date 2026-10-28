@@ -105,7 +105,7 @@ def real_project_copy():
     import shutil
     src = LAB_ROOT / "projects" / "hex-tile"
     dst = Path(os.environ["LAB_HOME"]) / "projects" / "hex-tile"
-    shutil.copytree(src, dst, ignore=shutil.ignore_patterns(".locks", "photos", "jobs"))
+    shutil.copytree(src, dst, ignore=shutil.ignore_patterns(".locks", "photos", "jobs", "production"))
     return dst
 
 

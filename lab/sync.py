@@ -93,22 +93,29 @@ def hub_target() -> Target | None:
 
 
 def targets(base: str | None = None) -> list:
-    """Local AI, then the Pi Hub when set up. A target that can't be built is (name, message), not a raise, so the
-    caller records it as that target's failure. An explicit base means Local AI at that address only."""
+    """The Pi Hub. A target that can't be built is (name, message), not a raise, so the
+    caller records it as that target's failure. An explicit base means the Pi Hub at that address only."""
     if base:
-        return [localai_target(base)]
-    out: list = []
-    try:
-        out.append(localai_target())
-    except (OSError, ValueError) as e:
-        out.append(("Local AI", f"No Local AI key ({getattr(e, 'strerror', None) or e})"))
+        base = base.rstrip("/")
+        if not base.startswith("https://") and not (base.startswith("http://127.0.0.1") or base.startswith("http://localhost")):
+            return [("Pi Hub", "The Pi Hub address must start with https://")]
+        key_file = Path(os.environ.get("LAB_HUB_KEY_FILE") or Path.home() / ".config" / "print-lab" / "hub.key")
+        lai_key_file = Path(os.environ.get("LAB_LOCALAI_KEY_FILE") or HOME / "mac.key")
+        key = "test-key"
+        if key_file.exists():
+            key = _clean_key(key_file.read_text(), "Pi Hub")
+        elif lai_key_file.exists():
+            key = _clean_key(lai_key_file.read_text(), "Local AI")
+        ca = Path(os.environ.get("LAB_HUB_CA") or Path.home() / ".config" / "print-lab" / "home-ca.crt")
+        ctx = ssl.create_default_context(cafile=str(ca)) if ca.is_file() and base.startswith("https://") else None
+        return [Target("Pi Hub", base, HUB_HEADER, key, ctx)]
     try:
         hub = hub_target()
     except (OSError, ValueError) as e:
         hub = ("Pi Hub", str(e))
     if hub:
-        out.append(hub)
-    return out
+        return [hub]
+    return [("Pi Hub", "No Pi Hub key (save ~/.config/print-lab/hub.key)")]
 
 
 def _error(body: dict, code: int) -> str:

@@ -28,21 +28,24 @@ class Fake:
                 self.end_headers()
                 self.wfile.write(b)
 
+            def _key(self):
+                return self.headers.get("X-Hub-Mac-Key") or self.headers.get("X-LocalAI-Mac-Key")
+
             def do_GET(self):
-                fake.calls.append(("GET", self.path, self.headers.get("X-LocalAI-Mac-Key"), None))
+                fake.calls.append(("GET", self.path, self._key(), None))
                 if "/requests" in self.path:
                     return self._reply(200, {"items": []})
                 self._reply(200, {"have": sorted(fake.have)})
 
             def do_PUT(self):
                 body = self.rfile.read(int(self.headers["Content-Length"]))
-                fake.calls.append(("PUT", self.path, self.headers.get("X-LocalAI-Mac-Key"), body))
+                fake.calls.append(("PUT", self.path, self._key(), body))
                 fake.have.add(self.path.rsplit("/", 1)[1][:-4])
                 self._reply(200, {"ok": True})
 
             def do_POST(self):
                 body = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
-                fake.calls.append(("POST", self.path, self.headers.get("X-LocalAI-Mac-Key"), body))
+                fake.calls.append(("POST", self.path, self._key(), body))
                 self._reply(fake.status, {"ok": True, "upserted": 4} if fake.status == 200
                             else {"error": "An older push than the one stored"})
 

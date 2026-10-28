@@ -261,7 +261,7 @@ def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]
                                       submitted={"actor": "owner", "channel": "phone", "request_id": req_id})
                     status, message = "applied", f"{rec['id']} is now at revision {obs.latest(rec)['rev']}"
                 except obs.Conflict as e:
-                    status, message = "conflict", str(e)
+                    status, message = "refused", f"conflict: {e}"
                 except ValueError as e:
                     status, message = "refused", str(e)
             elif kind in ("start", "approve", "abandon"):

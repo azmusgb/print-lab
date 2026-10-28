@@ -23,35 +23,34 @@ def keys(tmp_path, monkeypatch):
     return lai, hub
 
 
-def test_no_hub_key_means_local_ai_only(keys, monkeypatch):
+def test_no_hub_key_reports_missing_hub(keys, monkeypatch):
     monkeypatch.setenv("LAB_HUB_KEY_FILE", str(keys[1].parent / "absent.key"))
-    assert [t.name for t in sync.targets()] == ["Local AI"]
+    assert sync.targets() == [("Pi Hub", "No Pi Hub key (save ~/.config/print-lab/hub.key)")]
 
 
-def test_both_targets_when_the_hub_is_set_up(keys, tmp_path, monkeypatch):
+def test_hub_target_when_set_up(keys, tmp_path, monkeypatch):
     ca = _make_ca(tmp_path)
     monkeypatch.setenv("LAB_HUB_CA", str(ca))
     ts = sync.targets()
-    assert [t.name for t in ts] == ["Local AI", "Pi Hub"]
-    assert ts[0].header == "X-LocalAI-Mac-Key" and ts[0].key == "localai-secret"
-    assert ts[1].header == "X-Hub-Mac-Key" and ts[1].key == "hub-secret"
+    assert [t.name for t in ts] == ["Pi Hub"]
+    assert ts[0].header == "X-Hub-Mac-Key" and ts[0].key == "hub-secret"
 
 
 def test_hub_needs_https(keys, monkeypatch):
     monkeypatch.setenv("LAB_HUB_URL", "http://10.0.0.30")
-    hub = sync.targets()[1]
+    hub = sync.targets()[0]
     assert hub == ("Pi Hub", "The Pi Hub address must start with https://")
 
 
 def test_hub_needs_the_house_ca(keys):
-    hub = sync.targets()[1]
+    hub = sync.targets()[0]
     assert hub[0] == "Pi Hub" and hub[1].startswith("Save the house CA first")
 
 
 def test_hub_with_an_empty_key_fails(keys, monkeypatch, tmp_path):
     keys[1].write_text("\n")
     monkeypatch.setenv("LAB_HUB_CA", str(_make_ca(tmp_path)))
-    hub = sync.targets()[1]
+    hub = sync.targets()[0]
     assert hub[0] == "Pi Hub" and "key" in hub[1].lower()
 
 
@@ -85,10 +84,10 @@ def test_hub_target_is_none_without_a_key_file(keys, monkeypatch, tmp_path):
     assert sync.hub_target() is None
 
 
-def test_explicit_base_is_local_ai_only(keys, monkeypatch, tmp_path):
+def test_explicit_base_is_hub(keys, monkeypatch, tmp_path):
     monkeypatch.setenv("LAB_HUB_CA", str(_make_ca(tmp_path)))
     ts = sync.targets("http://127.0.0.1:1234/")
-    assert len(ts) == 1 and ts[0].name == "Local AI" and ts[0].base == "http://127.0.0.1:1234"
+    assert len(ts) == 1 and ts[0].name == "Pi Hub" and ts[0].base == "http://127.0.0.1:1234"
 
 
 class Fake:
@@ -158,10 +157,10 @@ def test_a_key_with_whitespace_or_control_characters_is_refused_without_quoting_
 
 
 def test_a_bad_key_text_never_reaches_sync_json_or_the_target_list(keys, tmp_path, monkeypatch):
-    keys[0].write_text("abc\ndef")
-    monkeypatch.setenv("LAB_HUB_KEY_FILE", str(tmp_path / "absent.key"))
+    keys[1].write_text("abc\ndef")
+    monkeypatch.setenv("LAB_HUB_CA", str(_make_ca(tmp_path)))
     ts = sync.targets()
-    assert ts[0][0] == "Local AI" and "abc" not in ts[0][1] and "def" not in ts[0][1]
+    assert ts[0][0] == "Pi Hub" and "abc" not in ts[0][1] and "def" not in ts[0][1]
     pdir = tmp_path / "proj"
     pdir.mkdir()
     sync.sync(pdir)
