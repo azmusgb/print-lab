@@ -145,11 +145,13 @@ def augment_index(pdir: Path, index: dict) -> dict:
     """Return *index* enriched with additive v2 run/release projections.
 
     RUN records intentionally stay out of index['records'] during this bridge so
-    older Pi Hub sync validators remain compatible.
+    older Pi Hub sync validators remain compatible. Before projection, legacy
+    PR attempts are idempotently reconciled into persistent canonical RUN files.
     """
     paths = ProjectPaths(Path(pdir))
     problems = index.setdefault("problems", [])
     qualification = index.get("qualification") if isinstance(index.get("qualification"), dict) else {}
+    problems.extend(runs.reconcile_legacy_project(paths))
     projected_runs = _runs(paths, problems)
     production = _production(paths, qualification)
     experiments = index.get("experiments") if isinstance(index.get("experiments"), list) else []
