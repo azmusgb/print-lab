@@ -156,3 +156,55 @@ def _real_lab_unchanged():
     changed = sorted(p for p in set(before) | set(after) if before.get(p) != after.get(p))
     if changed:
         pytest.fail("This test changed files in the real lab: " + ", ".join(changed[:10]), pytrace=False)
+
+
+def pytest_addoption(parser):
+    parser.addoption("--live-network", action="store_true", default=False,
+                     help="Explicitly allow non-loopback network connections in tests")
+
+
+@pytest.fixture(autouse=True)
+def _network_is_local_by_default(request, monkeypatch):
+    """Mocked services and loopback servers work; household/public services require explicit opt-in."""
+    import ipaddress
+    import socket
+    if request.config.getoption("--live-network"):
+        return
+    monkeypatch.setenv("LAB_BAMBUDDY_URL", "off")
+    real_connect, real_connect_ex = socket.socket.connect, socket.socket.connect_ex
+    real_getaddrinfo, real_sendto = socket.getaddrinfo, socket.socket.sendto
+
+    def check(host):
+        if host in (None, "", "localhost", b"localhost"):
+            return
+        try:
+            if ipaddress.ip_address(host.decode() if isinstance(host, bytes) else host).is_loopback:
+                return
+        except ValueError:
+            pass
+        raise PermissionError("Tests block non-loopback networking; use a mocked service or explicitly opt in "
+                              "with --live-network")
+
+    def connect(sock, address):
+        if sock.family in (socket.AF_INET, socket.AF_INET6):
+            check(address[0])
+        return real_connect(sock, address)
+
+    def connect_ex(sock, address):
+        if sock.family in (socket.AF_INET, socket.AF_INET6):
+            check(address[0])
+        return real_connect_ex(sock, address)
+
+    def getaddrinfo(host, *args, **kwargs):
+        check(host)
+        return real_getaddrinfo(host, *args, **kwargs)
+
+    def sendto(sock, data, *args):
+        if sock.family in (socket.AF_INET, socket.AF_INET6):
+            check(args[-1][0])
+        return real_sendto(sock, data, *args)
+
+    monkeypatch.setattr(socket.socket, "connect", connect)
+    monkeypatch.setattr(socket.socket, "connect_ex", connect_ex)
+    monkeypatch.setattr(socket.socket, "sendto", sendto)
+    monkeypatch.setattr(socket, "getaddrinfo", getaddrinfo)

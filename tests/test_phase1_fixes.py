@@ -58,13 +58,14 @@ def test_start_refuses_finished_experiments(proj, status):
         start(proj, eid)
 
 
-# 3. a missing artifact fails the difference guard
+# 3. a missing artifact fails the integrity guard before any difference parsing
 def test_missing_artifact_is_a_failure(proj):
     eid = built(proj)
     e = load(proj.experiments / f"{eid}.json", "experiment")
     (proj.root / e["builds"][-1]["artifact"]).unlink()
     res = check_experiment(proj, eid)
-    assert res.status in ("rebuild", "blocked") and "undeclared_difference" in codes(res)
+    assert res.status == "rebuild" and "artifact_integrity" in codes(res)
+    assert any("artifact: file missing" in g.message for g in res.guards if g.code == "artifact_integrity")
 
 
 # 4. cross-plate comparisons use the build that was printed, and fail closed
