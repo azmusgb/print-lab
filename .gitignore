@@ -19,3 +19,6 @@ projects/*/bambuddy-seen.json
 projects/*/.pull.lock
 projects/*/telemetry/
 projects/*/.pull-state.json
+
+# Local browser automation state
+.playwright-mcp/
