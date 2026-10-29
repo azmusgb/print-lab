@@ -695,4 +695,40 @@ def test_rotate_log_moves_oversized_log_to_dot_one(tmp_path):
     assert pull.rotate_log(log, max_bytes=200) is True
     assert not log.exists()
     assert (tmp_path / "print-lab-pull.log.1").read_bytes() == b"b" * 201
+# ---- Qualification Gate -------------------------------------------------------
 
+def test_pull_applies_a_qualification_continue_decision(project):
+    """The Pi request reaches the canonical Mac qualification handler and is acknowledged."""
+    from lab import qualification
+    from lab.records.store import atomic_write_json
+
+    e = load_experiment(project, "E-009")
+    e["reference_variants"] = ["E-010-A"]
+    ref = minimal_experiment("E-010", "Q-009")
+    atomic_write_json(project.experiments / "E-010.json", ref)
+    atomic_write_json(project.experiments / "E-009.json", e)
+
+    req = {
+        "id": "rq-00000000000000aa",
+        "kind": "qualification",
+        "experiment": "E-009",
+        "run": None,
+        "payload": {
+            "decision": "continue",
+            "reason": "More testing is needed.",
+            "reference_experiment": "E-010",
+            "run_seen": "PR-009-01",
+            "build_seen": "BLD-009-01",
+            "evidence_reviewed": True,
+        },
+        "at": "2026-10-29T12:00:00+00:00",
+    }
+    with FakeLocalAI(requests=[req]) as fake:
+        out = pull.apply_pending(project.root, _t(fake.base))
+
+    assert out[0]["status"] == "applied"
+    assert "kept in testing" in out[0]["message"]
+    state = qualification.summary(project)
+    assert state["current_reference"] is None
+    assert state["history"][-1]["decision"] == "continue"
+    assert fake.results[req["id"]]["status"] == "applied"
