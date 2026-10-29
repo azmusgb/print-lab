@@ -21,6 +21,10 @@ class ProjectPaths:
     @property
     def experiments(self) -> Path: return self.root / "experiments"
     @property
+    def runs(self) -> Path: return self.root / "runs"
+    @property
+    def production(self) -> Path: return self.root / "production"
+    @property
     def prints(self) -> Path: return self.root / "prints"
     @property
     def sliced(self) -> Path: return self.root / "prints" / "sliced"
@@ -30,6 +34,8 @@ class ProjectPaths:
     def photos(self) -> Path: return self.root / "photos"
     @property
     def sources(self) -> Path: return self.root / "sources"
+    @property
+    def presets(self) -> Path: return self.root / "presets"
     @property
     def locks(self) -> Path: return self.root / ".locks"
     @property

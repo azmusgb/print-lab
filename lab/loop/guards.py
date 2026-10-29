@@ -260,4 +260,11 @@ def start(paths: ProjectPaths, exp_id: str, started_at: str | None = None,
         e["status"] = "printing"
         e = save_experiment(paths, refresh_derived(paths, e))
     warn = [f"Not in the setup log: {', '.join(missing)}. Recorded as missing on {run['id']}."] if missing else []
+    try:
+        from lab import runs as run_records
+        canonical = run_records.reconcile_legacy_experiment(paths, e)
+        if not any(x.get("source_run") == run["id"] for x in canonical):
+            warn.append(f"Canonical RUN record was not created for {run['id']}; `lab sync` will retry.")
+    except (OSError, ValueError) as exc:
+        warn.append(f"Canonical RUN record was not created for {run['id']}: {exc}. `lab sync` will retry.")
     return e, warn
