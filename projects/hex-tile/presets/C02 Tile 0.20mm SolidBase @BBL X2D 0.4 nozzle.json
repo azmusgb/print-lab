@@ -1,0 +1,11 @@
+{
+    "from": "User",
+    "inherits": "0.20mm Standard @BBL X2D",
+    "name": "C02 Tile 0.20mm SolidBase @BBL X2D 0.4 nozzle",
+    "print_settings_id": "C02 Tile 0.20mm SolidBase @BBL X2D 0.4 nozzle",
+    "bottom_shell_layers": "13",
+    "wall_loops": "3",
+    "brim_type": "outer_only",
+    "brim_width": "5",
+    "version": "2.8.2.61"
+}
