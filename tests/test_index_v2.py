@@ -3,7 +3,12 @@ import json
 
 from lab import runs
 from lab.index_v2 import augment_index
+from lab.loop.builders import build_experiment, plan_experiment
+from lab.loop.commands import record_usage
+from lab.loop.guards import start
 from lab.records.project import ProjectPaths
+from loop_fixtures import PLAN, project_with_sources
+from test_builders import fake_slicer
 
 
 def _sha(data: bytes) -> str:
@@ -110,3 +115,61 @@ def test_augment_index_reports_missing_artifact_file_without_hashing(tmp_path):
     assert state["ready"] is False
     assert state["missing"] == []
     assert set(state["files_missing"]) == {"model", "process", "filament", "slice"}
+
+
+def _legacy_index(paths, eid, status):
+    return {
+        "schema": "print-lab-index/1",
+        "project": paths.name,
+        "fingerprint": "base",
+        "experiments": [{"id": eid, "status": status}],
+        "qualification": {},
+        "problems": [],
+        "records": {},
+    }
+
+
+def test_sync_canonicalizes_started_legacy_run_with_exact_build_artifacts(tmp_path):
+    paths = project_with_sources(tmp_path)
+    eid = plan_experiment(paths, "Q-009", **PLAN)
+    build = build_experiment(paths, eid, replace=False, slicer=fake_slicer)
+    experiment, _ = start(paths, eid, started_at="2026-10-29T20:24:54+00:00")
+    legacy = experiment["print_runs"][-1]
+
+    assert not paths.runs.exists() or not list(paths.runs.glob("RUN-*.json"))
+
+    out = augment_index(paths.root, _legacy_index(paths, eid, "printing"))
+    projected = out["runs"][0]
+    canonical = runs.load(paths, projected["id"])
+
+    assert canonical["id"] == legacy["id"].replace("PR-", "RUN-", 1)
+    assert canonical["source_run"] == legacy["id"]
+    assert canonical["build_id"] == build["id"]
+    assert canonical["status"] == "printing"
+    assert canonical["started_at"] == "2026-10-29T20:24:54+00:00"
+    assert set(canonical["artifacts"]) == {"model", "process", "filament", "slice"}
+    assert runs.artifact_problems(paths, canonical) == []
+    assert projected["artifacts"]["ready"] is True
+    assert projected["source_run"] == legacy["id"]
+
+
+def test_sync_updates_canonical_run_when_legacy_usage_finishes(tmp_path):
+    paths = project_with_sources(tmp_path)
+    eid = plan_experiment(paths, "Q-009", **PLAN)
+    build_experiment(paths, eid, replace=False, slicer=fake_slicer)
+    experiment, _ = start(paths, eid)
+    legacy_id = experiment["print_runs"][-1]["id"]
+
+    augment_index(paths.root, _legacy_index(paths, eid, "printing"))
+    canonical = runs.for_source_run(paths, legacy_id)
+    assert canonical and canonical["status"] == "printing"
+
+    record_usage(paths, legacy_id, minutes=33.9, grams=9.35)
+    out = augment_index(paths.root, _legacy_index(paths, eid, "printing"))
+    canonical = runs.for_source_run(paths, legacy_id)
+
+    assert canonical["status"] == "completed"
+    assert canonical["actual"]["minutes"] == 33.9
+    assert canonical["actual"]["g"] == 9.35
+    assert out["runs"][0]["status"] == "completed"
+    assert out["experiments"][0]["active_run"] is None
