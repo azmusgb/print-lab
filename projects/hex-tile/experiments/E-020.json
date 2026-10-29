@@ -2930,13 +2930,47 @@
         "nozzle_changed"
       ],
       "usage": {
-        "actual_minutes": 263.1,
+        "actual_minutes": 264.6,
         "actual_g": 86.21,
-        "usage_source": "telemetry",
-        "completion_fraction": null
+        "usage_source": "bambuddy",
+        "completion_fraction": null,
+        "source_note": "minutes from Bambuddy print #12; grams kept from telemetry (slicer estimate), Bambuddy reported none",
+        "g_source": "slicer_estimate"
       },
       "failed": null,
-      "photos": []
+      "photos": [],
+      "bambuddy": {
+        "print": 12,
+        "archive": 12,
+        "linked": "auto",
+        "at": "2026-10-27T21:49:51+00:00",
+        "status": "completed",
+        "started": "2026-10-26T03:09:40+00:00",
+        "ended": "2026-10-26T07:34:15+00:00",
+        "minutes": 264.6,
+        "grams": null,
+        "failure_reason": null,
+        "failed_at_estimate": null,
+        "snapshot_at": "2026-10-27T21:49:51+00:00"
+      },
+      "usage_revisions": [
+        {
+          "actual_minutes": 263.1,
+          "actual_g": 86.21,
+          "usage_source": "telemetry",
+          "completion_fraction": null,
+          "replaced_at": "2026-10-27T21:49:51+00:00",
+          "reason": "bambuddy print #12"
+        },
+        {
+          "actual_minutes": 264.6,
+          "actual_g": null,
+          "usage_source": "bambuddy",
+          "completion_fraction": null,
+          "replaced_at": "2026-10-27T22:09:56+00:00",
+          "reason": "grams restored: Bambuddy print #12 reported no grams, so the earlier 86.21 g (telemetry; the slicer's estimate) is kept"
+        }
+      ]
     }
   ],
   "owner_verdict": {

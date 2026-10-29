@@ -17,6 +17,11 @@ from lab.loop.commands import load_experiment, set_criteria
 from lab.records.project import ProjectPaths
 from loop_fixtures import make_project, minimal_experiment, minimal_question, started
 
+def _t(base):
+    """A Local AI target for a fake server on plain http, with the key "k"."""
+    return sync.Target("Local AI", base, "X-LocalAI-Mac-Key", "k", None)
+
+
 PNG = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
 PRINT = "print=Printed cleanly?:clean,flawed,failed"
 APART = "apart=Twists apart by hand?:yes,hard,no"
@@ -116,7 +121,7 @@ def test_pull_applies_a_verdict_and_reports_it(project):
         "at": "2026-10-25T10:00:00+00:00",
     }
     with FakeLocalAI(requests=[req]) as fake:
-        out = pull.apply_pending(project.root, fake.base, "k")
+        out = pull.apply_pending(project.root, _t(fake.base))
 
     assert out == [{"id": "rq-0000000000000001", "status": "applied", "message": "E-009 answered"}]
     assert load_experiment(project, "E-009")["owner_verdict"]["kind"] == "criteria"
@@ -144,7 +149,7 @@ def test_pull_refuses_with_the_cli_message(project):
         "at": "2026-10-25T10:01:00+00:00",
     }
     with FakeLocalAI(requests=[req]) as fake:
-        out = pull.apply_pending(project.root, fake.base, "k")
+        out = pull.apply_pending(project.root, _t(fake.base))
 
     assert out[0]["status"] == "refused"
     assert "already has a verdict" in out[0]["message"]
@@ -166,9 +171,9 @@ def test_pull_never_applies_an_id_twice(project):
         "at": "2026-10-25T10:00:00+00:00",
     }
     with FakeLocalAI(requests=[req]) as fake:
-        out1 = pull.apply_pending(project.root, fake.base, "k")
+        out1 = pull.apply_pending(project.root, _t(fake.base))
         assert out1[0]["status"] == "applied"
-        out2 = pull.apply_pending(project.root, fake.base, "k")
+        out2 = pull.apply_pending(project.root, _t(fake.base))
         assert out2[0]["status"] == "duplicate"
         assert fake.results["rq-0000000000000003"]["status"] == "duplicate"
 
@@ -191,7 +196,7 @@ def test_pull_adds_photos_with_their_tabs(project):
     }
     incoming = {sha1: PNG + b"1", sha2: PNG + b"2"}
     with FakeLocalAI(requests=[req], incoming=incoming) as fake:
-        out = pull.apply_pending(project.root, fake.base, "k")
+        out = pull.apply_pending(project.root, _t(fake.base))
 
     assert out[0]["status"] == "applied"
     e = load_experiment(project, "E-009")
@@ -226,7 +231,7 @@ def test_pull_applies_in_sent_order(project):
     }
     # Served out of order
     with FakeLocalAI(requests=[req_verdict, req_photos], incoming={sha1: PNG}) as fake:
-        out = pull.apply_pending(project.root, fake.base, "k")
+        out = pull.apply_pending(project.root, _t(fake.base))
 
     assert [r["id"] for r in out] == ["rq-0000000000000005", "rq-0000000000000006"]
     assert all(r["status"] == "applied" for r in out)
@@ -250,7 +255,7 @@ def test_pull_ignores_unknown_payload_fields(project):
         "at": "2026-10-25T10:00:00+00:00",
     }
     with FakeLocalAI(requests=[req]) as fake:
-        out = pull.apply_pending(project.root, fake.base, "k")
+        out = pull.apply_pending(project.root, _t(fake.base))
 
     assert out[0]["status"] == "applied"
     e = load_experiment(project, "E-009")
@@ -275,7 +280,7 @@ def test_pull_skips_when_locked(project):
     with open(lock_file, "w") as f:
         fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
         with FakeLocalAI(requests=[req]) as fake:
-            out = pull.apply_pending(project.root, fake.base, "k")
+            out = pull.apply_pending(project.root, _t(fake.base))
 
     assert out == []
     assert len(fake.calls) == 0
@@ -459,14 +464,14 @@ def test_pull_records_a_phone_observation_session_once(project):
            "payload": {"snapshots": [_obs_snapshot(separation={"status": "assessed", "value": "effort", "note": None})]},
            "at": "2026-10-27T10:00:00+00:00"}
     with FakeLocalAI(requests=[req]) as fake:
-        out = pull.apply_pending(project.root, fake.base, "k")
+        out = pull.apply_pending(project.root, _t(fake.base))
     assert out[0]["status"] == "applied" and "OBS-0001" in out[0]["message"]
     rv = obs.latest(obs.load(project, "OBS-0001"))
     assert rv["submitted"]["channel"] == "phone" and rv["submitted"]["request_id"] == "rq-obs-1"
     # Local AI delivers it again after a lost acknowledgement and a wiped requests.jsonl: still one observation
     (project.root / "requests.jsonl").unlink()
     with FakeLocalAI(requests=[req]) as fake:
-        out = pull.apply_pending(project.root, fake.base, "k")
+        out = pull.apply_pending(project.root, _t(fake.base))
     assert out[0]["status"] == "applied" and len(obs.all_observations(project)) == 1
 
 
@@ -475,7 +480,7 @@ def test_pull_refuses_an_observation_for_another_experiment(project):
            "payload": {"snapshots": [{**_obs_snapshot(), "subject": {**_obs_snapshot()["subject"], "experiment": "E-099"}}]},
            "at": "2026-10-27T10:00:00+00:00"}
     with FakeLocalAI(requests=[req]) as fake:
-        out = pull.apply_pending(project.root, fake.base, "k")
+        out = pull.apply_pending(project.root, _t(fake.base))
     assert out[0]["status"] == "refused"
 
 
@@ -488,15 +493,15 @@ def test_pull_reports_a_correction_conflict(project):
            "payload": {"observation": "OBS-0001", "expected_rev": 1, "snapshot": _obs_snapshot(), "reason": "b"},
            "at": "2026-10-27T10:00:00+00:00"}
     with FakeLocalAI(requests=[req]) as fake:
-        out = pull.apply_pending(project.root, fake.base, "k")
-    assert out[0]["status"] == "conflict"
+        out = pull.apply_pending(project.root, _t(fake.base))
+    assert out[0]["status"] == "refused" and "conflict" in out[0]["message"].lower()
 
 
 def test_pull_refuses_a_malformed_observation_instead_of_crashing(project):
     req = {"id": "rq-obs-4", "kind": "observation", "experiment": "E-009", "payload": {"snapshots": [{"x": 1}]},
            "at": "2026-10-27T10:00:00+00:00"}
     with FakeLocalAI(requests=[req]) as fake:
-        out = pull.apply_pending(project.root, fake.base, "k")
+        out = pull.apply_pending(project.root, _t(fake.base))
     assert out[0]["status"] == "refused" and "subject" in out[0]["message"]
 
 
@@ -678,3 +683,16 @@ def test_sync_fingerprint_changes_when_only_an_outside_status_changes(lab023, mo
         sync.sync(lab023.root, base=fake.base)
         posts = [c[3] for c in fake.calls if c[0] == "POST" and "/sync" in c[1]]
     assert posts[0]["fingerprint"] != posts[1]["fingerprint"]
+
+
+def test_rotate_log_moves_oversized_log_to_dot_one(tmp_path):
+    log = tmp_path / "print-lab-pull.log"
+    log.write_bytes(b"a" * 100)
+    assert pull.rotate_log(log, max_bytes=200) is False
+    assert log.exists() and not (tmp_path / "print-lab-pull.log.1").exists()
+
+    log.write_bytes(b"b" * 201)
+    assert pull.rotate_log(log, max_bytes=200) is True
+    assert not log.exists()
+    assert (tmp_path / "print-lab-pull.log.1").read_bytes() == b"b" * 201
+

@@ -45,6 +45,7 @@ import sys
 from lab.cli import ROOT as LAB_ROOT
 
 _SKIP_DIRS = {".git", ".venv", "__pycache__", ".pytest_cache", ".ruff_cache"}
+_SKIP_FILES = {".pull-state.json", ".pull.lock", ".DS_Store"}
 
 
 def _inside_real_lab(path) -> bool:
@@ -57,6 +58,7 @@ def _snapshot() -> dict:
     out = {}
     for dirpath, dirnames, filenames in os.walk(LAB_ROOT):
         dirnames[:] = [d for d in dirnames if d not in _SKIP_DIRS]
+        filenames = [f for f in filenames if f not in _SKIP_FILES]
         for name in dirnames + filenames:
             p = os.path.join(dirpath, name)
             try:
@@ -85,6 +87,8 @@ def _nothing_outside_the_checkout(tmp_path_factory, monkeypatch):
     monkeypatch.setenv("HOME", str(home))
     monkeypatch.setenv("LAB_LOCALAI_URL", "http://127.0.0.1:9")  # the discard port: nothing answers
     monkeypatch.setenv("LAB_LOCALAI_KEY_FILE", str(home / "no-such.key"))
+    monkeypatch.setenv("LAB_HUB_URL", "https://127.0.0.1:9")  # same: the hub can't be reached from a test
+    monkeypatch.setenv("LAB_HUB_KEY_FILE", str(home / "no-such-hub.key"))
     monkeypatch.setattr(sync, "HOME", home / ".claude" / "localai-chat")
     real_run = subprocess.run
 
@@ -103,7 +107,7 @@ def real_project_copy():
     import shutil
     src = LAB_ROOT / "projects" / "hex-tile"
     dst = Path(os.environ["LAB_HOME"]) / "projects" / "hex-tile"
-    shutil.copytree(src, dst, ignore=shutil.ignore_patterns(".locks", "photos", "jobs"))
+    shutil.copytree(src, dst, ignore=shutil.ignore_patterns(".locks", "photos", "jobs", "production"))
     return dst
 
 
