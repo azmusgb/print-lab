@@ -25,6 +25,22 @@ def _part(eid, qid, ref=None):
     return e
 
 
+def _observation():
+    """Minimal valid observation record shape used by page_index._finding()."""
+    return {
+        "id": "OBS-0001",
+        "revisions": [
+            {
+                "rev": 1,
+                "subject": {"variant": "E-023-A", "group": None},
+                "outcomes": {},
+                "source": {"kind": "owner"},
+                "viewing": {"light": "installed"},
+            }
+        ],
+    }
+
+
 @pytest.fixture
 def qualified_project(tmp_path, monkeypatch):
     q = minimal_question("Q-009", experiments=("E-019", "E-023"))
@@ -32,7 +48,7 @@ def qualified_project(tmp_path, monkeypatch):
     cur = _part("E-023", "Q-009", ref="E-019")
     paths = make_project(tmp_path, q, [ref, cur])
 
-    monkeypatch.setattr(qualification.obs, "for_experiment", lambda paths, eid: [{"id": "OBS-0001"}])
+    monkeypatch.setattr(qualification.obs, "for_experiment", lambda paths, eid: [_observation()])
     monkeypatch.setattr(
         qualification,
         "comparison_validity",
