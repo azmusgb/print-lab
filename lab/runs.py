@@ -15,6 +15,7 @@ from lab.records.store import atomic_write_json, now, read_json, record_lock
 
 SCHEMA = "print-lab-run/1"
 RUN_RE = re.compile(r"^RUN-(\d{3,})-(\d{2,})$")
+LEGACY_RUN_RE = re.compile(r"^PR-(\d{3,})-(\d{2,})$")
 EXPERIMENT_RE = re.compile(r"^E-(\d{3,})$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 STATUSES = ("planned", "printing", "completed", "failed", "aborted", "qualified")
@@ -103,8 +104,25 @@ def latest_for_experiment(paths: ProjectPaths, eid: str) -> dict | None:
     return got[-1] if got else None
 
 
-def _next_id(paths: ProjectPaths, eid: str) -> str:
+def for_source_run(paths: ProjectPaths, source_run: str) -> dict | None:
+    """The canonical run linked to one legacy PR-* attempt, if it has been migrated."""
+    if not LEGACY_RUN_RE.fullmatch(str(source_run or "")):
+        return None
+    for p in (sorted(paths.runs.glob("RUN-*.json")) if paths.runs.is_dir() else []):
+        record = validate(read_json(p))
+        if record.get("source_run") == source_run:
+            return record
+    return None
+
+
+def _next_id(paths: ProjectPaths, eid: str, source_run: str | None = None) -> str:
     n = int(EXPERIMENT_RE.fullmatch(eid).group(1))
+    if source_run:
+        m = LEGACY_RUN_RE.fullmatch(source_run)
+        if m and int(m.group(1)) == n:
+            candidate = f"RUN-{n:03d}-{int(m.group(2)):02d}"
+            if not path_for(paths, candidate).exists():
+                return candidate
     prefix = f"RUN-{n:03d}-"
     nums = []
     for p in (paths.runs.glob(f"{prefix}*.json") if paths.runs.is_dir() else []):
@@ -125,7 +143,7 @@ def create(paths: ProjectPaths, eid: str, *, build_id: str | None, artifacts: di
     checked_artifacts = {k: validate_artifact(v, name=f"artifacts.{k}") for k, v in artifacts.items()}
     paths.runs.mkdir(parents=True, exist_ok=True)
     with record_lock(paths.locks, "run-id-allocation", f"create run for {eid}"):
-        rid = _next_id(paths, eid)
+        rid = _next_id(paths, eid, source_run)
         record = {
             "schema": SCHEMA,
             "record_type": "run",
@@ -164,6 +182,139 @@ def update(paths: ProjectPaths, run_id: str, **changes) -> dict:
         validate(record)
         atomic_write_json(path_for(paths, run_id), record)
         return record
+
+
+def artifacts_from_build(paths: ProjectPaths, experiment: dict, build: dict | None) -> dict:
+    """Bind only artifact identities already proven by a successful legacy build.
+
+    `process` is the generated print 3MF after Print Lab's settings patches. `filament`
+    points at the build's base Bambu project, which is the settings/profile carrier used
+    by that generated plate. A multi-model build intentionally leaves `model` unbound
+    until the Run schema can represent more than one source model.
+    """
+    if not isinstance(build, dict):
+        return {}
+    out = {}
+    inputs = build.get("inputs") if isinstance(build.get("inputs"), dict) else {}
+    models = inputs.get("model") if isinstance(inputs.get("model"), dict) else {}
+    if len(models) == 1:
+        rel, digest = next(iter(models.items()))
+        if isinstance(rel, str) and isinstance(digest, str) and SHA256_RE.fullmatch(digest):
+            out["model"] = {"path": _safe_relpath(rel), "sha256": digest}
+
+    artifact = build.get("artifact")
+    artifact_sha = build.get("artifact_sha256")
+    if isinstance(artifact, str) and isinstance(artifact_sha, str) and SHA256_RE.fullmatch(artifact_sha):
+        out["process"] = {"path": _safe_relpath(artifact), "sha256": artifact_sha}
+
+    spec = experiment.get("build_spec") if isinstance(experiment.get("build_spec"), dict) else {}
+    base = spec.get("base")
+    settings_sha = inputs.get("settings")
+    if isinstance(base, str) and isinstance(settings_sha, str) and SHA256_RE.fullmatch(settings_sha):
+        out["filament"] = {"path": _safe_relpath(base), "sha256": settings_sha}
+
+    sliced = build.get("sliced")
+    if isinstance(sliced, str):
+        slice_path = paths.root / _safe_relpath(sliced)
+        if slice_path.is_file():
+            out["slice"] = {"path": _safe_relpath(sliced), "sha256": _sha256(slice_path)}
+    return out
+
+
+def _legacy_status(experiment: dict, legacy: dict, *, latest: bool) -> str:
+    if legacy.get("failed"):
+        return "failed"
+    if experiment.get("status") == "abandoned":
+        return "aborted"
+    usage = legacy.get("usage") if isinstance(legacy.get("usage"), dict) else None
+    verdict = experiment.get("owner_verdict") if isinstance(experiment.get("owner_verdict"), dict) else {}
+    judged_runs = verdict.get("print_runs") if isinstance(verdict.get("print_runs"), list) else []
+    if usage or legacy.get("id") in judged_runs or experiment.get("status") == "answered":
+        return "completed"
+    if latest and experiment.get("status") == "printing":
+        return "printing"
+    return "completed"
+
+
+def _legacy_actual(legacy: dict) -> dict:
+    usage = legacy.get("usage") if isinstance(legacy.get("usage"), dict) else {}
+    actual = {}
+    if usage.get("actual_minutes") is not None:
+        actual["minutes"] = usage.get("actual_minutes")
+    if usage.get("actual_g") is not None:
+        actual["g"] = usage.get("actual_g")
+    if usage.get("usage_source") is not None:
+        actual["usage_source"] = usage.get("usage_source")
+    if usage.get("completion_fraction") is not None:
+        actual["completion_fraction"] = usage.get("completion_fraction")
+    elif isinstance(legacy.get("failed"), dict) and legacy["failed"].get("at_fraction") is not None:
+        actual["completion_fraction"] = legacy["failed"].get("at_fraction")
+    return actual
+
+
+def reconcile_legacy_experiment(paths: ProjectPaths, experiment: dict) -> list[dict]:
+    """Create/update canonical RUN records from the legacy PR attempts of one experiment.
+
+    This is intentionally idempotent and additive: PR records remain the compatibility
+    source for the established experiment loop while RUN records become the durable
+    physical-execution identity used by Qualification and production sealing.
+    """
+    legacy_runs = experiment.get("print_runs") if isinstance(experiment.get("print_runs"), list) else []
+    builds = {b.get("id"): b for b in (experiment.get("builds") or []) if isinstance(b, dict) and b.get("id")}
+    out = []
+    for i, legacy in enumerate(legacy_runs):
+        if not isinstance(legacy, dict) or not LEGACY_RUN_RE.fullmatch(str(legacy.get("id") or "")):
+            continue
+        source_run = legacy["id"]
+        build = builds.get(legacy.get("build_id"))
+        status = _legacy_status(experiment, legacy, latest=i == len(legacy_runs) - 1)
+        artifacts = artifacts_from_build(paths, experiment, build)
+        estimate = (build or {}).get("estimate") or {}
+        actual = _legacy_actual(legacy)
+        record = for_source_run(paths, source_run)
+        if record is None:
+            record = create(
+                paths,
+                experiment["id"],
+                build_id=legacy.get("build_id"),
+                artifacts=artifacts,
+                estimate=estimate,
+                status=status,
+                started_at=legacy.get("started_at"),
+                source_run=source_run,
+            )
+            if actual:
+                record = update(paths, record["id"], actual=actual)
+        else:
+            changes = {}
+            if record.get("status") != "qualified" and record.get("status") != status:
+                changes["status"] = status
+            if not record.get("started_at") and legacy.get("started_at"):
+                changes["started_at"] = legacy.get("started_at")
+            if estimate and record.get("estimate") != estimate:
+                changes["estimate"] = estimate
+            merged_artifacts = {**(record.get("artifacts") or {}), **artifacts}
+            if merged_artifacts != (record.get("artifacts") or {}):
+                changes["artifacts"] = merged_artifacts
+            if actual and record.get("actual") != actual:
+                changes["actual"] = actual
+            if changes:
+                record = update(paths, record["id"], **changes)
+        out.append(record)
+    return out
+
+
+def reconcile_legacy_project(paths: ProjectPaths) -> list[dict]:
+    """Reconcile every readable experiment, returning non-fatal migration problems."""
+    from lab.records.schema import load as load_record
+
+    problems = []
+    for path in sorted(paths.experiments.glob("E-*.json")) if paths.experiments.is_dir() else []:
+        try:
+            reconcile_legacy_experiment(paths, load_record(path, "experiment"))
+        except (OSError, ValueError) as exc:
+            problems.append({"file": f"experiments/{path.name}", "error": f"canonical run migration: {exc}"})
+    return problems
 
 
 def missing_required_artifacts(run: dict) -> list[str]:

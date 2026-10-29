@@ -144,11 +144,14 @@ def _attach_runs(experiments: list[dict], projected_runs: list[dict], qualificat
 def augment_index(pdir: Path, index: dict) -> dict:
     """Return *index* enriched with additive v2 run/release projections.
 
-    RUN records intentionally stay out of index['records'] during this bridge so
-    older Pi Hub sync validators remain compatible.
+    New starts create RUN records directly. Reconciliation here remains an
+    idempotent migration/recovery path for older PR-only attempts and interrupted
+    start-time canonicalization. RUN records intentionally stay out of
+    index['records'] during this bridge so older Pi Hub sync validators remain compatible.
     """
     paths = ProjectPaths(Path(pdir))
     problems = index.setdefault("problems", [])
+    problems.extend(runs.reconcile_legacy_project(paths))
     qualification = index.get("qualification") if isinstance(index.get("qualification"), dict) else {}
     projected_runs = _runs(paths, problems)
     production = _production(paths, qualification)
