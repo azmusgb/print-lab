@@ -6,6 +6,7 @@ should bind to RUN-*.json records in <project>/runs/.
 """
 from __future__ import annotations
 
+import hashlib
 import re
 from pathlib import Path
 
@@ -18,6 +19,14 @@ EXPERIMENT_RE = re.compile(r"^E-(\d{3,})$")
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 STATUSES = ("planned", "printing", "completed", "failed", "aborted", "qualified")
 REQUIRED_ARTIFACTS = ("model", "process", "filament", "slice")
+
+
+def _sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
 
 
 def _safe_relpath(value: str) -> str:
@@ -82,7 +91,7 @@ def for_experiment(paths: ProjectPaths, eid: str) -> list[dict]:
     if not EXPERIMENT_RE.fullmatch(eid):
         raise ValueError("Experiment id must look like E-025.")
     out = []
-    for p in sorted(paths.runs.glob("RUN-*.json")) if paths.runs.is_dir() else []:
+    for p in (sorted(paths.runs.glob("RUN-*.json")) if paths.runs.is_dir() else []):
         r = validate(read_json(p))
         if r.get("experiment") == eid:
             out.append(r)
@@ -98,7 +107,7 @@ def _next_id(paths: ProjectPaths, eid: str) -> str:
     n = int(EXPERIMENT_RE.fullmatch(eid).group(1))
     prefix = f"RUN-{n:03d}-"
     nums = []
-    for p in paths.runs.glob(f"{prefix}*.json") if paths.runs.is_dir() else []:
+    for p in (paths.runs.glob(f"{prefix}*.json") if paths.runs.is_dir() else []):
         m = RUN_RE.fullmatch(p.stem)
         if m:
             nums.append(int(m.group(2)))
@@ -160,3 +169,25 @@ def update(paths: ProjectPaths, run_id: str, **changes) -> dict:
 def missing_required_artifacts(run: dict) -> list[str]:
     artifacts = run.get("artifacts") or {}
     return [key for key in REQUIRED_ARTIFACTS if key not in artifacts]
+
+
+def artifact_problems(paths: ProjectPaths, run: dict, *, require_all: bool = True) -> list[dict]:
+    """Verify run-bound files exist and still match the recorded SHA-256 values."""
+    problems = []
+    artifacts = run.get("artifacts") or {}
+    if require_all:
+        for key in missing_required_artifacts(run):
+            problems.append({"code": "missing_artifact", "artifact": key,
+                             "message": f"Run is missing required artifact {key}."})
+    for key, spec in artifacts.items():
+        checked = validate_artifact(spec, name=f"artifacts.{key}")
+        path = paths.root / checked["path"]
+        if not path.is_file():
+            problems.append({"code": "artifact_file_missing", "artifact": key,
+                             "message": f"Artifact file is missing: {checked['path']}"})
+            continue
+        actual = _sha256(path)
+        if actual != checked["sha256"]:
+            problems.append({"code": "artifact_hash_mismatch", "artifact": key,
+                             "message": f"Artifact {key} changed: {checked['path']} expected {checked['sha256']} but found {actual}."})
+    return problems
