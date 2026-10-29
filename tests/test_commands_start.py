@@ -18,6 +18,7 @@ def test_start_snapshots_setup_and_warns_baseline(proj):
     assert run["id"] == f"PR-{eid[2:]}-01" and run["build_id"] == f"BLD-{eid[2:]}-01"
     assert run["setup"]["nozzle_changed"]["fields"] == {"diameter_mm": 0.4}
     assert run["baseline_missing"] == ["filament_dried", "vibration_calibration"] and warnings
+    assert all("Canonical RUN record was not created" not in w for w in warnings)
     assert e["status"] == "printing"
 
     canonical = runs.for_source_run(proj, run["id"])
