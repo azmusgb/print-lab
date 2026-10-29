@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from lab import bambuddy
+from lab.qualification import summary as qualification_summary
 from lab.loop import ledger
 from lab.loop.outcome import comparison_validity, criteria_finding, prediction_outcome, sweep_finding
 from lab.records.project import ProjectPaths, project_settings
@@ -290,7 +291,13 @@ def build_index(pdir: Path, at: str | None = None) -> dict:
                    for e in sorted(exps.values(), key=lambda e: e["id"], reverse=True)]
     needs = sorted((x["needs"] for x in experiments if x["needs"]), key=lambda n: (n["urgency"], n["id"]))
     needs = [n for n in needs if n["urgency"] < 3 or n["action"] == "Fix the plan"]
-    fingerprint = hashlib.sha256(json.dumps({k: r["sha256"] for k, r in sorted(records.items())}).encode()).hexdigest()
+    qualification = qualification_summary(paths)
+    fingerprint_material = {
+        "records": {k: r["sha256"] for k, r in sorted(records.items())},
+        "qualification": qualification,
+    }
+    fingerprint = hashlib.sha256(json.dumps(fingerprint_material, sort_keys=True).encode()).hexdigest()
     return {"schema": SCHEMA, "project": paths.name, "generated_at": at, "fingerprint": fingerprint,
             "questions": [_question(q, exps, tol) for q in sorted(questions.values(), key=lambda q: q["id"], reverse=True)],
-            "experiments": experiments, "needs": needs, "records": records, "problems": problems}
+            "experiments": experiments, "needs": needs, "qualification": qualification,
+            "records": records, "problems": problems}

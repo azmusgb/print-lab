@@ -198,7 +198,7 @@ def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]
             run_id = req.get("run")
             payload = req.get("payload") or {}
 
-            bad = (kind in ("verdict", "start", "approve", "abandon") and not (isinstance(eid, str) and EXP_ID.fullmatch(eid))) \
+            bad = (kind in ("verdict", "start", "approve", "abandon", "qualification") and not (isinstance(eid, str) and EXP_ID.fullmatch(eid))) \
                 or (run_id is not None and not (isinstance(run_id, str) and RUN_ID.fullmatch(run_id)))
             if bad:
                 status, message = "refused", f"Not an experiment id or run id: {str(eid)[:40]!r}, {str(run_id)[:40]!r}."
@@ -262,6 +262,13 @@ def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]
                     status, message = "applied", f"{rec['id']} is now at revision {obs.latest(rec)['rev']}"
                 except obs.Conflict as e:
                     status, message = "refused", f"conflict: {e}"
+                except ValueError as e:
+                    status, message = "refused", str(e)
+            elif kind == "qualification":
+                from lab.qualification import apply_request as apply_qualification, message as qualification_message
+                try:
+                    rec = apply_qualification(paths, eid, payload, request_id=req_id)
+                    status, message = "applied", qualification_message(rec)
                 except ValueError as e:
                     status, message = "refused", str(e)
             elif kind in ("start", "approve", "abandon"):
