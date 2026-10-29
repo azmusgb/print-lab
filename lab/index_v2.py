@@ -102,8 +102,30 @@ def _production(paths: ProjectPaths, qualification: dict) -> dict:
             item = _package_projection(path)
             if item:
                 packages.append(item)
-    current_id = qualification.get("current_package") if isinstance(qualification, dict) else None
-    current = next((p for p in packages if p.get("id") == current_id or p.get("path") == current_id), None)
+
+    raw_current = qualification.get("current_package") if isinstance(qualification, dict) else None
+    current_id = None
+    current_path = None
+    if isinstance(raw_current, dict):
+        current_id = raw_current.get("id")
+        current_path = raw_current.get("path")
+    elif isinstance(raw_current, str):
+        current_id = raw_current
+        current_path = raw_current
+
+    current = next(
+        (p for p in packages if p.get("id") == current_id or p.get("path") == current_path),
+        None,
+    )
+    if current is None and isinstance(raw_current, dict):
+        current = {
+            "id": raw_current.get("id"),
+            "path": raw_current.get("path"),
+            "experiment": raw_current.get("experiment"),
+            "run": raw_current.get("run"),
+            "manifest_sha256": raw_current.get("manifest_sha256"),
+            "sealed": True,
+        }
     return {"current": current, "packages": packages}
 
 
