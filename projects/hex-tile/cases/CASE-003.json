@@ -1,0 +1,139 @@
+{
+  "id": "CASE-003",
+  "title": "RIFT six-copy common-Z spaghetti failure under C02-style motion",
+  "factor": "motion_envelope_on_tall_narrow_geometry",
+  "finding": "A six-copy RIFT plate using one identical STL remained adhered to the bed but developed a repeatable horizontal disturbance at a common Z across multiple copies, followed by localized loose extrusion and cross-object spaghetti. The exact failed job used the custom process 'RIFT 0.20mm - Original Body Motion - Upper Closure Check', which resolves to C02-style aggressive motion (300 mm/s inner wall, 200 mm/s outer wall, 250 mm/s gap infill, 10000 mm/s^2 default acceleration, 5000 mm/s^2 outer-wall acceleration, 10000 mm/s^2 travel acceleration, reduce-crossing-walls off). Height Slowdown is enabled only from 120-132 mm and occurs above the observed onset, so it is not considered the initiating cause. Current leading hypothesis: repeatable geometry/toolpath interaction amplified by the aggressive motion envelope, producing local lift/curl or part deflection and subsequent nozzle contact. Filament/bed adhesion are lower-probability primary causes because all six copies stayed attached and the unaffected walls remained largely uniform.",
+  "confidence": "observed",
+  "ladder_step": 1,
+  "experiments": [],
+  "runs": [],
+  "related_cases": [
+    "CASE-002"
+  ],
+  "reference_context": {
+    "accepted_package": "production/C02-accepted-2026-10-28",
+    "reserved_followup": "E-024 remains reserved for the v51/Kexcelled terracotta follow-up declared by E-023; this unplanned RIFT failure is intentionally not assigned E-024."
+  },
+  "event": {
+    "date": "2026-10-29",
+    "printer": "Bambu Lab X2D, 0.4 mm nozzle",
+    "copies": 6,
+    "source_relationship": "all six plate objects are copies of the same STL",
+    "result": "stopped_failed",
+    "stop_reason": "Bambu spaghetti detection; visual inspection confirmed a true-positive localized extrusion failure",
+    "bed_adhesion": "passed",
+    "global_layer_shift": "not_observed",
+    "failure_pattern": "common horizontal disturbance at approximately the same Z across multiple identical copies, with loose filament subsequently dragged between objects",
+    "physical_notes": [
+      "All six bodies remained standing and adhered to their brims/plate at inspection.",
+      "Large flat wall regions above and below the disturbed band remained comparatively uniform.",
+      "Failure was concentrated near repeated side/end geometry rather than distributed across every wall surface."
+    ]
+  },
+  "job_artifacts": {
+    "project_3mf": {
+      "name": "RIFT_SINGLE_NO_LAYER_RANGES.gcode(1).3mf",
+      "sha256": "1293dc143799992e54beb81189b670739cd137fe222419bfd6a700363043fdfc"
+    },
+    "gcode": {
+      "name": "RIFT_ab-pair_marked-plus-unmarked.stl_1(5)_PLA_10h7m(1).gcode",
+      "sha256": "10aaff0480e5b2d30e24936c0550cea2a62682a77f6bf6603f8b93eda467a74f"
+    },
+    "preset_bundle": {
+      "name": "Bambu Lab X2D 0.4 nozzle.bbscfg",
+      "sha256": "500ce07cbfe147245bf5bf312778f6bf02b024f41815cca9d78933ae1ad3e1df"
+    }
+  },
+  "resolved_process": {
+    "name": "RIFT 0.20mm - Original Body Motion - Upper Closure Check",
+    "layer_height_mm": 0.2,
+    "wall_loops": 3,
+    "inner_wall_speed_mm_s": 300,
+    "outer_wall_speed_mm_s": 200,
+    "gap_infill_speed_mm_s": 250,
+    "default_acceleration_mm_s2": 10000,
+    "outer_wall_acceleration_mm_s2": 5000,
+    "travel_acceleration_mm_s2": 10000,
+    "reduce_crossing_wall": false,
+    "seam_position": "aligned",
+    "height_slowdown": {
+      "enabled": true,
+      "start_height_mm": 120,
+      "start_speed_mm_s": 200,
+      "start_acceleration_mm_s2": 5000,
+      "end_height_mm": 132,
+      "end_speed_mm_s": 40,
+      "end_acceleration_mm_s2": 1000,
+      "assessment": "retained for now; begins above the observed failure onset and is not the leading initiating mechanism"
+    }
+  },
+  "resolved_filament": {
+    "name": "SUNLU PLA Grey - Reliable",
+    "flow_ratio": 0.98,
+    "max_volumetric_speed_mm3_s": 14,
+    "nozzle_temperature_c": 220,
+    "textured_plate_first_layer_c": 60,
+    "textured_plate_other_layers_c": 55,
+    "assessment": "no strong evidence that filament settings initiated the failure; leave unchanged for the first diagnostic rerun"
+  },
+  "evidence": {
+    "photos": [
+      {"name": "IMG_1106.jpg", "sha256": "d305b01192889f4b1f54ac939c6879cabcd658774e01d40076d921e78ce7417d"},
+      {"name": "IMG_1107.jpg", "sha256": "8009001e970e07a0037c2e5dfdbc62067c2834160e28fc2d6fc1ef2216f166ee"},
+      {"name": "IMG_1108.jpg", "sha256": "fb2f4585fdd7efd19f434a0fc6cc7a7068241b1e59e5363293fc8a4ae8d9192f"},
+      {"name": "IMG_1109.jpg", "sha256": "d43a9376bee9e2f6613bffde959ba7e39236991be9ba0216903bad094202ffd5"},
+      {"name": "IMG_1110.jpg", "sha256": "bb7312dec81cea2dd8b434c2d9d8a093f6dd5450a62930aabf57cbe6fecc459a"},
+      {"name": "IMG_1111.jpg", "sha256": "3505f4bbbf028b399aaae4637cfa580ef6b5d4d8d84316e60246c2c830ca344b"},
+      {"name": "IMG_1112.jpg", "sha256": "2d52a9081165c9cbb8fc57235a45a06298a536e771265770012c4bbde4203222"},
+      {"name": "IMG_1113.jpg", "sha256": "a9ce2783532f4b19a29cc12627a7c93c5060e9be9428ed71ca4eadf7715f0767"},
+      {"name": "IMG_1114.jpg", "sha256": "31d87937a86ff1a54d0310d35c2b10bb6840e8ba8424be31a173d76c22f84a6b"},
+      {"name": "IMG_1115.jpg", "sha256": "1e2f5e91df5f9e3973bbaa179e059f350c62607a0c86b43e8845ccceeac6f635"}
+    ],
+    "photo_storage": "Photos were supplied in the 2026-10-29 ChatGPT failure-review session. The hashes above bind this case to those exact originals; binary photo files are not yet copied into the Git repository.",
+    "artifact_storage": "The exact project, G-code, and preset bundle were supplied in the same review session. Hashes are recorded here; binary copies are not yet copied into the Git repository."
+  },
+  "hypotheses": [
+    {
+      "rank": 1,
+      "cause": "repeatable geometry/toolpath interaction amplified by excessive wall speed/acceleration for tall narrow parts",
+      "status": "leading"
+    },
+    {
+      "rank": 2,
+      "cause": "local raised/curling extrusion or part deflection leading to nozzle contact",
+      "status": "plausible"
+    },
+    {
+      "rank": 3,
+      "cause": "filament/thermal instability",
+      "status": "lower_probability"
+    },
+    {
+      "rank": 4,
+      "cause": "bed adhesion failure",
+      "status": "low_probability"
+    }
+  ],
+  "next_test": {
+    "scope": "one RIFT object only",
+    "intent": "isolate motion sensitivity without changing filament, temperatures, geometry, or the 120-132 mm Height Slowdown",
+    "settings": {
+      "inner_wall_speed_mm_s": 200,
+      "outer_wall_speed_mm_s": 80,
+      "gap_infill_speed_mm_s": 110,
+      "default_acceleration_mm_s2": 5000,
+      "outer_wall_acceleration_mm_s2": 1500,
+      "travel_acceleration_mm_s2": 8000,
+      "reduce_crossing_wall": true,
+      "height_slowdown": "keep",
+      "filament_profile": "keep",
+      "nozzle_temperature": "keep",
+      "bed_temperature": "keep"
+    },
+    "decision_rule": "If the one-copy rerun clears the common-Z failure region without wall disturbance or nozzle contact, motion sensitivity becomes the primary supported mechanism. If it fails at the same geometry/Z despite the reduced motion envelope, inspect the exact local geometry/toolpath transition before any further global tuning."
+  },
+  "rule_proposal": null,
+  "status": "open",
+  "created_at": "2026-10-29T18:58:00+00:00",
+  "updated_at": "2026-10-29T18:58:00+00:00"
+}
