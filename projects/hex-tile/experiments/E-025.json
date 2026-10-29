@@ -1,0 +1,116 @@
+{
+  "schema": 1,
+  "record_type": "experiment",
+  "id": "E-025",
+  "project": "hex-tile",
+  "question": "Q-006",
+  "provenance": "prospective",
+  "question_text": "Single-copy RIFT rerun with conservative motion only",
+  "hypothesis": "CASE-003 indicates the six-copy failure was initiated by a repeatable geometry/toolpath interaction that the C02-style 300/200 mm/s wall speeds and 10000/5000 mm/s^2 acceleration envelope amplified into local lift/deflection and nozzle contact. Reducing motion severity without changing geometry or filament should clear the common-Z failure region.",
+  "prediction": "One RIFT object reaches full height without the repeated horizontal disturbance, raised extrusion, nozzle contact, or spaghetti seen in CASE-003. If it fails again at the same geometry/Z, the geometry/toolpath transition becomes the leading cause rather than the global motion envelope.",
+  "why_this_test": "A single-copy rerun removes cross-object dragging as a confound and changes only the motion envelope. Filament, flow, temperatures, geometry, 0.20 mm layers, three walls, aligned seam, and the existing 120-132 mm Height Slowdown are held constant.",
+  "test_kind": "full_part",
+  "factor": {
+    "name": "motion_envelope",
+    "values": [
+      "diagnostic_conservative"
+    ],
+    "unit": ""
+  },
+  "factor_scope": "bundle",
+  "dependent_adjustments": {
+    "inner_wall_speed_mm_s": "300 -> 200",
+    "outer_wall_speed_mm_s": "200 -> 80",
+    "gap_infill_speed_mm_s": "250 -> 110",
+    "default_acceleration_mm_s2": "10000 -> 5000",
+    "outer_wall_acceleration_mm_s2": "5000 -> 1500",
+    "travel_acceleration_mm_s2": "10000 -> 8000",
+    "reduce_crossing_wall": "off -> on"
+  },
+  "controlled": {
+    "geometry": "unchanged RIFT source mesh",
+    "copies": 1,
+    "layer_height_mm": 0.2,
+    "wall_loops": 3,
+    "seam_position": "aligned",
+    "height_slowdown": "enabled 120-132 mm, 200->40 mm/s, 5000->1000 mm/s^2",
+    "filament": "SUNLU PLA Grey - RIFT Diagnostic",
+    "flow_ratio": 0.98,
+    "max_volumetric_speed_mm3_s": 14,
+    "nozzle_temperature_c": 220,
+    "textured_plate_first_layer_c": 60,
+    "textured_plate_other_layers_c": 55
+  },
+  "baseline": {},
+  "findings": [],
+  "judge_on": "Inspect the previously affected common-Z band first, then the full wall and end/channel features: no horizontal disturbance, raised/curling extrusion, nozzle-contact marks, spaghetti, or adhesion loss. Preserve photos even on a clean result.",
+  "expect": null,
+  "derived_from_artifact": [
+    "CASE-003",
+    "sources/RIFT_SINGLE_DIAGNOSTIC_CONSERVATIVE_MOTION.3mf",
+    "presets/RIFT_Diagnostic_0.20mm_Conservative_Motion_X2D_0.4.json",
+    "presets/SUNLU_PLA_Grey_RIFT_Diagnostic_X2D_0.4.json"
+  ],
+  "derived_from_result": [
+    "CASE-003"
+  ],
+  "controls": {
+    "witness_required": false,
+    "anchor": null
+  },
+  "reference_variants": [],
+  "build_spec": {
+    "kind": "full_part",
+    "source": "sources/RIFT_SINGLE_DIAGNOSTIC_CONSERVATIVE_MOTION.3mf",
+    "object": "RIFT_ab-pair_marked-plus-unmarked.stl_1(5).stl",
+    "z": [
+      0.0,
+      131.9823
+    ],
+    "judged": [
+      0.0,
+      131.9823
+    ],
+    "base": "sources/RIFT_SINGLE_DIAGNOSTIC_CONSERVATIVE_MOTION.3mf",
+    "variants": [
+      {
+        "id": "E-025-A",
+        "tab": "25A",
+        "settings_patch": {},
+        "copies": 1,
+        "source": "sources/RIFT_SINGLE_DIAGNOSTIC_CONSERVATIVE_MOTION.3mf"
+      }
+    ],
+    "witness": false,
+    "anchor": null,
+    "tabs": false,
+    "notes": [
+      "E-024 remains reserved for the v51/Kexcelled terracotta follow-up declared by E-023.",
+      "Do not change filament, temperatures, geometry, layer height, wall count, seam, or Height Slowdown for this run."
+    ]
+  },
+  "status": "planned",
+  "variants": [
+    {
+      "id": "E-025-A",
+      "tab": "25A",
+      "factor_value": "diagnostic_conservative",
+      "copies": 1
+    }
+  ],
+  "builds": [],
+  "artifact_manifest": {
+    "project_3mf": {
+      "path": "sources/RIFT_SINGLE_DIAGNOSTIC_CONSERVATIVE_MOTION.3mf",
+      "sha256": "d6c6c7b098b949fa7b8a4b46875b627d99b28379b68a8ef0e457a6f314a62624"
+    },
+    "process_preset": {
+      "path": "presets/RIFT_Diagnostic_0.20mm_Conservative_Motion_X2D_0.4.json",
+      "sha256": "d1312fbb9893101fcf8272f98433cfa787d179ebf345765711dc21596e7e4d2d"
+    },
+    "filament_preset": {
+      "path": "presets/SUNLU_PLA_Grey_RIFT_Diagnostic_X2D_0.4.json",
+      "sha256": "8886155c2cac807ba06753117fafa0f26f1948fc3f30acc5a6991a2c1806f492"
+    }
+  }
+}
