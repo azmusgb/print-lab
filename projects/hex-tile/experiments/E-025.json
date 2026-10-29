@@ -86,7 +86,10 @@
     "tabs": false,
     "notes": [
       "E-024 remains reserved for the v51/Kexcelled terracotta follow-up declared by E-023.",
-      "Do not change filament, temperatures, geometry, layer height, wall count, seam, or Height Slowdown for this run."
+      "Do not change filament, temperatures, geometry, layer height, wall count, seam, or Height Slowdown for this run.",
+      "Source 3MF SHA256: d6c6c7b098b949fa7b8a4b46875b627d99b28379b68a8ef0e457a6f314a62624",
+      "Process preset SHA256: d1312fbb9893101fcf8272f98433cfa787d179ebf345765711dc21596e7e4d2d",
+      "Filament preset SHA256: 8886155c2cac807ba06753117fafa0f26f1948fc3f30acc5a6991a2c1806f492"
     ]
   },
   "status": "planned",
@@ -98,19 +101,5 @@
       "copies": 1
     }
   ],
-  "builds": [],
-  "artifact_manifest": {
-    "project_3mf": {
-      "path": "sources/RIFT_SINGLE_DIAGNOSTIC_CONSERVATIVE_MOTION.3mf",
-      "sha256": "d6c6c7b098b949fa7b8a4b46875b627d99b28379b68a8ef0e457a6f314a62624"
-    },
-    "process_preset": {
-      "path": "presets/RIFT_Diagnostic_0.20mm_Conservative_Motion_X2D_0.4.json",
-      "sha256": "d1312fbb9893101fcf8272f98433cfa787d179ebf345765711dc21596e7e4d2d"
-    },
-    "filament_preset": {
-      "path": "presets/SUNLU_PLA_Grey_RIFT_Diagnostic_X2D_0.4.json",
-      "sha256": "8886155c2cac807ba06753117fafa0f26f1948fc3f30acc5a6991a2c1806f492"
-    }
-  }
+  "builds": []
 }
