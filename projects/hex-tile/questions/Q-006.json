@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "record_type": "question",
+  "id": "Q-006",
+  "project": "hex-tile",
+  "question": "Does the RIFT common-Z failure disappear when one identical object is printed with a conservative motion envelope while geometry, filament, temperatures, layer height, wall count, seam, and 120-132 mm Height Slowdown remain unchanged?",
+  "status": "active",
+  "autonomy_level": 2,
+  "budget": {
+    "max_test_minutes": 180,
+    "max_test_g": 80,
+    "max_minutes": 180,
+    "max_g": 80
+  },
+  "experiments": [
+    "E-025"
+  ],
+  "plans": [],
+  "stops": []
+}

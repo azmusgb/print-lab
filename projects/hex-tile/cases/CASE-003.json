@@ -5,14 +5,12 @@
   "finding": "A six-copy RIFT plate using one identical STL remained adhered to the bed but developed a repeatable horizontal disturbance at a common Z across multiple copies, followed by localized loose extrusion and cross-object spaghetti. The exact failed job used the custom process 'RIFT 0.20mm - Original Body Motion - Upper Closure Check', which resolves to C02-style aggressive motion (300 mm/s inner wall, 200 mm/s outer wall, 250 mm/s gap infill, 10000 mm/s^2 default acceleration, 5000 mm/s^2 outer-wall acceleration, 10000 mm/s^2 travel acceleration, reduce-crossing-walls off). Height Slowdown is enabled only from 120-132 mm and occurs above the observed onset, so it is not considered the initiating cause. Current leading hypothesis: repeatable geometry/toolpath interaction amplified by the aggressive motion envelope, producing local lift/curl or part deflection and subsequent nozzle contact. Filament/bed adhesion are lower-probability primary causes because all six copies stayed attached and the unaffected walls remained largely uniform.",
   "confidence": "observed",
   "ladder_step": 1,
-  "experiments": [],
+  "experiments": ["E-025"],
   "runs": [],
-  "related_cases": [
-    "CASE-002"
-  ],
+  "related_cases": ["CASE-002"],
   "reference_context": {
     "accepted_package": "production/C02-accepted-2026-10-28",
-    "reserved_followup": "E-024 remains reserved for the v51/Kexcelled terracotta follow-up declared by E-023; this unplanned RIFT failure is intentionally not assigned E-024."
+    "reserved_followup": "E-024 remains reserved for the v51/Kexcelled terracotta follow-up declared by E-023; this unplanned RIFT failure is intentionally tested by E-025."
   },
   "event": {
     "date": "2026-10-29",
@@ -31,18 +29,9 @@
     ]
   },
   "job_artifacts": {
-    "project_3mf": {
-      "name": "RIFT_SINGLE_NO_LAYER_RANGES.gcode(1).3mf",
-      "sha256": "1293dc143799992e54beb81189b670739cd137fe222419bfd6a700363043fdfc"
-    },
-    "gcode": {
-      "name": "RIFT_ab-pair_marked-plus-unmarked.stl_1(5)_PLA_10h7m(1).gcode",
-      "sha256": "10aaff0480e5b2d30e24936c0550cea2a62682a77f6bf6603f8b93eda467a74f"
-    },
-    "preset_bundle": {
-      "name": "Bambu Lab X2D 0.4 nozzle.bbscfg",
-      "sha256": "500ce07cbfe147245bf5bf312778f6bf02b024f41815cca9d78933ae1ad3e1df"
-    }
+    "project_3mf": {"name": "RIFT_SINGLE_NO_LAYER_RANGES.gcode(1).3mf", "sha256": "1293dc143799992e54beb81189b670739cd137fe222419bfd6a700363043fdfc"},
+    "gcode": {"name": "RIFT_ab-pair_marked-plus-unmarked.stl_1(5)_PLA_10h7m(1).gcode", "sha256": "10aaff0480e5b2d30e24936c0550cea2a62682a77f6bf6603f8b93eda467a74f"},
+    "preset_bundle": {"name": "Bambu Lab X2D 0.4 nozzle.bbscfg", "sha256": "500ce07cbfe147245bf5bf312778f6bf02b024f41815cca9d78933ae1ad3e1df"}
   },
   "resolved_process": {
     "name": "RIFT 0.20mm - Original Body Motion - Upper Closure Check",
@@ -90,33 +79,23 @@
       {"name": "IMG_1115.jpg", "sha256": "1e2f5e91df5f9e3973bbaa179e059f350c62607a0c86b43e8845ccceeac6f635"}
     ],
     "photo_storage": "Photos were supplied in the 2026-10-29 ChatGPT failure-review session. The hashes above bind this case to those exact originals; binary photo files are not yet copied into the Git repository.",
-    "artifact_storage": "The exact project, G-code, and preset bundle were supplied in the same review session. Hashes are recorded here; binary copies are not yet copied into the Git repository."
+    "artifact_storage": "The failed-job artifacts are hash-bound above. The replacement diagnostic project and presets are now stored in the repository and linked through E-025."
   },
   "hypotheses": [
-    {
-      "rank": 1,
-      "cause": "repeatable geometry/toolpath interaction amplified by excessive wall speed/acceleration for tall narrow parts",
-      "status": "leading"
-    },
-    {
-      "rank": 2,
-      "cause": "local raised/curling extrusion or part deflection leading to nozzle contact",
-      "status": "plausible"
-    },
-    {
-      "rank": 3,
-      "cause": "filament/thermal instability",
-      "status": "lower_probability"
-    },
-    {
-      "rank": 4,
-      "cause": "bed adhesion failure",
-      "status": "low_probability"
-    }
+    {"rank": 1, "cause": "repeatable geometry/toolpath interaction amplified by excessive wall speed/acceleration for tall narrow parts", "status": "leading"},
+    {"rank": 2, "cause": "local raised/curling extrusion or part deflection leading to nozzle contact", "status": "plausible"},
+    {"rank": 3, "cause": "filament/thermal instability", "status": "lower_probability"},
+    {"rank": 4, "cause": "bed adhesion failure", "status": "low_probability"}
   ],
   "next_test": {
+    "experiment": "E-025",
     "scope": "one RIFT object only",
     "intent": "isolate motion sensitivity without changing filament, temperatures, geometry, or the 120-132 mm Height Slowdown",
+    "artifacts": {
+      "project_3mf": "sources/RIFT_SINGLE_DIAGNOSTIC_CONSERVATIVE_MOTION.3mf",
+      "process_preset": "presets/RIFT_Diagnostic_0.20mm_Conservative_Motion_X2D_0.4.json",
+      "filament_preset": "presets/SUNLU_PLA_Grey_RIFT_Diagnostic_X2D_0.4.json"
+    },
     "settings": {
       "inner_wall_speed_mm_s": 200,
       "outer_wall_speed_mm_s": 80,
@@ -135,5 +114,5 @@
   "rule_proposal": null,
   "status": "open",
   "created_at": "2026-10-29T18:58:00+00:00",
-  "updated_at": "2026-10-29T18:58:00+00:00"
+  "updated_at": "2026-10-29T19:40:00+00:00"
 }
