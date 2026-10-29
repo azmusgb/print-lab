@@ -135,8 +135,10 @@ def test_sync_canonicalizes_started_legacy_run_with_exact_build_artifacts(tmp_pa
     build = build_experiment(paths, eid, replace=False, slicer=fake_slicer)
     experiment, _ = start(paths, eid, started_at="2026-10-29T20:24:54+00:00")
     legacy = experiment["print_runs"][-1]
+    canonical_before = runs.for_source_run(paths, legacy["id"])
 
-    assert not paths.runs.exists() or not list(paths.runs.glob("RUN-*.json"))
+    assert canonical_before is not None
+    assert canonical_before["id"] == legacy["id"].replace("PR-", "RUN-", 1)
 
     out = augment_index(paths.root, _legacy_index(paths, eid, "printing"))
     projected = out["runs"][0]
@@ -151,6 +153,7 @@ def test_sync_canonicalizes_started_legacy_run_with_exact_build_artifacts(tmp_pa
     assert runs.artifact_problems(paths, canonical) == []
     assert projected["artifacts"]["ready"] is True
     assert projected["source_run"] == legacy["id"]
+    assert len(runs.for_experiment(paths, eid)) == 1
 
 
 def test_sync_updates_canonical_run_when_legacy_usage_finishes(tmp_path):
@@ -160,7 +163,6 @@ def test_sync_updates_canonical_run_when_legacy_usage_finishes(tmp_path):
     experiment, _ = start(paths, eid)
     legacy_id = experiment["print_runs"][-1]["id"]
 
-    augment_index(paths.root, _legacy_index(paths, eid, "printing"))
     canonical = runs.for_source_run(paths, legacy_id)
     assert canonical and canonical["status"] == "printing"
 
