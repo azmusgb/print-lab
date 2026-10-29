@@ -4,7 +4,6 @@ import json
 from lab import runs
 from lab.index_v2 import augment_index
 from lab.records.project import ProjectPaths
-from lab.records.store import atomic_write_json
 
 
 def _sha(data: bytes) -> str:
@@ -61,7 +60,13 @@ def test_augment_index_projects_runs_and_current_package(tmp_path):
         "qualification": {
             "current_reference": "E-025",
             "current_run": run["id"],
-            "current_package": package_id,
+            "current_package": {
+                "id": package_id,
+                "path": f"production/{package_id}",
+                "run": run["id"],
+                "experiment": "E-025",
+                "manifest_sha256": "f" * 64,
+            },
         },
         "problems": [],
         "records": {},
