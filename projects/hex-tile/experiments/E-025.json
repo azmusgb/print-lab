@@ -5,25 +5,25 @@
   "project": "hex-tile",
   "question": "Q-006",
   "provenance": "prospective",
-  "question_text": "Single-copy RIFT rerun with conservative motion only",
+  "question_text": "RIFT rerun with fast-safe motion only",
   "hypothesis": "CASE-003 indicates the six-copy failure was initiated by a repeatable geometry/toolpath interaction that the C02-style 300/200 mm/s wall speeds and 10000/5000 mm/s^2 acceleration envelope amplified into local lift/deflection and nozzle contact. Reducing motion severity without changing geometry or filament should clear the common-Z failure region.",
-  "prediction": "One RIFT object reaches full height without the repeated horizontal disturbance, raised extrusion, nozzle contact, or spaghetti seen in CASE-003. If it fails again at the same geometry/Z, the geometry/toolpath transition becomes the leading cause rather than the global motion envelope.",
-  "why_this_test": "A single-copy rerun removes cross-object dragging as a confound and changes only the motion envelope. Filament, flow, temperatures, geometry, 0.20 mm layers, three walls, aligned seam, and the existing 120-132 mm Height Slowdown are held constant.",
+  "prediction": "The RIFT object reaches full height without the repeated horizontal disturbance, raised extrusion, nozzle contact, or spaghetti seen in CASE-003. If it fails again at the same geometry/Z, the geometry/toolpath transition becomes the leading cause rather than the global motion envelope.",
+  "why_this_test": "This rerun keeps geometry and filament fixed while reducing the failed job's motion envelope enough to test motion sensitivity without the excessive time penalty of the first conservative diagnostic profile.",
   "test_kind": "full_part",
   "factor": {
     "name": "motion_envelope",
     "values": [
-      "diagnostic_conservative"
+      "diagnostic_fast_safe"
     ],
     "unit": ""
   },
   "factor_scope": "bundle",
   "dependent_adjustments": {
-    "inner_wall_speed_mm_s": "300 -> 200",
-    "outer_wall_speed_mm_s": "200 -> 80",
-    "gap_infill_speed_mm_s": "250 -> 110",
-    "default_acceleration_mm_s2": "10000 -> 5000",
-    "outer_wall_acceleration_mm_s2": "5000 -> 1500",
+    "inner_wall_speed_mm_s": "300 -> 250",
+    "outer_wall_speed_mm_s": "200 -> 150",
+    "gap_infill_speed_mm_s": "250 -> 180",
+    "default_acceleration_mm_s2": "10000 -> 7000",
+    "outer_wall_acceleration_mm_s2": "5000 -> 2500",
     "travel_acceleration_mm_s2": "10000 -> 8000",
     "reduce_crossing_wall": "off -> on"
   },
@@ -48,7 +48,7 @@
   "derived_from_artifact": [
     "CASE-003",
     "sources/RIFT_SINGLE_DIAGNOSTIC_CONSERVATIVE_MOTION.3mf",
-    "presets/RIFT_Diagnostic_0.20mm_Conservative_Motion_X2D_0.4.json",
+    "presets/RIFT_Diagnostic_0.20mm_Fast_Safe_Motion_X2D_0.4.json",
     "presets/SUNLU_PLA_Grey_RIFT_Diagnostic_X2D_0.4.json"
   ],
   "derived_from_result": [
@@ -86,18 +86,21 @@
     "tabs": false,
     "notes": [
       "E-024 remains reserved for the v51/Kexcelled terracotta follow-up declared by E-023.",
-      "Do not change filament, temperatures, geometry, layer height, wall count, seam, or Height Slowdown for this run.",
-      "Source 3MF SHA256: d6c6c7b098b949fa7b8a4b46875b627d99b28379b68a8ef0e457a6f314a62624",
-      "Process preset SHA256: d1312fbb9893101fcf8272f98433cfa787d179ebf345765711dc21596e7e4d2d",
-      "Filament preset SHA256: 8886155c2cac807ba06753117fafa0f26f1948fc3f30acc5a6991a2c1806f492"
+      "Actual run uses fast-safe motion: inner 250 mm/s, outer 150 mm/s, gap infill 180 mm/s, default accel 7000 mm/s^2, outer accel 2500 mm/s^2, travel accel 8000 mm/s^2, reduce-crossing-walls on.",
+      "Filament, temperatures, geometry, layer height, wall count, seam, and Height Slowdown remain unchanged from the diagnostic baseline.",
+      "Actual runtime 3MF: RIFT_SINGLE_DIAGNOSTIC_FAST_SAFE_MOTION.3mf; SHA256 753e036819b6857756751bec656b6bdfe7df4f7d4476e0debedabb80e8d61bbf.",
+      "Actual full process preset SHA256: d433b7d578fddb42752a316a63bd45068119899c94efaae02ce68fe506e2fa93. Repository preset path: presets/RIFT_Diagnostic_0.20mm_Fast_Safe_Motion_X2D_0.4.json.",
+      "Filament preset SHA256: 8886155c2cac807ba06753117fafa0f26f1948fc3f30acc5a6991a2c1806f492. Repository path: presets/SUNLU_PLA_Grey_RIFT_Diagnostic_X2D_0.4.json.",
+      "Observed Bambu slice at print start: 12h41m9s estimated, 363.71 g estimated, 660 layers.",
+      "Print started 2026-10-29; outcome not yet known."
     ]
   },
-  "status": "planned",
+  "status": "printing",
   "variants": [
     {
       "id": "E-025-A",
       "tab": "25A",
-      "factor_value": "diagnostic_conservative",
+      "factor_value": "diagnostic_fast_safe",
       "copies": 1
     }
   ],
