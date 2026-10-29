@@ -16,6 +16,7 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
+from lab.index_v2 import augment_index
 from lab.page_index import build_index
 from lab.records.store import atomic_write_json, now
 
@@ -86,7 +87,7 @@ def hub_target() -> Target | None:
     if not key:
         raise ValueError("The Pi Hub key file is empty.")
     try:
-        context = ssl.create_default_context(cafile=str(ca))  # only the house CA: never the system store
+        context = ssl.create_default_context(cafile=str(ca))
     except (ssl.SSLError, OSError) as e:
         raise ValueError(f"The house CA file can't be used ({e})") from e
     return Target("Pi Hub", base, HUB_HEADER, key, context)
@@ -200,7 +201,7 @@ def sync(pdir: Path, base: str | None = None, timeout: float = 10) -> dict:
     pdir = Path(pdir)
     try:
         ts = targets(base)
-    except (OSError, ValueError) as e:  # an explicit base whose key is missing
+    except (OSError, ValueError) as e:
         return _record(pdir, {"ok": False, "message": f"Sync failed ({_why(e)})"[:200], "photos_sent": 0,
                               "targets": {}})
     results: dict[str, dict] = {}
@@ -227,17 +228,17 @@ def sync(pdir: Path, base: str | None = None, timeout: float = 10) -> dict:
 
     if live:
         try:
-            ix = build_index(pdir)
+            ix = augment_index(pdir, build_index(pdir))
             try:
                 saved = json.loads((pdir / "page.json").read_text())
             except (OSError, ValueError):
                 saved = {}
             ix["colours"] = saved.get("colours") or {}
             ix["outside"] = saved.get("outside") or []
-            if ix["outside"]:  # Remote skips a push whose fingerprint it has, so the list is part of it
+            if ix["outside"]:
                 whole = json.dumps(ix["outside"], sort_keys=True)
                 ix["fingerprint"] += ":o" + hashlib.sha256(whole.encode()).hexdigest()[:12]
-        except Exception as e:  # nothing to push to anyone
+        except Exception as e:
             print(f"lab sync: building the index failed: {type(e).__name__}: {e}", file=sys.stderr)
             for t in live:
                 results[t.name] = {"ok": False, "message": f"Sync failed ({_why(e)})"[:200]}

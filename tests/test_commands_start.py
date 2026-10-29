@@ -2,6 +2,7 @@ import json
 
 import pytest
 
+from lab import runs
 from lab.loop.guards import run_check, start
 from lab.loop.setup_log import append_event
 from lab.records.schema import load
@@ -17,15 +18,28 @@ def test_start_snapshots_setup_and_warns_baseline(proj):
     assert run["id"] == f"PR-{eid[2:]}-01" and run["build_id"] == f"BLD-{eid[2:]}-01"
     assert run["setup"]["nozzle_changed"]["fields"] == {"diameter_mm": 0.4}
     assert run["baseline_missing"] == ["filament_dried", "vibration_calibration"] and warnings
+    assert all("Canonical RUN record was not created" not in w for w in warnings)
     assert e["status"] == "printing"
+
+    canonical = runs.for_source_run(proj, run["id"])
+    assert canonical is not None
+    assert canonical["id"] == f"RUN-{eid[2:]}-01"
+    assert canonical["build_id"] == run["build_id"]
+    assert canonical["status"] == "printing"
+    assert canonical["started_at"] == run["started_at"]
+    assert canonical["source_run"] == run["id"]
+    assert set(canonical["artifacts"]) == {"model", "process", "filament", "slice"}
+    assert runs.artifact_problems(proj, canonical) == []
 
 
 def test_start_twice_writes_nothing(proj):
     eid = built(proj)
     start(proj, eid)
     before = (proj.experiments / f"{eid}.json").read_text()
+    run_before = runs.latest_for_experiment(proj, eid)
     e, warnings = start(proj, eid)
     assert "already" in warnings[0] and (proj.experiments / f"{eid}.json").read_text() == before
+    assert runs.latest_for_experiment(proj, eid) == run_before
 
 
 def test_start_rechecks_live_state(proj):
