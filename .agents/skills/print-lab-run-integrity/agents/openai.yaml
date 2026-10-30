@@ -1,0 +1,6 @@
+interface:
+  display_name: "Print Lab Run Integrity"
+  short_description: "Protect run identity, evidence, and sealed packages"
+  default_prompt: "Use $print-lab-run-integrity to check the current run-to-qualification workflow and validate its artifact and evidence bindings."
+policy:
+  allow_implicit_invocation: true

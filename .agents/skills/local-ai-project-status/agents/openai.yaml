@@ -1,0 +1,6 @@
+interface:
+  display_name: "Local AI Project Status"
+  short_description: "Verify project status, ownership, and the next action"
+  default_prompt: "Use $local-ai-project-status to check the current project evidence and identify the next concrete action."
+policy:
+  allow_implicit_invocation: true
