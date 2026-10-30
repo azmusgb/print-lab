@@ -357,7 +357,11 @@ def build_experiment(paths: ProjectPaths, exp_id: str, *, replace: bool, slicer=
         fp = input_fingerprints(paths, e)
         last = e["builds"][-1] if e["builds"] else None
         if last and last["ok"] and last.get("inputs") == fp:
-            return last
+            from lab.loop.verify import build_integrity_problems
+            if not build_integrity_problems(paths, last):
+                return last
+            if not replace:
+                raise ValueError(f"{last['id']} has missing or changed frozen files; rebuild with --replace.")
         if last and last["ok"] and not replace:
             raise ValueError(f"{exp_id} changed since {last['id']} was built (" + ", ".join(
                 k for k in fp if (last.get("inputs") or {}).get(k) != fp[k]) + "). Use --replace to build it again; "
@@ -381,6 +385,7 @@ def build_experiment(paths: ProjectPaths, exp_id: str, *, replace: bool, slicer=
         minutes, g = slice_estimate(sliced)
         prof = layer_time_profile(extract_gcode(sliced, 1))
         build.update(ok=True, job=job.id, sliced=str(Path(sliced).resolve().relative_to(paths.root.resolve())),
+                     sliced_sha256=sha256(Path(sliced)),
                      estimate={"minutes": minutes, "g": g},
                      measured={"layer_time_median_s": median_layer_time(prof), "layer_time_profile": prof})
         man_path = paths.prints / "manifest.json"

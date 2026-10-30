@@ -29,3 +29,19 @@ Each experiment answers one question, changes one factor and is judged by you. R
 `lab question stop|resume` pauses a question; `lab question rebuild` re-derives every total from the records and
 writes nothing if any record is invalid. `lab setup log <kind>` records drying, calibration and nozzle changes so
 each print knows the setup it ran on.
+
+## File integrity and test isolation
+
+New builds freeze both the source print archive and sliced archive with SHA-256 digests. Check, send and start
+refuse missing or changed frozen files. Existing builds without a sliced digest must be rebuilt with
+`lab exp build E-NNN --replace`; the lab never treats their current bytes as an approved baseline.
+`lab exp verify` compares sliced candidates to the stored build-time digest. A content-equivalent source archive
+can only be verified against a source archive that still matches its frozen digest.
+
+Photo imports stage conversions before publishing uniquely named files under the experiment lock. Concurrent
+starts use that same lock for eligibility checks and run creation, so a second start returns the existing run.
+
+Tests disable default Bambuddy access and refuse non-loopback socket connections and DNS lookups. Loopback fake
+servers and mocked clients remain available. `uv run pytest --live-network` explicitly enables live networking;
+record isolation still applies. Run live checks only in an environment configured for the intended services.
+The full suite also needs Bambu Studio 02.08.02.61, OpenSCAD 2025+ and macOS photo utilities.

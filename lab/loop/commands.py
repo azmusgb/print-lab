@@ -458,37 +458,50 @@ def _captured_at(src) -> str | None:
 
 
 def add_photos(paths: ProjectPaths, run_id: str, files: list, tabs: list[str | None] | None = None) -> list[dict]:
-    """Convert each photo to JPEG (EXIF orientation kept) into photos/ (outside git) and list it on the print run.
-    All or nothing: a photo that won't convert means none are added."""
+    """Stage conversions privately, then allocate and publish evidence under the record lock."""
+    import os
+    import re
     import subprocess
+    import tempfile
     from pathlib import Path
     from lab.jobs import sha256
-    e, run = find_run(paths, run_id)
+    e, _ = find_run(paths, run_id)
     paths.photos.mkdir(parents=True, exist_ok=True)
-    start = len(run.get("photos") or []) + 1
     made, entries = [], []
-    try:
+    with tempfile.TemporaryDirectory(prefix="photo-import-") as stage:
+        staged = []
         for idx, src in enumerate(map(Path, files)):
-            i = start + idx
-            dst = paths.photos / f"{run_id}-{i}.jpg"
-            r = subprocess.run(["sips", "-s", "format", "jpeg", "-Z", "2400", str(src), "--out", str(dst)],
-                               capture_output=True, text=True)
-            if r.returncode != 0 or not dst.exists() or dst.stat().st_size == 0:
-                raise ValueError(f"{src.name} couldn't be converted to JPEG ({(r.stderr or r.stdout).strip()[-200:]}). "
-                                 "No photos were added.")
-            made.append(dst)
-            entry = {"path": str(dst.relative_to(paths.root)), "sha256": sha256(dst),
-                     "captured_at": _captured_at(src), "source": src.name}
-            if tabs and idx < len(tabs) and tabs[idx] is not None:
-                entry["tab"] = tabs[idx]
-            entries.append(entry)
-    except Exception:
-        for f in made:
-            f.unlink(missing_ok=True)
-        raise
-    with record_lock(paths.locks, e["id"], f"lab photos add {run_id}"):
-        e = load_experiment(paths, e["id"])
-        run = next(r for r in e["print_runs"] if r["id"] == run_id)
-        run.setdefault("photos", []).extend(entries)
-        save_experiment(paths, e)
+            dst = Path(stage) / f"{idx}.jpg"
+            result = subprocess.run(["sips", "-s", "format", "jpeg", "-Z", "2400", str(src), "--out", str(dst)],
+                                    capture_output=True, text=True)
+            if result.returncode != 0 or not dst.exists() or dst.stat().st_size == 0:
+                raise ValueError(f"{src.name} couldn't be converted to JPEG "
+                                 f"({(result.stderr or result.stdout).strip()[-200:]}). No photos were added.")
+            staged.append((dst, src, _captured_at(src)))
+        with record_lock(paths.locks, e["id"], f"lab photos add {run_id}"):
+            e = load_experiment(paths, e["id"])
+            run = next(r for r in e["print_runs"] if r["id"] == run_id)
+            used = [int(m[1]) for p in paths.photos.glob(f"{run_id}-*.jpg")
+                    if (m := re.fullmatch(re.escape(run_id) + r"-(\d+)\.jpg", p.name))]
+            start = max([len(run.get("photos") or []), *used], default=0) + 1
+            try:
+                for idx, (staged_file, src, captured) in enumerate(staged):
+                    dst = paths.photos / f"{run_id}-{start + idx}.jpg"
+                    # Exclusive creation: a collision never overwrites an existing photograph.
+                    with dst.open("xb") as target:
+                        made.append(dst)
+                        target.write(staged_file.read_bytes())
+                        target.flush()
+                        os.fsync(target.fileno())
+                    entry = {"path": str(dst.relative_to(paths.root)), "sha256": sha256(dst),
+                             "captured_at": captured, "source": src.name}
+                    if tabs and idx < len(tabs) and tabs[idx] is not None:
+                        entry["tab"] = tabs[idx]
+                    entries.append(entry)
+                run.setdefault("photos", []).extend(entries)
+                save_experiment(paths, e)
+            except Exception:
+                for dst in made:
+                    dst.unlink(missing_ok=True)
+                raise
     return entries

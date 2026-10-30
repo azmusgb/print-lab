@@ -4,6 +4,7 @@ Ensures the file sent to Bambu Studio or the printer matches the approved build 
 catching accidental re-slices, lost arc fitting, and changed slicer settings before printing.
 """
 import hashlib
+import zipfile
 from pathlib import Path
 
 from lab.adapters.bambu import read_settings, slice_estimate
@@ -33,6 +34,25 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def build_integrity_problems(paths: ProjectPaths, build: dict) -> list[str]:
+    """Compare current bytes to build-time digests; never adopt current bytes as a baseline."""
+    problems = []
+    for kind, digest_key in (("artifact", "artifact_sha256"), ("sliced", "sliced_sha256")):
+        rel, expected = build.get(kind), build.get(digest_key)
+        if not rel or not expected:
+            problems.append(f"{kind}: no frozen path/digest; rebuild with --replace")
+            continue
+        path = paths.root / rel
+        try:
+            actual = _sha256(path)
+        except OSError:
+            problems.append(f"{kind}: file missing or unreadable; rebuild with --replace")
+            continue
+        if actual != expected:
+            problems.append(f"{kind}: bytes changed since build; rebuild with --replace")
+    return problems
+
+
 def verify_artifact(paths: ProjectPaths, eid: str, candidate_file: Path | str, *, build_id: str | None = None) -> dict:
     e = load_experiment(paths, eid)
     builds = e.get("builds") or []
@@ -57,11 +77,11 @@ def verify_artifact(paths: ProjectPaths, eid: str, candidate_file: Path | str, *
 
     artifact_rel = build.get("artifact")
     artifact_path = (paths.root / artifact_rel).resolve() if artifact_rel else None
-    artifact_sha = build.get("artifact_sha256") or (_sha256(artifact_path) if artifact_path and artifact_path.exists() else None)
+    artifact_sha = build.get("artifact_sha256")
 
     sliced_rel = build.get("sliced")
     sliced_path = (paths.root / sliced_rel).resolve() if sliced_rel else None
-    sliced_sha = _sha256(sliced_path) if sliced_path and sliced_path.exists() else None
+    sliced_sha = build.get("sliced_sha256")
 
     # Check exact hash matches
     if candidate_sha == artifact_sha:
@@ -96,7 +116,7 @@ def verify_artifact(paths: ProjectPaths, eid: str, candidate_file: Path | str, *
 
     # Content-based match (ignoring dynamic metadata/comments such as run ID tags)
     from lab.adapters.threemf import content_sha256
-    if artifact_path and artifact_path.exists():
+    if artifact_sha and artifact_path and artifact_path.exists() and _sha256(artifact_path) == artifact_sha:
         try:
             if content_sha256(candidate_path) == content_sha256(artifact_path):
                 return {
@@ -116,12 +136,21 @@ def verify_artifact(paths: ProjectPaths, eid: str, candidate_file: Path | str, *
             pass
 
     # Hash mismatch: analyze settings differences
-    cand_settings = read_settings(candidate_path) if candidate_path.suffix == ".3mf" else None
+    try:
+        cand_settings = read_settings(candidate_path) if candidate_path.suffix == ".3mf" else None
+    except (OSError, ValueError, zipfile.BadZipFile):
+        cand_settings = None
     appr_settings = None
     if artifact_path and artifact_path.exists() and artifact_path.suffix == ".3mf":
-        appr_settings = read_settings(artifact_path)
+        try:
+            appr_settings = read_settings(artifact_path)
+        except (OSError, ValueError, zipfile.BadZipFile):
+            pass
     if not appr_settings and sliced_path and sliced_path.exists() and sliced_path.suffix == ".3mf":
-        appr_settings = read_settings(sliced_path)
+        try:
+            appr_settings = read_settings(sliced_path)
+        except (OSError, ValueError, zipfile.BadZipFile):
+            pass
 
     differences = []
     warnings = []

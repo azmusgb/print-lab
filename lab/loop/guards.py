@@ -93,6 +93,11 @@ def check_experiment(paths: ProjectPaths, exp_id: str) -> CheckResult:
     if not build or not build.get("ok"):
         add("no_estimate", False, "rebuild", f"{exp_id} has no successful build; run `lab exp build {exp_id}`")
         return _finish(e, g, None, q, exps, tol, est)
+    from lab.loop.verify import build_integrity_problems
+    integrity = build_integrity_problems(paths, build)
+    add("artifact_integrity", not integrity, "rebuild", "; ".join(integrity) if integrity else "frozen bytes unchanged")
+    if integrity:
+        return _finish(e, g, build, q, exps, tol, est)
     add("no_estimate", bool(est.get("minutes") is not None), "rebuild",
         "estimate present" if est else "the build has no sliced estimate; rebuild it")
     if e.get("build_spec"):
@@ -237,19 +242,18 @@ def start(paths: ProjectPaths, exp_id: str, started_at: str | None = None,
     """Record that the owner sent the print: re-check the live state, snapshot the setup, open a print run.
     started_at: when it really started (the page's tap time), else now; started_from: "page" when it came from Local AI."""
     from lab.loop.setup_log import current_setup
-    e = load_experiment(paths, exp_id)
-    if e["status"] == "printing":
-        return e, [f"{exp_id} already started ({e['print_runs'][-1]['id']}); nothing written."]
-    if e["status"] not in ("built", "ready", "needs_approval", "approved"):
-        raise ValueError(f"{exp_id} is {e['status']}; only a built experiment can be started. "
-                         "To print it again, plan a repeat.")
-    r = check_experiment(paths, exp_id)
-    if r.status not in ("ready", "approved"):
-        raise ValueError(f"Can't start {exp_id}:\n" + "\n".join(f"  {x.code}: {x.message}" for x in r.failed()))
-    setup = current_setup(paths)
-    missing = [k for k in BASELINE if k not in setup]
     with record_lock(paths.locks, exp_id, f"lab exp start {exp_id}"):
         e = load_experiment(paths, exp_id)
+        if e["status"] == "printing":
+            return e, [f"{exp_id} already started ({e['print_runs'][-1]['id']}); nothing written."]
+        if e["status"] not in ("built", "ready", "needs_approval", "approved"):
+            raise ValueError(f"{exp_id} is {e['status']}; only a built experiment can be started. "
+                             "To print it again, plan a repeat.")
+        r = check_experiment(paths, exp_id)
+        if r.status not in ("ready", "approved"):
+            raise ValueError(f"Can't start {exp_id}:\n" + "\n".join(f"  {x.code}: {x.message}" for x in r.failed()))
+        setup = current_setup(paths)
+        missing = [k for k in BASELINE if k not in setup]
         run = {"id": next_local_id(e, "print_runs", f"PR-{exp_id[2:]}"), "build_id": r.build["id"],
                "started_at": started_at or now(), "setup": {k: {"id": v["id"], "at": v["at"], "fields": v["fields"]}
                                               for k, v in setup.items()},
