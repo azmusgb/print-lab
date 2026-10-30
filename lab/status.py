@@ -54,7 +54,8 @@ def build_status(pdir: Path, *, include_printer: bool = True) -> dict:
     printing_exp = next((e for e in ix.get("experiments", []) if e.get("status") == "printing"), None)
     if printing_exp:
         last_run = (printing_exp.get("runs") or [{}])[-1]
-        last_build = printing_exp.get("approval", {}).get("build_id")
+        approval = printing_exp.get("approval") or {}
+        last_build = approval.get("build_id")
         active_print = {
             "experiment_id": printing_exp["id"],
             "question_id": printing_exp.get("question"),
