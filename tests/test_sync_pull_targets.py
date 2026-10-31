@@ -330,3 +330,33 @@ def test_no_pending_requests_prints_once_while_idle(project, monkeypatch, capsys
         a.requests.clear()
         assert pull.cmd_pull(args) == 0
         assert capsys.readouterr().out == "No pending requests.\n"
+
+
+# ---- a standing outage reaches the desktop once --------------------------------------------------------------------
+def test_an_outage_alerts_once_after_fifteen_minutes_and_once_on_recovery():
+    said = []
+    say = lambda message, title="": said.append(message)
+    down = pull.track_outages({}, {"Pi Hub": "HTTP 502", "Local AI": "ok"}, 1000, say)
+    assert down == {"Pi Hub": {"since": 1000, "alerted": False}} and said == []
+    down = pull.track_outages(down, {"Pi Hub": "HTTP 502"}, 1000 + 14 * 60, say)
+    assert said == []  # a Pi restart is a blip, not an alert
+    down = pull.track_outages(down, {"Pi Hub": "no answer"}, 1000 + 15 * 60, say)
+    assert len(said) == 1 and "Pi Hub hasn't answered for 15 minutes" in said[0] and "no answer" in said[0]
+    down = pull.track_outages(down, {"Pi Hub": "no answer"}, 1000 + 60 * 60, say)
+    assert len(said) == 1
+    assert pull.track_outages(down, {"Pi Hub": "ok"}, 1000 + 61 * 60, say) == {}
+    assert len(said) == 2 and "answering again" in said[1]
+
+
+def test_a_blip_that_recovers_says_nothing_and_a_bad_state_file_is_ignored():
+    said = []
+    say = lambda message, title="": said.append(message)
+    down = pull.track_outages("junk", {"Pi Hub": "HTTP 502"}, 50, say)
+    assert pull.track_outages(down, {"Pi Hub": "ok"}, 100, say) == {} and said == []
+
+
+def test_desktop_text_with_quotes_cant_break_the_applescript(monkeypatch):
+    seen = []
+    monkeypatch.setattr(pull.subprocess, "run", lambda cmd, **k: seen.append(cmd))
+    pull.notify_desktop('Pi Hub said "no" \\ then quit', "Print Lab")
+    assert seen[0][2] == 'display notification "Pi Hub said \\"no\\" \\\\ then quit" with title "Print Lab"'
