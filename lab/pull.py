@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -298,11 +299,15 @@ def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]
         lock_fd.close()
 
 
+def _applescript_text(text: str) -> str:
+    return '"' + str(text).replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
 def notify_desktop(message: str, title: str = "Print Lab", subtitle: str = "") -> None:
     """Send a native macOS user notification via AppleScript."""
     try:
-        sub_clause = f' subtitle "{subtitle}"' if subtitle else ""
-        script = f'display notification "{message}" with title "{title}"{sub_clause}'
+        sub_clause = f" subtitle {_applescript_text(subtitle)}" if subtitle else ""
+        script = f"display notification {_applescript_text(message)} with title {_applescript_text(title)}{sub_clause}"
         subprocess.run(["osascript", "-e", script], timeout=2.0, capture_output=True)
     except Exception:
         pass
@@ -418,6 +423,32 @@ def _save_state(pdir: Path, state: dict) -> None:
         print(f"lab pull: couldn't save {STATE_FILE} ({e})", file=sys.stderr)
 
 
+OUTAGE_ALERT_AFTER = 15 * 60  # seconds a target must keep failing before the Mac says so
+
+
+def track_outages(down: dict, now_state: dict, now: float, notify=None) -> dict:
+    """Each failing target's first failure time; one desktop alert once it has failed for OUTAGE_ALERT_AFTER,
+    and one when it answers again. A brief blip (a Pi restart) stays in the log only."""
+    notify = notify or notify_desktop
+    down = down if isinstance(down, dict) else {}
+    out = {}
+    for name, outcome in now_state.items():
+        was = down.get(name) if isinstance(down.get(name), dict) else None
+        if outcome == "ok":
+            if was and was.get("alerted"):
+                notify(f"{name} is answering again; lab requests and syncs are flowing.", "Print Lab")
+            continue
+        since = was.get("since") if was and isinstance(was.get("since"), (int, float)) else now
+        alerted = bool(was and was.get("alerted"))
+        if not alerted and now - since >= OUTAGE_ALERT_AFTER:
+            minutes = int((now - since) // 60)
+            notify(f"{name} hasn't answered for {minutes} minutes, so phone requests aren't reaching the Mac. "
+                   f"Last error: {outcome}"[:240], "Print Lab")
+            alerted = True
+        out[name] = {"since": since, "alerted": alerted}
+    return out
+
+
 def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]:
     pdir = Path(pdir)
     applied = []
@@ -440,7 +471,7 @@ def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]
             else:
                 print(f"lab pull: {name}: {message}", file=sys.stderr)
             applied.append(entry)
-    _save_state(pdir, {**state, "targets": now_state})
+    _save_state(pdir, {**state, "targets": now_state, "down": track_outages(state.get("down"), now_state, time.time())})
     seen: dict = {}
     lock_fd = open(pdir / ".pull.lock", "a")
     try:
