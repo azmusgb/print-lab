@@ -22,7 +22,7 @@ from lab.records.store import atomic_write_json, now
 
 HOME = Path.home() / ".claude" / "localai-chat"
 BASE = "https://10.0.0.21"
-HUB_URL = "https://home.home.arpa"
+HUB_URL = "https://hub.rahe-home.duckdns.org"  # a Let's Encrypt certificate: the system's trust is enough
 LOCALAI_HEADER, HUB_HEADER = "X-LocalAI-Mac-Key", "X-Hub-Mac-Key"
 
 
@@ -72,24 +72,25 @@ def localai_target(base: str | None = None) -> Target:
 
 def hub_target() -> Target | None:
     """The Pi Hub, or None when this Mac has no hub key (not set up: not a failure). A set-up hub that can't be
-    reached safely raises ValueError: plain http, no saved house CA, or an empty key."""
+    reached safely raises ValueError: plain http, an unusable LAB_HUB_CA, or an empty key."""
     key_file = Path(os.environ.get("LAB_HUB_KEY_FILE") or Path.home() / ".config" / "print-lab" / "hub.key")
     if not key_file.exists():
         return None
     base = (os.environ.get("LAB_HUB_URL") or HUB_URL).rstrip("/")
     if not base.startswith("https://"):
         raise ValueError("The Pi Hub address must start with https://")
-    ca = Path(os.environ.get("LAB_HUB_CA") or Path.home() / ".config" / "print-lab" / "home-ca.crt")
-    if not ca.is_file():
-        raise ValueError("Save the house CA first: curl -o ~/.config/print-lab/home-ca.crt "
-                         "https://home.home.arpa/home-ca.crt")
+    # The hub's name has a public certificate, so the system's trust store checks it. LAB_HUB_CA pins a CA instead (a
+    # test server, or the old home.home.arpa with the house CA).
+    ca = os.environ.get("LAB_HUB_CA")
+    if ca and not Path(ca).is_file():
+        raise ValueError(f"LAB_HUB_CA names a file that isn't there: {ca}")
     key = _clean_key(key_file.read_text(), "Pi Hub")
     if not key:
         raise ValueError("The Pi Hub key file is empty.")
     try:
-        context = ssl.create_default_context(cafile=str(ca))
+        context = ssl.create_default_context(cafile=ca) if ca else ssl.create_default_context()
     except (ssl.SSLError, OSError) as e:
-        raise ValueError(f"The house CA file can't be used ({e})") from e
+        raise ValueError(f"The LAB_HUB_CA file can't be used ({e})") from e
     return Target("Pi Hub", base, HUB_HEADER, key, context)
 
 
@@ -107,8 +108,10 @@ def targets(base: str | None = None) -> list:
             key = _clean_key(key_file.read_text(), "Pi Hub")
         elif lai_key_file.exists():
             key = _clean_key(lai_key_file.read_text(), "Local AI")
-        ca = Path(os.environ.get("LAB_HUB_CA") or Path.home() / ".config" / "print-lab" / "home-ca.crt")
-        ctx = ssl.create_default_context(cafile=str(ca)) if ca.is_file() and base.startswith("https://") else None
+        ca = os.environ.get("LAB_HUB_CA")
+        ctx = None
+        if base.startswith("https://"):
+            ctx = ssl.create_default_context(cafile=ca) if ca and Path(ca).is_file() else ssl.create_default_context()
         return [Target("Pi Hub", base, HUB_HEADER, key, ctx)]
     try:
         hub = hub_target()

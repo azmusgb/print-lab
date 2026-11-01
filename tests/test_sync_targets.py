@@ -42,9 +42,17 @@ def test_hub_needs_https(keys, monkeypatch):
     assert hub == ("Pi Hub", "The Pi Hub address must start with https://")
 
 
-def test_hub_needs_the_house_ca(keys):
+def test_a_missing_pinned_ca_is_refused(keys):
     hub = sync.targets()[0]
-    assert hub[0] == "Pi Hub" and hub[1].startswith("Save the house CA first")
+    assert hub[0] == "Pi Hub" and hub[1].startswith("LAB_HUB_CA names a file that isn't there")
+
+
+def test_without_a_pinned_ca_the_system_trust_checks_the_hub(keys, monkeypatch):
+    monkeypatch.delenv("LAB_HUB_CA", raising=False)
+    monkeypatch.delenv("LAB_HUB_URL", raising=False)
+    t = sync.hub_target()
+    assert t.base == "https://hub.rahe-home.duckdns.org" and t.context.verify_mode == ssl.CERT_REQUIRED
+    assert t.context.check_hostname
 
 
 def test_hub_with_an_empty_key_fails(keys, monkeypatch, tmp_path):
@@ -57,7 +65,7 @@ def test_hub_with_an_empty_key_fails(keys, monkeypatch, tmp_path):
 def test_the_default_hub_address_is_https(keys, tmp_path, monkeypatch):
     monkeypatch.delenv("LAB_HUB_URL", raising=False)
     monkeypatch.setenv("LAB_HUB_CA", str(_make_ca(tmp_path)))
-    assert sync.hub_target().base == "https://home.home.arpa"
+    assert sync.hub_target().base == "https://hub.rahe-home.duckdns.org"
 
 
 def _make_ca(tmp_path):
