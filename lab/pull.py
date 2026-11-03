@@ -423,6 +423,52 @@ def _save_state(pdir: Path, state: dict) -> None:
         print(f"lab pull: couldn't save {STATE_FILE} ({e})", file=sys.stderr)
 
 
+# The launchd agent runs straight from this checkout, so a new commit here is print-lab's deploy (amendment A3). Only the
+# code that runs counts as uncommitted changes: projects/ and history/ change with every print.
+CODE_PATHS = ("lab", "pyproject.toml", "uv.lock")
+MAC_WATCH = (".claude", "localai-chat", "mac-watch.py")  # under the home folder, found when a pull runs
+
+
+def checkout_release(repo: Path | None = None, runner=subprocess.run) -> dict | None:
+    """{"commit", "dirty"} for the checkout `lab` runs from, or None when it isn't a readable git checkout."""
+    repo = repo or ROOT
+    try:
+        head = runner(["git", "-C", str(repo), "rev-parse", "HEAD"], capture_output=True, text=True, timeout=10)
+        status = runner(["git", "-C", str(repo), "status", "--porcelain", "--", *CODE_PATHS],
+                        capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    commit = head.stdout.strip().lower()
+    if head.returncode != 0 or status.returncode != 0 or not re.fullmatch(r"[0-9a-f]{40}", commit):
+        return None
+    return {"commit": commit, "dirty": bool(status.stdout.strip())}
+
+
+def report_release(last: dict | None, runner=subprocess.run, watch: Path | None = None,
+                   repo: Path | None = None) -> dict | None:
+    """Queues release:print-lab through mac-watch's outbox (it sends it to Pi Hub with the mac deploy key) when the
+    checkout differs from `last`, the release last queued. Returns what to remember: the new release once queued; else
+    `last` plus the failure, so the release is tried again next run but a standing failure prints once. No mac-watch
+    installed: nothing to do."""
+    last = last if isinstance(last, dict) else {}
+    now = checkout_release(repo, runner)
+    watch = Path(os.environ.get("LAB_MAC_WATCH") or watch or Path.home().joinpath(*MAC_WATCH))
+    if now is None or now == {k: last.get(k) for k in ("commit", "dirty")} or not watch.is_file():
+        return last or None
+    try:
+        out = runner([sys.executable, str(watch), "--queue-release", "print-lab", now["commit"],
+                      "1" if now["dirty"] else "0"], capture_output=True, text=True, timeout=30)
+        failure = None if out.returncode == 0 else (out.stderr or "").strip()[:200] or f"exit {out.returncode}"
+    except (OSError, subprocess.TimeoutExpired) as e:
+        failure = str(e) or type(e).__name__
+    if failure:
+        if last.get("failed") != failure:
+            print(f"lab pull: mac-watch didn't queue the release report: {failure}", file=sys.stderr)
+        return {**last, "failed": failure}
+    print(f"Release report queued: print-lab {now['commit'][:7]}{' + local changes' if now['dirty'] else ''}")
+    return now
+
+
 OUTAGE_ALERT_AFTER = 15 * 60  # seconds a target must keep failing before the Mac says so
 
 
@@ -609,7 +655,7 @@ def cmd_pull(args) -> int:
         print("No pending requests.")
     for r in shown:
         print(f"{r['id']}: {r['status']} ({r['message']})")
-    _save_state(pdir, {**state, "idle": idle})
+    _save_state(pdir, {**state, "idle": idle, "release": report_release(state.get("release"))})
     rotate_log()
     return 1 if any(r["status"] == "error" for r in applied) else 0
 
