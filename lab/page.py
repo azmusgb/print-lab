@@ -107,9 +107,12 @@ def refresh(pdir: Path, log: list | None = None) -> None:
     write(pdir, saved.get("colours") or {}, saved.get("outside") or [], log)
 
 
-def page_url() -> str:
-    from lab.sync import BASE
-    return (os.environ.get("LAB_LOCALAI_URL") or BASE).rstrip("/") + "/#/printLab"
+def page_url(project: str | None = None) -> str:
+    """Pi Hub's /lab, the print lab's one page (platform step 6, PR 6.5), opened on this project when one is given."""
+    from urllib.parse import quote
+    from lab.sync import HUB_URL
+    base = (os.environ.get("LAB_HUB_URL") or HUB_URL).rstrip("/") + "/lab"
+    return f"{base}?p={quote(project, safe='')}" if project else base
 
 
 def cmd_page(args) -> int:
@@ -119,10 +122,11 @@ def cmd_page(args) -> int:
         raise FileNotFoundError(f"No project {args.project!r} at {pdir}.")
     out = write(pdir)
     print(f"Wrote {out}")
-    print(f"Open the print lab: {page_url()}")
+    url = page_url(pdir.name)
+    print(f"Open the print lab: {url}")
     if args.open:
         import webbrowser
-        webbrowser.open(page_url())
+        webbrowser.open(url)
     return 0
 
 

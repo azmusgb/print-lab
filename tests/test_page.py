@@ -15,9 +15,18 @@ def test_lab_page_writes_json_only_and_commands_keep_it_current(tmp_path, monkey
     ix = json.loads((p.root / "page.json").read_text())
     assert ix["schema"] == "print-lab-index/1" and not (p.root / "page.html").exists()
     out = capsys.readouterr().out
-    assert "page.json" in out and "#/printLab" in out
+    assert "page.json" in out and f"/lab?p={p.root.name}\n" in out
+    assert "#/printLab" not in out  # Local AI's copy is retired (platform step 6, PR 6.5)
     assert main(["question", "new", "Is the top edge clean?", "--budget", "2h,50g"]) == 0
     assert "Is the top edge clean?" in (p.root / "page.json").read_text()  # refreshed by the command
+
+
+def test_page_url_is_pi_hubs_lab(monkeypatch):
+    monkeypatch.delenv("LAB_HUB_URL", raising=False)
+    assert page.page_url() == "https://hub.rahe-home.duckdns.org/lab"
+    assert page.page_url("hex tile/x") == "https://hub.rahe-home.duckdns.org/lab?p=hex%20tile%2Fx"
+    monkeypatch.setenv("LAB_HUB_URL", "https://hub.example/")
+    assert page.page_url("hex-tile") == "https://hub.example/lab?p=hex-tile"
 
 
 def test_bambuddy_off_gives_no_colours_and_unreachable_gives_none():
