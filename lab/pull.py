@@ -304,13 +304,57 @@ def _applescript_text(text: str) -> str:
 
 
 def notify_desktop(message: str, title: str = "Print Lab", subtitle: str = "") -> None:
-    """Send a native macOS user notification via AppleScript."""
+    """A native macOS notification via AppleScript. Only for Pi Hub not answering: every other notice goes to the phone
+    through Pi Hub (verdict_notice), which can't carry news of itself (platform step 5, D2)."""
     try:
         sub_clause = f" subtitle {_applescript_text(subtitle)}" if subtitle else ""
         script = f"display notification {_applescript_text(message)} with title {_applescript_text(title)}{sub_clause}"
         subprocess.run(["osascript", "-e", script], timeout=2.0, capture_output=True)
     except Exception:
         pass
+
+
+NOTICE_MAX_AGE = 3600  # seconds a phone notice Pi Hub hasn't taken is still worth sending
+
+
+def verdict_notice(event: dict, now_ts: float | None = None) -> dict:
+    """The phone notice for a finished print (check_active_print's event): sent through Pi Hub, which keeps quiet hours.
+    A tap opens the lab at that experiment's verdict sheet."""
+    from lab.sync import HUB_URL
+    exp, run = event["experiment"], event["run"]
+    body = (f"Print {run} finished." if event.get("elapsed_minutes") is not None else
+            f"Print {run} finished. Give its minutes from the printer's history.")
+    return {"kind": "verdict", "title": f"{exp} is ready for a verdict", "body": body,
+            "click": f"{HUB_URL}/lab?e={exp}&do=judge", "dedupe": f"verdict-{run}", "at": int(now_ts or time.time())}
+
+
+def flush_notices(notices: list, timeout: float = 10, now_ts: float | None = None) -> list:
+    """Posts queued phone notices to Pi Hub's /api/notify/print-lab with the lab key, oldest first. Returns those still
+    to send: the first one Pi Hub didn't take and the rest. One refused as invalid (400), or older than an hour, is
+    dropped. With no hub key this Mac isn't set up for Pi Hub, so they're dropped too."""
+    from lab.sync import _call, hub_target
+    now_ts = now_ts or time.time()
+    fresh = [n for n in notices if isinstance(n, dict) and now_ts - (n.get("at") or 0) <= NOTICE_MAX_AGE]
+    if not fresh:
+        return []
+    try:
+        hub = hub_target()
+    except (OSError, ValueError) as e:
+        print(f"lab pull: phone notice waiting ({e})", file=sys.stderr)
+        return fresh
+    if hub is None:
+        return []
+    for i, n in enumerate(fresh):
+        body = json.dumps({k: n[k] for k in ("kind", "title", "body", "click", "dedupe") if n.get(k)}).encode()
+        try:
+            st, said = _call(hub, "POST", "/api/notify/print-lab", timeout, body)
+        except (urllib.error.URLError, OSError, http.client.HTTPException, ValueError):
+            return fresh[i:]
+        if st == 400:
+            print(f"lab pull: Pi Hub refused a phone notice as invalid: {_error(said, st)}", file=sys.stderr)
+        elif not 200 <= st < 300:
+            return fresh[i:]
+    return []
 
 
 def check_active_print(paths: ProjectPaths, base: str | None = None, timeout: float = 5.0) -> dict | None:
@@ -338,13 +382,10 @@ def check_active_print(paths: ProjectPaths, base: str | None = None, timeout: fl
         return None
     if t["is_finished"] and t["elapsed_minutes"] is None:
         mark_finished_unknown(paths, printing["id"], last_run["id"])
-        notify_desktop(f"Print {t['run_id']} finished. Ready for verdict; give its minutes from the printer's "
-                       "history.", "Print Lab", f"{printing['id']}")
         return {"action": "finished_time_unknown", "experiment": printing["id"], "run": t["run_id"],
                 "elapsed_minutes": None, "grams": None}
     try:
         e, t = apply_telemetry(paths, printing["id"], run_id=last_run["id"], base=base)
-        notify_desktop(f"Print {t['run_id']} finished! Ready for verdict.", "Print Lab", f"{printing['id']}")
         return {
             "action": "telemetry_applied",
             "experiment": printing["id"],
@@ -550,6 +591,11 @@ def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]
             sync(pdir, timeout=timeout)
         else:
             sync(pdir, base, timeout)
+    state = _load_state(pdir)
+    notices = (state.get("notices") or []) + ([verdict_notice(event)] if event else [])
+    if notices:
+        _save_state(pdir, {**state, "notices": notices})  # kept before sending, so a crash can't lose it
+        _save_state(pdir, {**state, "notices": flush_notices(notices, timeout)})
     if event:
         applied.append({
             "id": f"event-{event['run']}",

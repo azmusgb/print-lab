@@ -419,7 +419,7 @@ def test_check_active_print_records_completion_and_notifies(project):
         assert res["experiment"] == "E-009"
         assert res["run"] == "PR-009-01"
         assert res["elapsed_minutes"] is None
-        mock_notify.assert_called_once()
+        mock_notify.assert_not_called()  # the phone hears through Pi Hub (verdict_notice), not a Mac banner
         from lab.loop.commands import load_experiment
         u = load_experiment(project, "E-009")["print_runs"][-1]["usage"]
         assert u == {"actual_minutes": None, "actual_g": None, "usage_source": "finished_unknown",
