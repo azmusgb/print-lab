@@ -1,22 +1,35 @@
-# Repository boundaries: discovery snapshot
+# Repository boundaries: where to look
 
-Source-inspected 2026-10-29 (America/New_York). This is not live deployment verification. Recheck these links and relevant implementations on each task; branch names and source paths can change.
+This file holds pointers only. Ownership is decided by the platform baseline, and it is verified against code and
+records on each task. Don't use a remembered table.
 
-| Repository/service | Observed responsibility | Useful source |
-| --- | --- | --- |
-| azmusgb/pi-hub | Household browser UI on the Pi; Print Lab projection and queued requests; printer pause/resume/clear via Bambuddy | https://github.com/azmusgb/pi-hub/blob/main/hub/lab.py ; https://github.com/azmusgb/pi-hub/blob/main/hub/printer_control.py |
-| azmusgb/print-lab | Mac experiment/build engine; canonical project files, physical-run records, qualification and production packages | https://github.com/azmusgb/print-lab/blob/main/lab/runs.py ; https://github.com/azmusgb/print-lab/blob/main/lab/qualification.py |
-| azmusgb/LocalAI | Windows-hosted AI appliance, model/service orchestration, engineering workspace; display-feed integration | https://github.com/azmusgb/LocalAI/blob/main/docs/ARCHITECTURE.md |
-| azmusgb/bambuhelper-smart-display | Workshop OS firmware, WS350 touchscreen, guarded printer/device controls, OTA/recovery and physical acceptance | https://github.com/azmusgb/bambuhelper-smart-display/blob/main/docs/REPOSITORY_BOUNDARIES.md |
-| Bambuddy (separate service on Pi) | Spools, quantities, AMS placement, workshop projects, print archive/queue; printer integration | Verify consuming adapters in pi-hub/hub/bambuddy.py and print-lab/lab/bambuddy.py |
+## Authorities, in order
 
-## Important discrepancies to recheck
-- Print Lab's lab/sync.py targets() selected Pi Hub only at the snapshot, while its module docstring and older one-home spec described LocalAI as the UI destination. Trust the actual selected targets, not the historical narrative.
-- Workshop OS boundary documentation names Bambuddy as inventory authority and says the old Filament Inventory app was retired, but retains historical inventory contracts and old candidate sequencing. Do not revive retired endpoints based on those sections.
-- Print Lab still contains LocalAI telemetry helpers; a Pi Hub-only UI sync does not prove the Windows dependency has been eliminated.
-- Pi Hub and Workshop OS expose different printer control paths. Do not claim a shared command service exists without tracing both.
+1. **The platform baseline:** pi-hub `docs/superpowers/specs/2026-11-01-platform-product-architecture-design.md` on
+   `origin/main`. The sections that matter here are §3 Domains, §7 Page ownership, §10 Failure boundaries,
+   §11 Migration sequence, §12 Decisions, and `## Amendments`. It is frozen. An amendment is part of it once merged
+   under `## Amendments`; a proposed amendment (open PR) is not.
+2. **What is live:** Pi Hub's `release:<target>` records (`/api/records`, or the home MCP `releases` tool). These are
+   the deployment truth for pi-hub, localai, firmware, netmon, mac-watch, x2d-bridge-mac and print-lab. Probes only
+   verify them, and a record's `verified` block is a probe's observation, not the release.
+3. **Plans and status:** pi-hub `docs/superpowers/plans/` (one per baseline item) and `docs/status.md`.
+4. **Each repo's own code** at `origin/main`. A local checkout can be behind, and production checkouts can be dirty.
 
-## Recommended ownership, not a completed migration
-Pi Hub should be the everyday household/workshop entry point; Print Lab should own experimental truth; Bambuddy should own stock and print operations; LocalAI should provide optional AI assistance; Workshop OS should provide the nearby physical interface.
-Use explicit run/build/artifact identifiers and source timestamps across services. A cached display, AI answer, queued request or printer-completed event is not an accepted experiment verdict.
-Prefer one owner per fact and a documented command policy. Preserve proven device-local operation and guards during any control-path consolidation.
+## Ownership in one line each (baseline D1, D5; verify before relying on it)
+
+- **Pi Hub:** operational truth, meaning what is live where (System › Versions), Needs you, and the one phone
+  channel. It also holds Print Lab's projection and queued requests.
+- **print-lab:** the Mac experiment and build engine, and canonical experiment, run, qualification and package
+  records. Authoring stays CLI-only (D8).
+- **LocalAI:** engineering and change work (Improve, the Claude board, ship, Atlas).
+- **Bambuddy:** spools, AMS and the print archive or queue.
+- **Workshop OS (bambuhelper-smart-display):** the nearby physical interface and OTA. It keeps the `home.arpa` names and
+  the local CA by design until a firmware release can move (D4).
+
+## Things that still trip people up
+
+- A cached display, an AI answer, a queued request or a printer "finished" event is not an accepted verdict. Only
+  print-lab's owner verdict is.
+- Two printer-control paths exist until baseline step 8 removes the display's direct Bambuddy call. Trace both before
+  claiming one command path.
+- `lab/sync.py` writes only to Pi Hub (D5 premise). Older docs that name LocalAI as the UI destination are historical.

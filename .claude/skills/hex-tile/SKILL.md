@@ -24,14 +24,16 @@ Nothing below is proven. Each line says how far the evidence goes; don't present
 | v58's face prints clean | owner, several prints | E-002, E-008, E-012, E-014 (lab filament, 0.4 nozzle settings) |
 | Filament affects the face | untested | yellow → grey → pink → white → terracotta across versions; every cross-version comparison is confounded |
 
-## Current state
+## Current state: read it, don't remember it
 
-- **E-020 (v61s):** accepted for the 26 Oct deadline *with defects* (separation "SUPER hard", one back torn).
-- **E-021/E-022 (v61s + v62k strips):** ridged faces, cause unresolved (Q-004). E-021 stopped at 1 h 27 min on the printer.
-- **Next: E-023**, v51 reprinted as it was (owner said yes, 26 Oct): the last design seen apart with a mostly clean face. Then the same in Kexcelled terracotta, to separate filament from design.
+Experiments move faster than this file, so it holds no "where we are". Before answering:
+
+- **Run `uv run lab status --no-printer`** for open questions and experiments. For one item, use
+  `uv run lab question show Q-…`, or read `projects/hex-tile/experiments/E-*.json` (`status`, `verdict`, `print_runs[]`).
+  The newest verdict outranks the table above. If it contradicts a lesson there, say so and update the table.
+- **Reading a record:** a failed run shows in `print_runs[].failed` and `usage`; `status` stays open for a retry.
 - **Nozzle:** every file, including `*_0.6nozzle`, is set up for 0.4/0.4. Ask the owner what is fitted before relying on it.
 - **Settings** for v57 onward come from `sources/hexagon_v57_X2D_0.4nozzle_kexcelled.3mf`. v51 carries its own settings in its 3MF.
-- **Reading a record:** a failed run shows in `print_runs[].failed` and `usage`; `status` stays open for a retry.
 - **Quotes:** owner words come from experiment verdicts or `history/hex-tile/chat/owner-notes.md`. Never turn an AI-photo reading into a quote.
 - The lab's filament is spool #1, Kexcelled Light Matte Terracotta, lot C6719062. Numbers beyond the labels on the other spools are untested guesses.
 

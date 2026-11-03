@@ -12,7 +12,7 @@ Resolve what is true now and which repository owns the requested change. Preserv
 - Use current source/runtime evidence before project documents and chat history. A README can contain stale release tables or migration plans.
 - For GitHub status, inspect the relevant current branch/PR and checks against its exact SHA. A local HEAD, a remote branch, and a deployed build are separate observations.
 - Read only the source necessary to answer the question. Do not fetch credentials or print environment values merely to discover an integration.
-- For cross-project questions, read [repository-boundaries.md](references/repository-boundaries.md). Treat its snapshot as discovery hints; verify routes, callers, schemas and ownership before acting.
+- For cross-project or platform questions, read [repository-boundaries.md](references/repository-boundaries.md). It points to the authorities: the pi-hub platform baseline spec and its merged amendments, Pi Hub's `release:<target>` records for what is live, then each repo's `origin/main`. Verify routes, callers, schemas and ownership there before acting. Report migration work against the baseline's numbered steps, and keep approved amendments separate from proposed ones.
 
 ## Choose the next action
 - Identify the requested outcome, its data owner, serving UI, execution host, and downstream consumers. Distinguish data ownership from cached copies and request queues.
