@@ -244,3 +244,26 @@ def test_each_usage_figure_is_judged_by_its_own_source(tmp_path):
     p2 = make_project(tmp_path / "two", minimal_question(), [e])
     u = page_index.build_index(p2.root)["experiments"][0]["usage"]
     assert u["minutes_source"] == "estimate" and u["g_source"] == "observed"
+
+
+def test_needs_asks_to_restore_missing_or_changed_build_files(tmp_path):
+    """E-026 (5 Nov): built in another checkout, its sliced file wasn't here, so 'Approve or drop' led to a refusal.
+    The need names the missing file instead."""
+    import hashlib
+    art, sliced = tmp_path / "prints" / "a.3mf", tmp_path / "prints" / "sliced" / "a.gcode.3mf"
+    sliced.parent.mkdir(parents=True)
+    art.write_bytes(b"plate")
+    sliced.write_bytes(b"gcode")
+    build = {"id": "BLD-099-01", "ok": True, "artifact": "prints/a.3mf", "sliced": "prints/sliced/a.gcode.3mf",
+             "artifact_sha256": hashlib.sha256(b"plate").hexdigest(),
+             "sliced_sha256": hashlib.sha256(b"gcode").hexdigest(), "check": {"status": "needs_approval", "guards": []}}
+    e = {"id": "E-099", "status": "needs_approval", "builds": [build]}
+    at = "2026-11-05T12:00:00+00:00"
+    assert page_index._needs(e, at, tmp_path)["action"] == "Approve or drop"
+    sliced.unlink()
+    n = page_index._needs(e, at, tmp_path)
+    assert n["action"] == "Restore the build files" and "sliced: file missing" in n["why"]
+    assert n["command"] == "uv run lab exp build E-099 --replace"
+    sliced.write_bytes(b"other")
+    assert "bytes changed" in page_index._needs({**e, "status": "approved"}, at, tmp_path)["why"]
+    assert page_index._needs(e, at)["action"] == "Approve or drop"  # without a root nothing is read
