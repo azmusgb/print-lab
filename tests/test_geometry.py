@@ -71,3 +71,19 @@ def test_thin_regions_v57_not_below_one_line(hex_dir):
 
 def test_thin_regions_clean_box():
     assert thin_regions(trimesh.creation.box((10, 10, 10)).apply_translation([0, 0, 5]), 0.42) == []
+
+
+def test_zero_area_faces_dont_open_an_stl(tmp_path):
+    """RIFT's STLs carry back-to-back zero-area triangles on the back plane, sharing edges with real faces: the solid
+    read as open and in pieces until load_mesh dropped them (as Bambu Studio does)."""
+    from lab.geometry.mesh import load_mesh, solid_pieces
+    box = trimesh.creation.box((10, 10, 10))
+    a, b, c = box.vertices[box.faces[0]]
+    v = np.vstack([box.vertices, [a, b, (a + b) / 2]])
+    n = len(box.vertices)
+    sliver = [[n, n + 1, n + 2], [n, n + 2, n + 1]]  # zero area, both windings, on one of the box's edges
+    f = tmp_path / "littered.stl"
+    trimesh.Trimesh(v, np.vstack([box.faces, sliver]), process=False).export(f)
+    assert not trimesh.load(f, force="mesh").is_watertight
+    m = load_mesh(f)
+    assert m.is_watertight and solid_pieces(m) == 1 and abs(m.volume - 1000) < 1e-6
