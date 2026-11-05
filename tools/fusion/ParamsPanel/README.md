@@ -3,6 +3,11 @@
 A panel docked on the right of Fusion that lists the active design's user parameters.
 
 - Edit an expression and press **Enter** (or move focus away) to apply it. **Esc** reverts the field.
+  **−/+** (and ↑/↓ in the field) step a plain number by 1; Shift ×10, Alt ×0.1. **↺** returns a parameter to the
+  value it had when the panel first saw the design this session.
+- Each row says what the parameter **drives** (the features and sketches using it), or that nothing uses it.
+- If a change breaks the timeline, a red banner names the failed steps; export is disabled until it's fixed.
+- The status line reports each change with the volume before and after.
 - Each change runs as one "Change parameter" command, so **Edit › Undo** takes it back.
 - Invalid expressions are rejected before Fusion sees them; the field turns red with the reason.
 - While another command is open (a sketch tool, Extrude...), editing is disabled until it finishes.

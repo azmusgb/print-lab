@@ -120,6 +120,7 @@ def _state(message=None, error=None, field=None):
             'unit': p.unit,
             'comment': p.comment,
             'favorite': p.isFavorite,
+            'drives': _drives(p),
         })
     return {
         'design': _app.activeDocument.name,
@@ -127,11 +128,48 @@ def _state(message=None, error=None, field=None):
         'busy': _busy(),
         'params': params,
         'model': _model_info(design),
+        'problems': _timeline_problems(design),
         'projects': _lab_projects(),
         'message': message,
         'error': error,
         'field': field,
     }
+
+
+def _drives(param):
+    """Names of the features, sketches and parameters whose values use this parameter."""
+    names = []
+    deps = param.dependentParameters
+    for i in range(deps.count):
+        dep = deps.item(i)
+        name = None
+        if dep.objectType == adsk.fusion.UserParameter.classType():
+            name = dep.name
+        else:
+            owner = getattr(dep, 'createdBy', None)
+            if owner is not None:
+                sketch = getattr(owner, 'parentSketch', None)
+                name = sketch.name if sketch is not None else getattr(owner, 'name', None)
+        if name and name not in names:
+            names.append(name)
+    return names
+
+
+def _timeline_problems(design):
+    """Timeline steps that fail to compute (errors) or compute with a warning."""
+    states = adsk.fusion.FeatureHealthStates
+    items = []
+    tl = design.timeline
+    for i in range(tl.count):
+        item = tl.item(i)
+        if item.isGroup:
+            group = adsk.fusion.TimelineGroup.cast(item)
+            items.extend(group.item(j) for j in range(group.count))
+        else:
+            items.append(item)
+    errors = [it.name for it in items if it.healthState == states.ErrorFeatureHealthState]
+    warnings = [it.name for it in items if it.healthState == states.WarningFeatureHealthState]
+    return {'errors': errors, 'warnings': warnings}
 
 
 def _model_info(design):
@@ -301,13 +339,18 @@ class _ApplyExecute(adsk.core.CommandEventHandler):
             _last_result.update(error='Nothing to apply.')
             return
         old = param.expression
+        before = _model_info(design).get('volume_cm3')
         try:
             param.expression = expression
         except Exception as e:
             _last_result.update(error='Fusion rejected {} = {}: {}'.format(name, expression, e), field=name)
             return
         # Sent when the command terminates: pushing now would report this command as busy.
-        _last_result.update(message='{}: {} → {}'.format(name, old, param.expression), field=name)
+        message = '{}: {} → {}'.format(name, old, param.expression)
+        after = _model_info(design).get('volume_cm3')
+        if before is not None and after is not None and before != after:
+            message += ' · volume {:.2f} → {:.2f} cm³'.format(before, after)
+        _last_result.update(message=message, field=name)
 
 
 class _ToggleCreated(adsk.core.CommandCreatedEventHandler):
