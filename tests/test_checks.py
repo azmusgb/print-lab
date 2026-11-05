@@ -81,3 +81,24 @@ def test_v56_single_layer_sliver_not_blocking(hex_dir):
     m = load_object(hex_dir / "hexagon_v56_X2D_0.6nozzle.3mf", "6in")
     fs = run_checks(m, nozzle=0.4)
     assert not any(f.rule == "feature-below-line-width" and f.severity == "blocking" for f in fs)
+
+
+def test_lettering_is_a_note_not_a_blocker(hex_dir):
+    """The Fusion RIFT tile's 0.6 mm RAHE/RIFT cut leaves sub-line slivers 0.6 mm deep: one engraving note, no
+    feature-width finding at those heights."""
+    fs = run_checks(load_mesh(hex_dir / "RIFT_fusion_lettered_upright.stl"), nozzle=0.4)
+    f = next(f for f in fs if f.rule == "engraving")
+    assert f.severity == "info" and 92 <= f.data["z_min"] < f.data["z_max"] <= 109
+    assert "0.6 mm deep" in f.why
+    assert "feature-below-line-width" not in rules(fs)
+
+
+def test_a_thin_rib_still_blocks():
+    """A 0.3 mm rib standing 2.5 mm off a block is a real feature the slicer will lose, not an engraving."""
+    body = trimesh.creation.box(extents=[20, 20, 10])
+    rib = trimesh.creation.box(extents=[2.5, 0.3, 10])
+    rib.apply_translation([11.24, 0, 0])
+    m = trimesh.boolean.union([body, rib])
+    m.apply_translation([0, 0, -m.bounds[0][2]])
+    fs = run_checks(m, nozzle=0.4)
+    assert "feature-below-line-width" in rules(fs, "blocking") and "engraving" not in rules(fs)
