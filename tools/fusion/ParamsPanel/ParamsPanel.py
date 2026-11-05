@@ -172,7 +172,10 @@ def _uv():
 
 
 def _run(args, timeout):
-    return subprocess.run(args, cwd=str(LAB_ROOT), capture_output=True, text=True, timeout=timeout)
+    # Fusion sets PYTHONHOME/PYTHONPATH to its own bundled Python; a child Python that
+    # inherits them can't even import its standard library.
+    env = {k: v for k, v in os.environ.items() if not k.startswith('PYTHON')}
+    return subprocess.run(args, cwd=str(LAB_ROOT), env=env, capture_output=True, text=True, timeout=timeout)
 
 
 def _export_and_check(project, upright):
