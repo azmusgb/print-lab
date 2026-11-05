@@ -39,6 +39,13 @@
         },
         "reason": "deadline pair: staggered tacks"
       }
+    },
+    {
+      "reason": "\u2026",
+      "at": "2026-11-05T16:30:37+00:00",
+      "resumed_at": null,
+      "resume": null,
+      "auto_code": null
     }
   ]
 }

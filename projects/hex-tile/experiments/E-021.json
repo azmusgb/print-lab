@@ -70,7 +70,7 @@
     "tabs": true,
     "notes": []
   },
-  "status": "built",
+  "status": "abandoned",
   "variants": [
     {
       "id": "E-021-A",
@@ -1011,5 +1011,6 @@
         "failed"
       ]
     }
-  ]
+  ],
+  "abandoned_reason": "\u2026"
 }
