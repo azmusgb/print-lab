@@ -70,6 +70,27 @@
   dt { color: var(--muted); }
   dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
   .hint { margin-top: 6px; color: var(--muted); font-size: 11px; }
+  .export { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+  .export .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .export select, .export button {
+    width: 100%; padding: 4px 6px; border-radius: 4px; font: inherit; font-size: 12px;
+    border: 1px solid var(--line); background: var(--input-bg); color: var(--text);
+  }
+  .export button {
+    grid-column: 1 / -1; background: var(--accent); border-color: var(--accent); color: #fff;
+    font-weight: 600; cursor: pointer;
+  }
+  .export button:disabled { opacity: .55; cursor: default; }
+  #report { margin-top: 6px; font-size: 12px; max-height: 220px; overflow-y: auto; }
+  #report .path { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+  #report .facts { margin: 4px 0; }
+  .finding { margin-top: 6px; padding-left: 8px; border-left: 3px solid var(--line); }
+  .finding.blocking { border-color: var(--error); }
+  .finding.warning { border-color: #d9a441; }
+  .finding .sev { font-weight: 600; text-transform: capitalize; }
+  .finding .fix { color: var(--muted); }
+  .clean { color: var(--ok); }
+  .err { color: var(--error); }
   @media (prefers-reduced-motion: no-preference) {
     input.expr { transition: border-color .12s ease; }
   }
@@ -86,6 +107,18 @@
   <h2>Model</h2>
   <dl id="model"><dt>Bodies</dt><dd>—</dd></dl>
   <div class="hint">Enter applies · Esc reverts · each change is one Undo step</div>
+  <section class="export" aria-labelledby="export-h">
+    <h2 id="export-h">Print-lab check</h2>
+    <div class="controls">
+      <select id="project" aria-label="print-lab project"></select>
+      <select id="orient" aria-label="print orientation">
+        <option value="upright">Upright (top +Y up)</option>
+        <option value="flat">Flat (as modelled)</option>
+      </select>
+      <button id="export" type="button">Export &amp; check</button>
+    </div>
+    <div id="report" aria-live="polite"></div>
+  </section>
 </footer>
 <script>
 "use strict";
@@ -120,6 +153,7 @@ function render(next) {
   else setStatus("", "");
   renderParams();
   renderModel();
+  renderProjects();
   if (state.error && state.field) {
     const input = document.querySelector(`input.expr[data-name="${CSS.escape(state.field)}"]`);
     if (input) { input.classList.add("invalid"); input.focus(); }
@@ -214,6 +248,91 @@ function renderModel() {
     return [dt, dd];
   }));
 }
+
+const PREFS_KEY = "paramsPanel.export";
+function loadPrefs() {
+  try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch { return {}; }
+}
+function savePrefs() {
+  try {
+    localStorage.setItem(PREFS_KEY, JSON.stringify({ project: $("project").value, orient: $("orient").value }));
+  } catch { /* storage unavailable: preferences just aren't remembered */ }
+}
+
+function renderProjects() {
+  const select = $("project");
+  const projects = state.projects || [];
+  const current = select.value || loadPrefs().project || "hex-tile";
+  select.replaceChildren(...projects.map((name) => {
+    const o = document.createElement("option"); o.value = name; o.textContent = name; return o;
+  }));
+  if (projects.includes(current)) select.value = current;
+  const disabled = !projects.length || !state.design || !(state.model && state.model.bodies);
+  select.disabled = !projects.length;
+  if (!exporting) $("export").disabled = disabled;
+  if (!projects.length && !$("report").textContent) {
+    $("report").innerHTML = '<p class="err">print-lab checkout not found next to this add-in.</p>';
+  }
+}
+
+let exporting = false;
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+function renderReport(r) {
+  const box = $("report");
+  if (!r) { box.replaceChildren(el("p", "err", "No answer from Fusion.")); return; }
+  const parts = [];
+  if (r.export_error) parts.push(el("p", "err", r.export_error));
+  if (r.relative || r.path) parts.push(el("div", "path", "Saved: " + (r.relative || r.path)));
+  if (r.facts) {
+    const f = r.facts;
+    const bits = [];
+    if (f.extents) bits.push(f.extents.map((v) => Number(v).toFixed(1)).join(" × ") + " mm");
+    if (f.volume_cm3 != null) bits.push(Number(f.volume_cm3).toFixed(2) + " cm³");
+    bits.push(f.watertight ? "closed mesh" : "NOT closed");
+    if (f.bed_contact_mm2 != null) bits.push("bed contact " + Math.round(f.bed_contact_mm2) + " mm²");
+    parts.push(el("div", "facts", bits.join(" · ")));
+  }
+  if (r.findings) {
+    if (!r.findings.length) parts.push(el("p", "clean", "No findings."));
+    for (const f of r.findings) {
+      const d = el("div", "finding " + (f.severity || ""));
+      const head = el("div");
+      head.append(el("span", "sev", f.severity || "note"), document.createTextNode(" · " + (f.where || "")));
+      d.append(head, el("div", "", f.why || ""));
+      if (f.fix) d.append(el("div", "fix", "Fix: " + f.fix));
+      parts.push(d);
+    }
+  }
+  box.replaceChildren(...parts);
+}
+
+function runExport() {
+  if (exporting) return;
+  exporting = true;
+  const button = $("export");
+  button.disabled = true;
+  button.textContent = "Exporting and checking…";
+  $("report").replaceChildren(el("p", "", "Exporting the visible bodies and running lab inspect…"));
+  send("export", { project: $("project").value, upright: $("orient").value === "upright" })
+    .then(renderReport)
+    .catch((err) => renderReport({ export_error: "Could not reach Fusion: " + err.message }))
+    .finally(() => {
+      exporting = false;
+      button.textContent = "Export & check";
+      if (state) renderProjects();
+    });
+}
+
+$("export").addEventListener("click", runExport);
+$("project").addEventListener("change", savePrefs);
+$("orient").addEventListener("change", savePrefs);
+(() => { const p = loadPrefs(); if (p.orient) $("orient").value = p.orient; })();
 
 function markPending() {
   const input = document.querySelector(`input.expr[data-name="${CSS.escape(pendingField || "")}"]`);

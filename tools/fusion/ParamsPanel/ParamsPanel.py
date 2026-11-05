@@ -6,9 +6,14 @@ bodies' size, volume and an estimated PLA weight. Install by linking this folder
 into Fusion's API/AddIns folder (see README.md).
 """
 
+import datetime
 import json
 import os
+import re
+import shutil
+import subprocess
 import traceback
+from pathlib import Path
 
 import adsk.core
 import adsk.fusion
@@ -18,6 +23,9 @@ TOGGLE_ID = 'ParamsPanelToggle'
 APPLY_ID = 'ParamsPanelApply'
 TOOLBAR_PANEL_ID = 'SolidScriptsAddinsPanel'
 PLA_DENSITY = 1.24  # g/cm3; the lab's PLA spools are labelled 1.24
+HERE = Path(__file__).resolve().parent
+LAB_ROOT = HERE.parents[2]  # print-lab checkout: tools/fusion/ParamsPanel -> repo root
+UV_CANDIDATES = ('~/.local/bin/uv', '/opt/homebrew/bin/uv', '/usr/local/bin/uv')
 
 _app = None
 _ui = None
@@ -118,6 +126,7 @@ def _state(message=None, error=None, field=None):
         'busy': _busy(),
         'params': params,
         'model': _model_info(design),
+        'projects': _lab_projects(),
         'message': message,
         'error': error,
         'field': field,
@@ -144,6 +153,77 @@ def _model_info(design):
     }
 
 
+def _lab_projects():
+    projects = LAB_ROOT / 'projects'
+    if not (LAB_ROOT / 'pyproject.toml').is_file() or not projects.is_dir():
+        return []
+    return sorted(p.name for p in projects.iterdir() if p.is_dir() and not p.name.startswith('.'))
+
+
+def _uv():
+    found = shutil.which('uv')
+    if found:
+        return found
+    for candidate in UV_CANDIDATES:
+        path = os.path.expanduser(candidate)
+        if os.access(path, os.X_OK):
+            return path
+    return None
+
+
+def _run(args, timeout):
+    return subprocess.run(args, cwd=str(LAB_ROOT), capture_output=True, text=True, timeout=timeout)
+
+
+def _export_and_check(project, upright):
+    """Export the visible solid bodies as one STL into projects/<project>/fusion/ and run lab inspect."""
+    design = _design()
+    if not design:
+        return {'export_error': 'Open a design to export it.'}
+    if project not in _lab_projects():
+        return {'export_error': 'Pick a print-lab project (none found at {}).'.format(LAB_ROOT)}
+    if not _model_info(design).get('bodies'):
+        return {'export_error': 'Nothing to export: no visible solid bodies.'}
+    uv = _uv()
+    if not uv:
+        return {'export_error': 'uv not found; print-lab checks need it (~/.local/bin/uv).'}
+
+    out_dir = LAB_ROOT / 'projects' / project / 'fusion'
+    out_dir.mkdir(parents=True, exist_ok=True)
+    stem = re.sub(r'[^A-Za-z0-9._-]+', '-', _app.activeDocument.name).strip('-') or 'design'
+    stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
+    path = out_dir / '{}-{}{}.stl'.format(stem, stamp, '-upright' if upright else '')
+
+    em = design.exportManager
+    options = em.createSTLExportOptions(design.rootComponent, str(path))
+    options.meshRefinement = adsk.fusion.MeshRefinementSettings.MeshRefinementHigh
+    options.isBinaryFormat = True
+    if not em.execute(options) or not path.is_file():
+        return {'export_error': 'Fusion could not write {}.'.format(path)}
+
+    try:
+        if upright:
+            turned = _run([uv, 'run', 'python', '-I', str(HERE / 'upright.py'), str(path)], 120)
+            if turned.returncode != 0:
+                return {'export_error': 'Turning upright failed: {}'.format((turned.stderr or turned.stdout).strip()[-400:]),
+                        'path': str(path)}
+        inspected = _run([uv, 'run', 'lab', 'inspect', '--json', str(path)], 180)
+    except subprocess.TimeoutExpired:
+        return {'export_error': 'lab inspect timed out.', 'path': str(path)}
+    try:
+        report = json.loads(inspected.stdout)
+    except ValueError:
+        return {'export_error': 'lab inspect failed: {}'.format((inspected.stderr or inspected.stdout).strip()[-400:]),
+                'path': str(path)}
+    return {
+        'path': str(path),
+        'relative': str(path.relative_to(LAB_ROOT)),
+        'upright': bool(upright),
+        'facts': report.get('facts', {}),
+        'findings': [{k: f.get(k) for k in ('severity', 'where', 'why', 'fix', 'rule')} for f in report.get('findings', [])],
+    }
+
+
 def _busy():
     cmd = _ui.activeCommand
     return bool(cmd) and cmd != 'SelectCommand'
@@ -164,6 +244,12 @@ class _Incoming(adsk.core.HTMLEventHandler):
                 html_args.returnData = json.dumps(_state())
             elif html_args.action == 'set':
                 html_args.returnData = json.dumps(_request_change(data.get('name'), data.get('expression')))
+            elif html_args.action == 'export':
+                try:
+                    result = _export_and_check(data.get('project'), data.get('upright'))
+                except Exception as e:
+                    result = {'export_error': 'Export failed: {}'.format(e)}
+                html_args.returnData = json.dumps(result)
             elif html_args.action == 'response':
                 pass
         except Exception:

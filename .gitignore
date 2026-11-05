@@ -6,6 +6,7 @@ result.json
 .venv/
 __pycache__/
 projects/*/prints/sliced/
+projects/*/fusion/
 projects/*/jobs/
 .DS_Store
 projects/*/.locks/
