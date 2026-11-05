@@ -86,6 +86,8 @@
   /* Compact by default: one line of comment; the full comment and what it drives show on hover or focus. */
   .sub.comment { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .drives { font-size: 11px; display: none; }
+  .limit { font-size: 11px; color: var(--warn); }
+  input.expr.past-limit:not(.invalid) { border-color: var(--warn); }
   .drives.none { color: var(--warn); display: block; }
   li:hover .sub.comment, li:focus-within .sub.comment { white-space: normal; }
   li:hover .drives, li:focus-within .drives { display: block; }
@@ -356,6 +358,14 @@ function renderParams() {
       c.id = id + "-c"; described.push(c.id);
       li.append(c);
     }
+    const broken = (p.limits || []).filter((l) => !l.ok);
+    for (const l of broken) {
+      const w = el("div", "sub limit", `${l.bound === "min" ? "Below the" : "Above the"} ${l.limit} ${l.bound}: ${l.reason}`);
+      w.title = `${l.bound} = ${l.expression}`;
+      w.id = id + "-l" + l.bound; described.push(w.id);
+      li.append(w);
+    }
+    if (broken.length) input.classList.add("past-limit");
     const d = el("div", "sub drives" + (drives.length ? "" : " none"),
       drives.length ? "Drives: " + drives.join(", ") : "Not used by the model — changing it does nothing");
     d.id = id + "-d"; described.push(d.id);
@@ -542,7 +552,11 @@ $("base").addEventListener("change", () => {
   bases[$("project").value] = $("base").value;
   savePrefs({ bases });
 });
-$("project").addEventListener("change", () => { savePrefs({ project: $("project").value }); if (state) renderProjects(); });
+$("project").addEventListener("change", () => {
+  savePrefs({ project: $("project").value });
+  send("refresh", { project: $("project").value }).then(render)
+    .catch((err) => setStatus("Could not reach Fusion: " + err.message, "error"));
+});
 $("orient").addEventListener("change", () => savePrefs({ orient: $("orient").value }));
 for (const id of ["sec-model", "sec-export"]) {
   const d = $(id);
@@ -554,7 +568,7 @@ for (const id of ["sec-model", "sec-export"]) {
 
 (function waitForBridge(tries) {
   if (window.adsk && typeof window.adsk.fusionSendData === "function") {
-    send("ready").then(render).catch((err) => setStatus("Could not reach Fusion: " + err.message, "error"));
+    send("ready", { project: loadPrefs().project }).then(render).catch((err) => setStatus("Could not reach Fusion: " + err.message, "error"));
   } else if (tries > 0) {
     setTimeout(() => waitForBridge(tries - 1), 100);
   } else {
