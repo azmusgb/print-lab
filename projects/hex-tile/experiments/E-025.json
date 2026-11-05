@@ -95,7 +95,7 @@
       "Print started 2026-10-29; outcome not yet known."
     ]
   },
-  "status": "printing",
+  "status": "abandoned",
   "variants": [
     {
       "id": "E-025-A",
@@ -104,5 +104,6 @@
       "copies": 1
     }
   ],
-  "builds": []
+  "builds": [],
+  "abandoned_reason": "Closed by the owner, 5 Nov 2026; outcome not recorded."
 }

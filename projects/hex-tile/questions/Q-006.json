@@ -16,5 +16,13 @@
     "E-025"
   ],
   "plans": [],
-  "stops": []
+  "stops": [
+    {
+      "reason": "Closed by the owner with E-025, 5 Nov 2026.",
+      "at": "2026-11-05T02:59:38+00:00",
+      "resumed_at": null,
+      "resume": null,
+      "auto_code": null
+    }
+  ]
 }
