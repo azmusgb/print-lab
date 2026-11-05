@@ -31,6 +31,7 @@ _app = None
 _ui = None
 _handlers = []
 _pending = {}  # name -> expression waiting for the Apply command
+_last_result = {}  # message/error/field from the Apply command, sent when it terminates
 
 
 def run(context):
@@ -229,7 +230,7 @@ def _export_and_check(project, upright):
 
 def _busy():
     cmd = _ui.activeCommand
-    return bool(cmd) and cmd != 'SelectCommand'
+    return bool(cmd) and cmd not in ('SelectCommand', APPLY_ID, TOGGLE_ID)
 
 
 def _push(message=None, error=None, field=None):
@@ -293,18 +294,20 @@ class _ApplyExecute(adsk.core.CommandEventHandler):
     def notify(self, args):
         name, expression = next(iter(_pending.items()), (None, None))
         _pending.clear()
+        _last_result.clear()
         design = _design()
         param = design.userParameters.itemByName(name) if design and name else None
         if not param:
-            _push(error='Nothing to apply.')
+            _last_result.update(error='Nothing to apply.')
             return
         old = param.expression
         try:
             param.expression = expression
         except Exception as e:
-            _push(error='Fusion rejected {} = {}: {}'.format(name, expression, e), field=name)
+            _last_result.update(error='Fusion rejected {} = {}: {}'.format(name, expression, e), field=name)
             return
-        _push(message='{}: {} → {}'.format(name, old, param.expression), field=name)
+        # Sent when the command terminates: pushing now would report this command as busy.
+        _last_result.update(message='{}: {} → {}'.format(name, old, param.expression), field=name)
 
 
 class _ToggleCreated(adsk.core.CommandCreatedEventHandler):
@@ -339,8 +342,11 @@ class _CmdRefresh(adsk.core.ApplicationCommandEventHandler):
 
     def notify(self, args):
         try:
-            # The Apply command pushes its own result message; don't overwrite it.
-            if adsk.core.ApplicationCommandEventArgs.cast(args).commandId != APPLY_ID:
+            if adsk.core.ApplicationCommandEventArgs.cast(args).commandId == APPLY_ID:
+                result = dict(_last_result)
+                _last_result.clear()
+                _push(**result)
+            else:
                 _push()
         except Exception:
             pass
