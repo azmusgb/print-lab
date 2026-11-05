@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "record_type": "question",
+  "id": "Q-007",
+  "project": "hex-tile",
+  "question": "Does the RIFT face's top band stop rippling when the infill there sits further behind the face?",
+  "status": "active",
+  "autonomy_level": 2,
+  "budget": {
+    "max_test_minutes": 45,
+    "max_test_g": 25,
+    "max_minutes": 180,
+    "max_g": 120
+  },
+  "experiments": [
+    "E-026",
+    "E-027"
+  ],
+  "plans": [],
+  "stops": []
+}
