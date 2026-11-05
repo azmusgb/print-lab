@@ -23,6 +23,17 @@ def load_mesh(path: Path, object: str | None = None) -> trimesh.Trimesh:
         from lab.adapters.threemf import load_object
         return load_object(path, object or "")
     m = trimesh.load(path, force="mesh")
+    # Some exporters leave zero-area triangles (RIFT's STLs: back-to-back pairs lying in the back plane). They hold
+    # no material, but they share edges with real faces, so the mesh reads as open and in pieces; Bambu Studio drops
+    # them on import. Other meshes need their zero-area triangles to close (v53), so drop them only from an open mesh,
+    # and only when that closes it.
+    keep = m.nondegenerate_faces(height=1e-6)
+    if not m.is_watertight and not keep.all():
+        cleaned = m.copy()
+        cleaned.update_faces(keep)
+        cleaned.remove_unreferenced_vertices()
+        if cleaned.is_watertight:
+            m = cleaned
     m.apply_translation([0, 0, -m.bounds[0][2]])
     return m
 
