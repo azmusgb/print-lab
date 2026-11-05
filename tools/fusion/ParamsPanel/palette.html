@@ -119,9 +119,16 @@
   .export label > select, .export label > input { margin-top: 2px; }
   .export button:disabled { opacity: .5; cursor: default; }
   .export :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-  #report .next { display: block; margin-top: 6px; padding: 4px 6px; border-radius: 4px; background: var(--input-bg);
-    font: 11px ui-monospace, Menlo, monospace; overflow-wrap: anywhere; user-select: all; }
   #report { margin-top: 6px; font-size: 12px; }
+  .lab .need { margin-top: 6px; font-size: 12px; }
+  .lab .need .why { color: var(--muted); font-size: 11px; }
+  .lab .q { margin-top: 6px; font-size: 12px; color: var(--muted); }
+  .lab code, #report .next { display: block; margin-top: 4px; padding: 4px 6px; border-radius: 4px;
+    background: var(--input-bg); font: 11px ui-monospace, Menlo, monospace; overflow-wrap: anywhere; user-select: all; }
+  .lab code:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button.link { margin-top: 6px; padding: 0; border: 0; background: none; color: var(--accent); font: inherit;
+    font-size: 11px; cursor: pointer; }
+  button.link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   #report .path { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
   #report .facts { margin: 4px 0; }
   .finding { margin-top: 6px; padding-left: 8px; border-left: 3px solid var(--line); }
@@ -145,6 +152,12 @@
 <div id="status" role="status" aria-live="polite"></div>
 <main id="main"><p class="empty">Loading parameters…</p></main>
 <footer>
+  <details id="sec-lab" class="lab">
+    <summary>Lab<span class="peek" id="lab-peek"></span></summary>
+    <div id="lab"></div>
+    <div id="lab-history" class="hint"></div>
+    <button id="lab-refresh" type="button" class="link">Refresh</button>
+  </details>
   <details id="sec-model">
     <summary>Model<span class="peek" id="model-peek"></span></summary>
     <dl id="model"><dt>Bodies</dt><dd>—</dd></dl>
@@ -231,6 +244,7 @@ function render(next) {
   renderParams();
   renderModel();
   renderProjects();
+  renderLab();
   if (state.error && state.field) {
     const input = fieldInput(state.field);
     if (input) { input.classList.add("invalid"); input.focus(); }
@@ -381,6 +395,45 @@ function renderParams() {
   }
 }
 
+function renderLab() {
+  const w = state.waiting;
+  const box = $("lab");
+  const parts = [];
+  let peek = "";
+  if (!w) {
+    parts.push(el("p", "q", "Not read yet."));
+  } else if (w.error) {
+    parts.push(el("p", "err", w.error));
+    peek = "unavailable";
+  } else {
+    const needs = w.needs || [];
+    peek = needs.length ? `${needs[0].action} ${needs[0].id}` + (needs.length > 1 ? ` +${needs.length - 1}` : "")
+      : "nothing waiting";
+    if (w.question) parts.push(el("p", "q", `${w.question.id}: ${w.question.text}`));
+    if (!needs.length) parts.push(el("p", "clean", "Nothing is waiting on you."));
+    for (const n of needs) {
+      const d = el("div", "need");
+      d.append(el("div", "", `${n.action} ${n.id}`));
+      if (n.why) d.append(el("div", "why", n.why));
+      if (n.command) {
+        const c = el("code", "", n.command);
+        c.tabIndex = 0;
+        c.title = "Select to copy";
+        d.append(c);
+      }
+      parts.push(d);
+    }
+    for (const p of w.problems || []) parts.push(el("p", "err", typeof p === "string" ? p : JSON.stringify(p)));
+  }
+  box.replaceChildren(...parts);
+  $("lab-peek").textContent = peek;
+  const h = state.history;
+  $("lab-history").textContent = !state.design ? ""
+    : !h ? "This design hasn't been sent to the lab."
+    : !h.diffs.length ? `This design matches ${h.source}.`
+    : `Nearest sent design: ${h.source}. Changed: ${h.diffs.join("; ")}.`;
+}
+
 function renderModel() {
   const m = state.model || { bodies: 0 };
   const rows = [["Bodies", String(m.bodies || 0)]];
@@ -489,6 +542,7 @@ function runSend() {
       exporting = false;
       button.textContent = "Send to lab";
       if (state) renderProjects();
+      send("refresh").then(render).catch(() => {});
     });
 }
 
@@ -506,6 +560,7 @@ function runExport() {
       exporting = false;
       button.textContent = "Export & check";
       if (state) renderProjects();
+      send("refresh").then(render).catch(() => {});
     });
 }
 
@@ -554,11 +609,15 @@ $("base").addEventListener("change", () => {
 });
 $("project").addEventListener("change", () => {
   savePrefs({ project: $("project").value });
-  send("refresh", { project: $("project").value }).then(render)
+  send("refresh", { project: $("project").value, lab_status: true }).then(render)
     .catch((err) => setStatus("Could not reach Fusion: " + err.message, "error"));
 });
 $("orient").addEventListener("change", () => savePrefs({ orient: $("orient").value }));
-for (const id of ["sec-model", "sec-export"]) {
+$("lab-refresh").addEventListener("click", () => {
+  send("refresh", { lab_status: true }).then(render)
+    .catch((err) => setStatus("Could not reach Fusion: " + err.message, "error"));
+});
+for (const id of ["sec-lab", "sec-model", "sec-export"]) {
   const d = $(id);
   const saved = loadPrefs()[id];
   if (saved !== undefined) d.open = saved;

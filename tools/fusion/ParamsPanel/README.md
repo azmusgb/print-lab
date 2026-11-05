@@ -15,6 +15,11 @@ A panel docked on the right of Fusion that lists the active design's user parame
 - Invalid expressions are rejected before Fusion sees them; the field turns red with the reason.
 - While another command is open (a sketch tool, Extrude...), editing is disabled until it finishes.
 - Starred parameters (☆ in Modify › Change Parameters) sort to the top. The filter box matches names and comments.
+- The **Lab** footer says what the lab is waiting for (from `lab status --json --no-printer`, read-only): the active
+  question and each item waiting on you with the exact command to run (select it to copy). Its title shows the first
+  one when collapsed. It refreshes when the panel opens, the project changes, after a check or Send to lab, and with
+  **Refresh**; never on a timer. Below, it names the registered Fusion source whose parameters the design matches, or
+  the nearest one and what changed.
 - The **Model** footer shows the visible solid bodies' overall size, volume and an estimated PLA weight
   (density 1.24 g/cm³, solid; a sliced print with infill weighs less).
 - **Print-lab check** exports the visible solid bodies as one STL to `projects/<project>/fusion/` (not tracked by git),
