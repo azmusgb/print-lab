@@ -1,7 +1,7 @@
 # Print Lab UX/UI Roadmap (2026–2027)
 
 **Date:** 2026-10-27  
-**Status:** In Progress (Phase 1 Delivered & Verified)  
+**Status:** Superseded (5 Nov 2026). The page moved to Pi Hub's `/lab` (platform baseline D5, step 6) and is being redone under amendment A7 (one page) in pi-hub; the Fusion-to-lab work in this repo follows `2026-11-05-fusion-to-lab-design.md`. Kept for history.  
 **Reference Document:** `docs/blueprint/Print-Lab-Blueprint.md`  
 **Figma Canvas:** `https://www.figma.com/design/ZDNyoPD0ZQRLEWw6NtmFPi` (Boards 01–10)  
 **Implementation Surface:** `LocalAI` frontend (`Projects › Print lab`) / `print-lab` CLI & daemon
