@@ -1,0 +1,37 @@
+{
+  "schema": "print-lab-run/1",
+  "record_type": "run",
+  "id": "RUN-012-01",
+  "experiment": "E-012",
+  "build_id": "BLD-012-01",
+  "status": "completed",
+  "printer": null,
+  "started_at": "2026-10-25T17:21:00+00:00",
+  "finished_at": null,
+  "estimate": {
+    "minutes": 292.5,
+    "g": 87.57
+  },
+  "actual": {
+    "minutes": 204.0,
+    "usage_source": "manual"
+  },
+  "artifacts": {
+    "process": {
+      "path": "prints/hex-tile_E-012_BLD-012-01.3mf",
+      "sha256": "b213f68883fad51e997cc85d6935440d702224635226269db46413d797fd8748"
+    },
+    "filament": {
+      "path": "sources/hexagon_v57_X2D_0.4nozzle.3mf",
+      "sha256": "1d4c063e2ed94f9358dd1e496cb5cfbe1bfac507f531d4ef13a94c98ec0822b9"
+    },
+    "slice": {
+      "path": "prints/sliced/hex-tile_E-012_BLD-012-01.gcode.3mf",
+      "sha256": "d212ad240d465c5778d1cabb5e5ecd6c52f87ab160602c95fd1f6b7d14851a35"
+    }
+  },
+  "evidence": [],
+  "source_run": "PR-012-01",
+  "created_at": "2026-10-29T23:15:27+00:00",
+  "updated_at": "2026-10-29T23:15:27+00:00"
+}
