@@ -9,6 +9,10 @@ A panel docked on the right of Fusion that lists the active design's user parame
 - Starred parameters (☆ in Modify › Change Parameters) sort to the top. The filter box matches names and comments.
 - The **Model** footer shows the visible solid bodies' overall size, volume and an estimated PLA weight
   (density 1.24 g/cm³, solid; a sliced print with infill weighs less).
+- **Print-lab check** exports the visible solid bodies as one STL to `projects/<project>/fusion/` (not tracked by git),
+  runs `lab inspect --json` on it and lists the findings. **Upright** turns it the way the hex tiles print (model +Y up,
+  face toward -Y, as in the SCAD `upright()` module; `upright.py`); **Flat** keeps the model's own axes.
+  It runs `uv` in the print-lab checkout this folder lives in, so Fusion waits a few seconds while it works.
 
 ## Install (macOS)
 
