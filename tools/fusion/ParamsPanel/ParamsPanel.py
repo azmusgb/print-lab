@@ -41,7 +41,7 @@ def run(context):
         defs = _ui.commandDefinitions
 
         toggle = defs.itemById(TOGGLE_ID) or defs.addButtonDefinition(
-            TOGGLE_ID, 'Parameters Panel', 'Show the docked user-parameters panel.', '')
+            TOGGLE_ID, 'Parameters Panel', 'Show or hide the docked user-parameters panel.', '')
         _on(toggle.commandCreated, _ToggleCreated())
         panel = _ui.allToolbarPanels.itemById(TOOLBAR_PANEL_ID)
         if panel and not panel.controls.itemById(TOGGLE_ID):
@@ -316,6 +316,10 @@ class _ToggleCreated(adsk.core.CommandCreatedEventHandler):
 
 class _ToggleExecute(adsk.core.CommandEventHandler):
     def notify(self, args):
+        palette = _ui.palettes.itemById(PALETTE_ID)
+        if palette and palette.isVisible:
+            palette.isVisible = False
+            return
         _show_palette()
         _push()
 

@@ -24,6 +24,7 @@ ln -s ~/dev/print-lab/tools/fusion/ParamsPanel \
 ```
 
 Then in Fusion: **UTILITIES › ADD-INS › Scripts and Add-Ins** (Shift+S) › **Add-Ins** tab › **ParamsPanel** › **Run**,
-and tick **Run on Startup**. Reopen a closed panel with **UTILITIES › ADD-INS › Parameters Panel**.
+and tick **Run on Startup**. **UTILITIES › ADD-INS › Parameters Panel** shows or hides the panel (its × also hides it);
+give it a keyboard shortcut from the ⋮ next to it in that menu.
 
 To remove it: Stop it in the same dialog and delete the link.
