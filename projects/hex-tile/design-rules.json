@@ -24,6 +24,18 @@
       "min": "0.9 mm",
       "reason": "two printed lines (0.42 mm each, 0.4 nozzle), so the land prints as a real wall",
       "source": "lab inspect's feature-below-line-width check (lab/checks/feature_width.py)"
+    },
+    {
+      "parameter": "land_width",
+      "min": "15 mm",
+      "reason": "keeps the RAHE/RIFT lettering on the land",
+      "source": "Fusion 'Rift simplified' lettering: text boxes span 14.3 mm across the land; at land_width 15 they sit about 0.1 mm from the inner edge (measured in Fusion, 5 Nov)"
+    },
+    {
+      "parameter": "roof_wall",
+      "min": "0.9 mm",
+      "reason": "two printed lines (0.42 mm each, 0.4 nozzle), so the roof plate prints as a real wall",
+      "source": "lab inspect's feature-below-line-width check (lab/checks/feature_width.py)"
     }
   ]
 }
