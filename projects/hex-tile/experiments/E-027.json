@@ -24,7 +24,9 @@
   "findings": [],
   "judge_on": "the display face's top 20 mm under one low side light: diagonal stripes (none|faint|bad) and the rows of dashes (none|faint|bad); then the sloped inner roof seen through the open top",
   "expect": null,
-  "derived_from_artifact": [],
+  "derived_from_artifact": [
+    "photos/RIFT-2026-11-04/IMG_1475.jpg..IMG_1515.jpg: the owner's best RIFT prints to date (owner, 5 Nov 2026), six marked tiles, 6- and 10-inch in three colours; top band clearest in IMG_1475, 1484, 1496, 1503"
+  ],
   "derived_from_result": [],
   "controls": {
     "witness_required": true,
@@ -684,7 +686,7 @@
       "sliced_sha256": "b4e77d0412f15421048e2e0b64ee26c387b40b95bca8f4e2335fc3efa3927d4f",
       "check": {
         "status": "blocked",
-        "at": "2026-11-05T02:57:38+00:00",
+        "at": "2026-11-05T03:05:07+00:00",
         "guards": [
           {
             "code": "owner_stopped",

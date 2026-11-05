@@ -66,7 +66,7 @@
     "tabs": true,
     "notes": []
   },
-  "status": "printing",
+  "status": "answered",
   "variants": [
     {
       "id": "E-022-A",
@@ -914,7 +914,26 @@
       }
     }
   ],
-  "owner_verdict": null,
+  "owner_verdict": {
+    "kind": "criteria",
+    "grades": {
+      "E-022-A": {
+        "ridges": "none",
+        "apart": "no"
+      },
+      "E-022-B": {
+        "ridges": "none",
+        "apart": "no"
+      }
+    },
+    "lighting": "room",
+    "print_runs": [
+      "PR-022-01"
+    ],
+    "note": null,
+    "by": "owner",
+    "at": "2026-10-31T04:05:59+00:00"
+  },
   "superseded_verdicts": [],
   "anchors": [],
   "ai_observations": [
