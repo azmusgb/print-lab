@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parameters</title>
+<style>
+  :root {
+    --bg: #2b2f36;
+    --surface: #343941;
+    --line: #444a53;
+    --text: #e6e8eb;
+    --muted: #a3aab4;
+    --accent: #4fa3e0;
+    --error: #f08a7e;
+    --ok: #8fcf9a;
+    --input-bg: #23272d;
+    color-scheme: dark;
+  }
+  /* Fusion sends its active UI theme as data-theme; the media query covers the moment before. */
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f4f5f7; --surface: #ffffff; --line: #d6d9de; --text: #1f2328;
+      --muted: #5c6470; --accent: #1f6fb2; --error: #b3261e; --ok: #2e7d32; --input-bg: #ffffff;
+      color-scheme: light;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f5f7; --surface: #ffffff; --line: #d6d9de; --text: #1f2328;
+    --muted: #5c6470; --accent: #1f6fb2; --error: #b3261e; --ok: #2e7d32; --input-bg: #ffffff;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: flex; flex-direction: column;
+  }
+  header { padding: 10px 12px 8px; border-bottom: 1px solid var(--line); }
+  .doc { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #filter {
+    margin-top: 8px; width: 100%; padding: 5px 8px; border-radius: 4px;
+    border: 1px solid var(--line); background: var(--input-bg); color: var(--text); font: inherit;
+  }
+  #status { min-height: 18px; padding: 6px 12px 0; font-size: 12px; color: var(--muted); }
+  #status.error { color: var(--error); }
+  #status.ok { color: var(--ok); }
+  main { flex: 1; overflow-y: auto; padding: 4px 0 8px; }
+  .empty { padding: 16px 12px; color: var(--muted); }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li { padding: 8px 12px; border-bottom: 1px solid var(--line); }
+  .row { display: flex; align-items: center; gap: 8px; }
+  label { flex: 1 1 auto; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+  .star { color: var(--accent); font-weight: normal; }
+  input.expr {
+    flex: 0 0 120px; width: 120px; padding: 4px 6px; border-radius: 4px;
+    border: 1px solid var(--line); background: var(--input-bg); color: var(--text);
+    font: 12px/1.3 ui-monospace, Menlo, monospace; text-align: right;
+  }
+  input.expr.dirty { border-color: var(--accent); }
+  input.expr.invalid { border-color: var(--error); }
+  input:disabled { opacity: .55; }
+  .comment { margin-top: 2px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+  .computed { color: var(--muted); font-size: 11px; text-align: right; margin-top: 2px; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  footer { border-top: 1px solid var(--line); background: var(--surface); padding: 8px 12px 10px; }
+  footer h2 { margin: 0 0 4px; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0; font-size: 12px; }
+  dt { color: var(--muted); }
+  dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+  .hint { margin-top: 6px; color: var(--muted); font-size: 11px; }
+  @media (prefers-reduced-motion: no-preference) {
+    input.expr { transition: border-color .12s ease; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="doc" id="doc">Loading…</div>
+  <input id="filter" type="search" placeholder="Filter parameters" aria-label="Filter parameters" autocomplete="off">
+</header>
+<div id="status" role="status" aria-live="polite"></div>
+<main id="main"><p class="empty">Loading parameters…</p></main>
+<footer>
+  <h2>Model</h2>
+  <dl id="model"><dt>Bodies</dt><dd>—</dd></dl>
+  <div class="hint">Enter applies · Esc reverts · each change is one Undo step</div>
+</footer>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+let state = null;
+let pendingField = null;
+
+function send(action, data) {
+  if (!window.adsk || typeof window.adsk.fusionSendData !== "function") {
+    return Promise.reject(new Error("Fusion bridge not ready"));
+  }
+  return Promise.resolve(window.adsk.fusionSendData(action, JSON.stringify(data || {})))
+    .then((text) => (text ? JSON.parse(text) : null));
+}
+
+function setStatus(text, kind) {
+  const el = $("status");
+  el.textContent = text || "";
+  el.className = kind || "";
+}
+
+function render(next) {
+  if (!next) return;
+  if (next.pending) { pendingField = next.field; markPending(); return; }
+  state = next;
+  pendingField = null;
+  if (state.theme) document.documentElement.dataset.theme = state.theme;
+  $("doc").textContent = state.design ? state.design : "No design open";
+  if (state.error) setStatus(state.error, "error");
+  else if (state.message) setStatus(state.message, "ok");
+  else if (state.busy) setStatus("A command is open — finish or cancel it to edit.", "");
+  else setStatus("", "");
+  renderParams();
+  renderModel();
+  if (state.error && state.field) {
+    const input = document.querySelector(`input.expr[data-name="${CSS.escape(state.field)}"]`);
+    if (input) { input.classList.add("invalid"); input.focus(); }
+  }
+}
+
+function renderParams() {
+  const main = $("main");
+  const active = document.activeElement;
+  const keepFocus = active && active.classList.contains("expr") ? active.dataset.name : null;
+  const drafts = {};
+  main.querySelectorAll("input.expr.dirty").forEach((i) => { drafts[i.dataset.name] = i.value; });
+
+  if (!state.design) { main.innerHTML = '<p class="empty">Open a design to see its parameters.</p>'; return; }
+  const params = state.params || [];
+  if (!params.length) {
+    main.innerHTML = '<p class="empty">No user parameters yet. Add one in Modify › Change Parameters.</p>';
+    return;
+  }
+  const q = $("filter").value.trim().toLowerCase();
+  const shown = params
+    .filter((p) => !q || p.name.toLowerCase().includes(q) || (p.comment || "").toLowerCase().includes(q))
+    .sort((a, b) => (b.favorite - a.favorite));
+  if (!shown.length) { main.innerHTML = '<p class="empty">No parameters match the filter.</p>'; return; }
+
+  const ul = document.createElement("ul");
+  for (const p of shown) {
+    const li = document.createElement("li");
+    const id = "p-" + p.name;
+    const row = document.createElement("div");
+    row.className = "row";
+    const label = document.createElement("label");
+    label.htmlFor = id;
+    label.textContent = p.name;
+    if (p.favorite) {
+      const star = document.createElement("span");
+      star.className = "star"; star.textContent = " ★"; star.setAttribute("aria-label", "favorite");
+      label.append(star);
+    }
+    const input = document.createElement("input");
+    input.className = "expr"; input.id = id; input.type = "text"; input.spellcheck = false;
+    input.dataset.name = p.name; input.dataset.saved = p.expression;
+    input.value = p.name in drafts ? drafts[p.name] : p.expression;
+    if (p.name in drafts) input.classList.add("dirty");
+    input.disabled = !!state.busy;
+    if (p.comment) input.setAttribute("aria-describedby", id + "-c");
+    input.addEventListener("input", () => {
+      input.classList.toggle("dirty", input.value !== input.dataset.saved);
+      input.classList.remove("invalid");
+    });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); apply(input); }
+      else if (e.key === "Escape") {
+        input.value = input.dataset.saved; input.classList.remove("dirty", "invalid");
+        setStatus("", "");
+      }
+    });
+    input.addEventListener("change", () => apply(input));
+    row.append(label, input);
+    li.append(row);
+    if (p.value && p.value.replace(/\s/g, "") !== p.expression.replace(/\s/g, "")) {
+      const c = document.createElement("div");
+      c.className = "computed"; c.textContent = "= " + p.value;
+      li.append(c);
+    }
+    if (p.comment) {
+      const c = document.createElement("div");
+      c.className = "comment"; c.id = id + "-c"; c.textContent = p.comment;
+      li.append(c);
+    }
+    ul.append(li);
+  }
+  main.replaceChildren(ul);
+  if (keepFocus) {
+    const again = document.querySelector(`input.expr[data-name="${CSS.escape(keepFocus)}"]`);
+    if (again && !again.disabled) again.focus();
+  }
+}
+
+function renderModel() {
+  const m = state.model || { bodies: 0 };
+  const dl = $("model");
+  const rows = [["Bodies", String(m.bodies || 0)]];
+  if (m.bodies) {
+    rows.push(["Size", m.size_mm.map((v) => v.toFixed(1)).join(" × ") + " mm"]);
+    rows.push(["Volume", m.volume_cm3.toFixed(2) + " cm³"]);
+    rows.push(["PLA weight", "≈ " + m.pla_g.toFixed(1) + " g"]);
+  }
+  dl.replaceChildren(...rows.flatMap(([k, v]) => {
+    const dt = document.createElement("dt"); dt.textContent = k;
+    const dd = document.createElement("dd"); dd.textContent = v;
+    return [dt, dd];
+  }));
+}
+
+function markPending() {
+  const input = document.querySelector(`input.expr[data-name="${CSS.escape(pendingField || "")}"]`);
+  if (input) input.disabled = true;
+  setStatus("Applying " + pendingField + "…", "");
+}
+
+function apply(input) {
+  const value = input.value.trim();
+  if (value === input.dataset.saved || pendingField) return;
+  if (!value) { input.classList.add("invalid"); setStatus("Enter a value.", "error"); return; }
+  send("set", { name: input.dataset.name, expression: value })
+    .then(render)
+    .catch((err) => setStatus("Could not reach Fusion: " + err.message, "error"));
+}
+
+window.fusionJavaScriptHandler = {
+  handle(action, data) {
+    try {
+      if (action === "state") render(JSON.parse(data));
+    } catch (err) {
+      setStatus("Panel error: " + err.message, "error");
+    }
+    return "OK";
+  },
+};
+
+$("filter").addEventListener("input", () => { if (state) renderParams(); });
+
+(function waitForBridge(tries) {
+  if (window.adsk && typeof window.adsk.fusionSendData === "function") {
+    send("ready").then(render).catch((err) => setStatus("Could not reach Fusion: " + err.message, "error"));
+  } else if (tries > 0) {
+    setTimeout(() => waitForBridge(tries - 1), 100);
+  } else {
+    setStatus("Fusion bridge not available. Reopen the panel.", "error");
+    $("main").innerHTML = '<p class="empty">Not connected to Fusion.</p>';
+  }
+})(50);
+</script>
+</body>
+</html>
