@@ -161,7 +161,7 @@
     "path": "sources/RIFT_10IN_batch5.3mf",
     "sha256": "86380496ecfac0fdc88a216252f4fccb3ed929d67783caf0de7dd41d9c6bf10c",
     "source": "home_folder",
-    "note": "owner's best 10-inch RIFT to date (owner, 4 Nov 2026): ~/Downloads/RIFT_MARKED_10IN_BATCH5_PRINT_PACKAGE (3)/RIFT_MARKED_10IN_SINGLE.3mf, the 6-inch RIFT mesh scaled 10/6 in the face with the 19 mm depth kept; process 'RIFT Marked 10in Batch5 - Fixed 0.20mm' with a 30 mm outer-only brim (the owner's last setting; the package README's 15 mm is out of date). The project saved Kexcelled Light Matte Terracotta as its filament. Printed in three colours, as photographed 4 Nov (photos/RIFT-2026-11-04): orange, dusty pink and grey marble (owner, 5 Nov); by Claude's reading of the photos against filaments.json, Kexcelled Pastel Orange, PlastKyro Dusty Rose and Shadow Storm Marble, not confirmed by the owner. Shadow Storm turned out best (owner, 4 Nov)."
+    "note": "owner's best 10-inch RIFT to date (owner, 4 Nov 2026): ~/Downloads/RIFT_MARKED_10IN_BATCH5_PRINT_PACKAGE (3)/RIFT_MARKED_10IN_SINGLE.3mf, the 6-inch RIFT mesh scaled 10/6 in the face with the 19 mm depth kept; process 'RIFT Marked 10in Batch5 - Fixed 0.20mm' with a 30 mm outer-only brim (the owner's last setting; the package README's 15 mm is out of date). The project saved Kexcelled Light Matte Terracotta as its filament. Printed in three colours, as photographed 4 Nov (photos/RIFT-2026-11-04): orange, dusty pink and grey marble (owner, 5 Nov); Kexcelled Pastel Orange, PlastKyro Dusty Rose and Shadow Storm Marble (confirmed by the owner, 5 Nov). Shadow Storm turned out best (owner, 4 Nov)."
   },
   {
     "path": "sources/RIFT_10IN_batch5_shadow_storm.3mf",
@@ -174,6 +174,6 @@
     "path": "sources/RIFT_6IN_marked_pair.3mf",
     "sha256": "b17a47c0208387bb6f45db60e792d318cb16ea06b9648c086974a455e5645c4b",
     "source": "home_folder",
-    "note": "owner's best 6-inch RIFT to date (owner, 4-5 Nov 2026): ~/Downloads/RIFT_marked.3mf, two identical marked tiles (the C02-T mesh, 152.4 x 132 x 19 mm, printed upright); process 'Hex Tile v70 - Recent 0.20mm', auto brim, prime tower on; the project saved Generic PLA as its filament, not the filaments printed. Printed in three colours, as photographed 4 Nov (photos/RIFT-2026-11-04): orange, dusty pink and grey marble (owner, 5 Nov); by Claude's reading of the photos against filaments.json, Kexcelled Pastel Orange, PlastKyro Dusty Rose and Shadow Storm Marble, not confirmed by the owner. Shadow Storm turned out best (owner, 4 Nov)."
+    "note": "owner's best 6-inch RIFT to date (owner, 4-5 Nov 2026): ~/Downloads/RIFT_marked.3mf, two identical marked tiles (the C02-T mesh, 152.4 x 132 x 19 mm, printed upright); process 'Hex Tile v70 - Recent 0.20mm', auto brim, prime tower on; the project saved Generic PLA as its filament, not the filaments printed. Printed in three colours, as photographed 4 Nov (photos/RIFT-2026-11-04): orange, dusty pink and grey marble (owner, 5 Nov); Kexcelled Pastel Orange, PlastKyro Dusty Rose and Shadow Storm Marble (confirmed by the owner, 5 Nov). Shadow Storm turned out best (owner, 4 Nov)."
   }
 ]
