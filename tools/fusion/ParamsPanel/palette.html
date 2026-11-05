@@ -54,13 +54,14 @@
     background: var(--error-bg); color: var(--error); border: 1px solid var(--error);
   }
   #health.warn { background: transparent; color: var(--warn); border-color: var(--warn); }
-  #status { min-height: 18px; padding: 6px 12px 0; font-size: 12px; color: var(--muted); }
+  #status { padding: 6px 12px 0; font-size: 12px; color: var(--muted); }
+  #status:empty { display: none; }
   #status.error { color: var(--error); }
   #status.ok { color: var(--ok); }
   main { flex: 1; min-height: 120px; overflow-y: auto; padding: 4px 0 8px; }
   .empty { padding: 16px 12px; color: var(--muted); }
   ul { list-style: none; margin: 0; padding: 0; }
-  li { padding: 8px 12px; border-bottom: 1px solid var(--line); }
+  li { padding: 6px 12px; border-bottom: 1px solid var(--line); }
   li.unused label { color: var(--muted); }
   .row { display: flex; align-items: center; gap: 4px; }
   label { flex: 1 1 auto; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
@@ -80,10 +81,14 @@
   button.reset { color: var(--accent); }
   button.reset[hidden] { display: block; visibility: hidden; }
   button:disabled { cursor: default; }
-  .sub { margin-top: 3px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
-  .sub.computed { text-align: right; font-size: 11px; margin-top: 2px; }
-  .drives { font-size: 11px; }
-  .drives.none { color: var(--warn); }
+  .sub { margin-top: 2px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+  .sub.computed { text-align: right; font-size: 11px; margin-top: 1px; }
+  /* Compact by default: one line of comment; the full comment and what it drives show on hover or focus. */
+  .sub.comment { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .drives { font-size: 11px; display: none; }
+  .drives.none { color: var(--warn); display: block; }
+  li:hover .sub.comment, li:focus-within .sub.comment { white-space: normal; }
+  li:hover .drives, li:focus-within .drives { display: block; }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   footer { border-top: 1px solid var(--line); background: var(--surface); padding: 0 12px 8px; max-height: 55%; overflow-y: auto; }
   details { border-bottom: 1px solid var(--line); padding: 6px 0; }
@@ -130,12 +135,12 @@
 <div id="status" role="status" aria-live="polite"></div>
 <main id="main"><p class="empty">Loading parameters…</p></main>
 <footer>
-  <details id="sec-model" open>
+  <details id="sec-model">
     <summary>Model<span class="peek" id="model-peek"></span></summary>
     <dl id="model"><dt>Bodies</dt><dd>—</dd></dl>
-    <div class="hint">Enter applies · Esc reverts · − / + step by 1 (Shift ×10, Alt ×0.1) · ↺ back to the value when the panel opened · each change is one Undo step</div>
+    <div class="hint">Enter applies, Esc reverts. −/+ step 1 (Shift 10, Alt 0.1). ↺ restores the value from when the panel opened. Cmd+Z undoes a change.</div>
   </details>
-  <details id="sec-export" class="export" open>
+  <details id="sec-export" class="export">
     <summary>Print-lab check</summary>
     <div class="controls">
       <select id="project" aria-label="print-lab project"></select>
@@ -326,11 +331,13 @@ function renderParams() {
     reset.addEventListener("click", () => submit(p.name, original));
     row.append(label, minus, input, plus, reset);
     li.append(row);
-    if (p.value && p.value.replace(/\s/g, "") !== p.expression.replace(/\s/g, "")) {
+    // Show the computed value only for formulas; for a plain number it just repeats the field.
+    if (p.value && !NUMBER_RE.test(p.expression)) {
       li.append(el("div", "sub computed", "= " + p.value));
     }
     if (p.comment) {
-      const c = el("div", "sub", p.comment);
+      const c = el("div", "sub comment", p.comment);
+      c.title = p.comment;
       c.id = id + "-c"; described.push(c.id);
       li.append(c);
     }
