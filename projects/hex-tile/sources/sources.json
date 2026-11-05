@@ -169,5 +169,11 @@
     "source": "derived",
     "derived_from": "sources/RIFT_10IN_batch5.3mf",
     "change": "filament values set from the overrides in presets/filament 'High Speed PLA Marble - Shadow Storm @BBL X2D 0.4 nozzle' (215/220 C, flow 0.98, textured plate 55/60 C, density 1.24); everything else as saved, including max volumetric speed 12 mm3/s and auxiliary fan 70%, since the project doesn't record which Shadow Storm variant printed; geometry unchanged"
+  },
+  {
+    "path": "sources/RIFT_6IN_marked_pair.3mf",
+    "sha256": "b17a47c0208387bb6f45db60e792d318cb16ea06b9648c086974a455e5645c4b",
+    "source": "home_folder",
+    "note": "owner's best 6-inch RIFT to date (owner, 4-5 Nov 2026): ~/Downloads/RIFT_marked.3mf, two identical marked tiles (the C02-T mesh, 152.4 x 132 x 19 mm, printed upright); process 'Hex Tile v70 - Recent 0.20mm', auto brim, prime tower on; the project saved Generic PLA as its filament, so the colour actually printed isn't recorded"
   }
 ]
