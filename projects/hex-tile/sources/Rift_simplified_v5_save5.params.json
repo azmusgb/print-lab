@@ -1,0 +1,62 @@
+{
+  "document": "Rift simplified v6",
+  "version": 6,
+  "parameters": [
+    {
+      "name": "corner_diameter",
+      "expression": "165.4 mm",
+      "value": 165.4,
+      "unit": "mm",
+      "comment": "Hex size across the corners (6 inch)"
+    },
+    {
+      "name": "edge_depth",
+      "expression": "9 mm",
+      "value": 9.0,
+      "unit": "mm",
+      "comment": "Height of the hex side wall, back to face edge"
+    },
+    {
+      "name": "facet_rise",
+      "expression": "10 mm",
+      "value": 10.0,
+      "unit": "mm",
+      "comment": "How far the highest facet peak rises above the edge"
+    },
+    {
+      "name": "skin_axial",
+      "expression": "2.4 mm",
+      "value": 2.4,
+      "unit": "mm",
+      "comment": "Face skin thickness, measured straight back (Z)"
+    },
+    {
+      "name": "perimeter_wall",
+      "expression": "2.4 mm",
+      "value": 2.4,
+      "unit": "mm",
+      "comment": "Side wall thickness"
+    },
+    {
+      "name": "land_width",
+      "expression": "17.7 mm",
+      "value": 17.7,
+      "unit": "mm",
+      "comment": "Width of the U-shaped tape land on the back"
+    },
+    {
+      "name": "land_thickness",
+      "expression": "2.4 mm",
+      "value": 2.4,
+      "unit": "mm",
+      "comment": "Thickness of the tape land"
+    },
+    {
+      "name": "roof_wall",
+      "expression": "2.4 mm",
+      "value": 2.4,
+      "unit": "mm",
+      "comment": "Roof plate width per layer (45 deg roof); the space above it is sealed hollow so no infill sits behind the face"
+    }
+  ]
+}
