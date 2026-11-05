@@ -169,11 +169,22 @@ def _clock(iso: str) -> str:
     return datetime.fromisoformat(iso).astimezone().strftime("%H:%M")
 
 
-def _needs(e: dict, at: str) -> dict | None:
-    """What the owner has to do next for this experiment, or None. Urgency: lower first."""
+def _needs(e: dict, at: str, root: Path | None = None) -> dict | None:
+    """What the owner has to do next for this experiment, or None. Urgency: lower first. With root, a build waiting
+    on the owner is checked against its frozen files first: approving or sending one whose files are gone or changed
+    would only be refused."""
     s, eid, b = e["status"], e["id"], _last_build(e) or {}
     if s in ("answered", "abandoned"):
         return None
+    # Only a build that records its files: a migrated one without them is lab exp check's to explain.
+    if root is not None and (b.get("artifact") or b.get("sliced")) and s in ("needs_approval", "approved", "ready"):
+        from lab.loop.verify import build_integrity_problems
+        lost = build_integrity_problems(ProjectPaths(root), b)
+        if lost:
+            return {"id": eid, "urgency": 2, "action": "Restore the build files",
+                    "why": "; ".join(lost) + ". If it was built in another checkout, copy the files from there "
+                           "(the digests must match); otherwise rebuild.",
+                    "command": f"uv run lab exp build {eid} --replace"}
     check = b.get("check") or {}
     why = "; ".join(g["message"] for g in check.get("guards") or [] if not g["ok"] and g["result"] != "info")
     if s == "printing" and not e.get("owner_verdict"):
@@ -223,7 +234,7 @@ def _experiment(e: dict, exps: dict, root: Path, tol: float, production, at: str
         "runs": [{"id": r["id"], "started_at": r.get("started_at"), "baseline_missing": r.get("baseline_missing") or [],
                   "print": _print(r), "entered_on_mac": (r.get("usage") or {}).get("usage_source") == "manual"}
                  for r in e.get("print_runs") or []],
-        **_finding(e, root), "photos": _photos(e, root), "ai_observations": e.get("ai_observations") or [], "due_at": _due_at(e), "needs": _needs(e, at)}
+        **_finding(e, root), "photos": _photos(e, root), "ai_observations": e.get("ai_observations") or [], "due_at": _due_at(e), "needs": _needs(e, at, root)}
 
 
 def _finding(e: dict, root: Path) -> dict:
