@@ -1,0 +1,29 @@
+{
+  "about": "Limits the Fusion Parameters Panel shows under a parameter when its value breaks them. They warn, never block: an experiment may test past a rule on purpose. Each limit is a Fusion expression over the design's user parameters; a rule whose parameter or names the open design lacks is skipped.",
+  "rules": [
+    {
+      "parameter": "edge_depth",
+      "min": "skin_axial + land_thickness + 1.6 mm",
+      "reason": "keeps 1.6 mm of air between the skin and the tape land at the edge",
+      "source": "hex-tile skill: nothing within 1.6 mm of the skin. The gap is edge_depth - skin_axial - land_thickness at the edge and grows inward (RIFT export at edge_depth 9: 4.8 mm, 4 mm in from a corner; tests/test_design_rules.py)"
+    },
+    {
+      "parameter": "skin_axial",
+      "min": "0.9 mm",
+      "reason": "two printed lines (0.42 mm each, 0.4 nozzle), so the skin prints as a real wall",
+      "source": "lab inspect's feature-below-line-width check (lab/checks/feature_width.py)"
+    },
+    {
+      "parameter": "perimeter_wall",
+      "min": "0.9 mm",
+      "reason": "two printed lines (0.42 mm each, 0.4 nozzle), so the wall prints as a real wall",
+      "source": "lab inspect's feature-below-line-width check (lab/checks/feature_width.py)"
+    },
+    {
+      "parameter": "land_thickness",
+      "min": "0.9 mm",
+      "reason": "two printed lines (0.42 mm each, 0.4 nozzle), so the land prints as a real wall",
+      "source": "lab inspect's feature-below-line-width check (lab/checks/feature_width.py)"
+    }
+  ]
+}

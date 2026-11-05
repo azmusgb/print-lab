@@ -5,6 +5,9 @@ A panel docked on the right of Fusion that lists the active design's user parame
 - Edit an expression and press **Enter** (or move focus away) to apply it. **Esc** reverts the field.
   **−/+** (and ↑/↓ in the field) step a plain number by 1; Shift ×10, Alt ×0.1. **↺** returns a parameter to the
   value it had when the panel first saw the design this session.
+- A value that breaks one of the project's design rules (`projects/<project>/design-rules.json`, e.g. edge_depth at
+  least skin_axial + land_thickness + 1.6 mm) gets an amber note under it naming the limit and why. Rules warn and
+  never block; the project is the one picked under Print-lab check.
 - Each row says what the parameter **drives** (the features and sketches using it), or that nothing uses it.
 - If a change breaks the timeline, a red banner names the failed steps; export is disabled until it's fixed.
 - The status line reports each change with the volume before and after.

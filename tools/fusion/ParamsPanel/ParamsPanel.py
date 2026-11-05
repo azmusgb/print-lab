@@ -32,6 +32,7 @@ _ui = None
 _handlers = []
 _pending = {}  # name -> expression waiting for the Apply command
 _last_result = {}  # message/error/field from the Apply command, sent when it terminates
+_project = {'name': 'hex-tile'}  # the panel's chosen print-lab project; its design-rules.json sets the limits
 
 
 def run(context):
@@ -111,6 +112,7 @@ def _state(message=None, error=None, field=None):
     if not design:
         return {'design': None, 'theme': _theme(), 'message': message, 'error': error, 'field': field}
     um = design.unitsManager
+    limits = _limits(design, _rules(_project['name']))
     params = []
     for p in design.userParameters:
         params.append({
@@ -121,6 +123,7 @@ def _state(message=None, error=None, field=None):
             'comment': p.comment,
             'favorite': p.isFavorite,
             'drives': _drives(p),
+            'limits': limits.get(p.name, []),
         })
     return {
         'design': _app.activeDocument.name,
@@ -131,11 +134,48 @@ def _state(message=None, error=None, field=None):
         'problems': _timeline_problems(design),
         'projects': _lab_projects(),
         'bases': _lab_bases(),
+        'project': _project['name'],
         'suggested_name': _suggested_name(),
         'message': message,
         'error': error,
         'field': field,
     }
+
+
+def _rules(project):
+    """The project's design rules (projects/<p>/design-rules.json); none when it has no readable file."""
+    try:
+        rules = json.loads((LAB_ROOT / 'projects' / project / 'design-rules.json').read_text()).get('rules', [])
+    except (OSError, ValueError, AttributeError):
+        return []
+    return [r for r in rules if isinstance(r, dict) and isinstance(r.get('parameter'), str)]
+
+
+def _limits(design, rules):
+    """{parameter: [{bound, limit, ok, reason}]} for each rule the open design can evaluate."""
+    um = design.unitsManager
+    out = {}
+    for rule in rules:
+        param = design.userParameters.itemByName(rule['parameter'])
+        if not param:
+            continue
+        for bound in ('min', 'max'):
+            expression = rule.get(bound)
+            if not isinstance(expression, str) or not um.isValidExpression(expression, param.unit):
+                continue  # a rule naming a parameter this design lacks
+            try:
+                limit = um.evaluateExpression(expression, param.unit)
+            except Exception:
+                continue
+            ok = param.value >= limit - 1e-9 if bound == 'min' else param.value <= limit + 1e-9
+            out.setdefault(param.name, []).append({
+                'bound': bound,
+                'limit': um.formatInternalValue(limit, param.unit, True) if param.unit else str(round(limit, 6)),
+                'expression': expression,
+                'ok': ok,
+                'reason': rule.get('reason', ''),
+            })
+    return out
 
 
 def _drives(param):
@@ -391,6 +431,8 @@ class _Incoming(adsk.core.HTMLEventHandler):
         try:
             html_args = adsk.core.HTMLEventArgs.cast(args)
             data = json.loads(html_args.data) if html_args.data else {}
+            if data.get('project') in _lab_projects():
+                _project['name'] = data['project']
             if html_args.action in ('ready', 'refresh'):
                 html_args.returnData = json.dumps(_state())
             elif html_args.action == 'set':
