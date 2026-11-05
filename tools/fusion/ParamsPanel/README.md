@@ -18,6 +18,11 @@ A panel docked on the right of Fusion that lists the active design's user parame
   runs `lab inspect --json` on it and lists the findings. **Upright** turns it the way the hex tiles print (model +Y up,
   face toward -Y, as in the SCAD `upright()` module; `upright.py`); **Flat** keeps the model's own axes.
   It runs `uv` in the print-lab checkout this folder lives in, so Fusion waits a few seconds while it works.
+- **Send to lab** turns the design into a new registered source: it exports the visible bodies, and
+  `lab variant add` writes `sources/<name>.3mf` with the chosen **base** project's full print settings (so it slices
+  with the X2D's own start G-code), registers it in `sources/sources.json` (sha256, `derived_from`, a change line from
+  the parameter differences) and keeps the parameters beside it as `sources/<name>.params.json`. It never overwrites a
+  source. The report ends with the `lab exp plan … --source … --object … --base …` line to plan an experiment with it.
 
 ## Install (macOS)
 

@@ -103,7 +103,7 @@
   dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
   .hint { margin-top: 6px; color: var(--muted); font-size: 11px; }
   .export .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
-  .export select, .export button {
+  .export select, .export button, .export input {
     width: 100%; padding: 4px 6px; border-radius: 4px; font: inherit; font-size: 12px;
     border: 1px solid var(--line); background: var(--input-bg); color: var(--text);
   }
@@ -111,6 +111,14 @@
     grid-column: 1 / -1; background: var(--accent); border-color: var(--accent); color: #fff;
     font-weight: 600; cursor: pointer;
   }
+  .export .send { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+  .export .send button { background: transparent; border-color: var(--accent); color: var(--text); }
+  .export label { display: block; grid-column: 1 / -1; font-size: 11px; color: var(--muted); }
+  .export label > select, .export label > input { margin-top: 2px; }
+  .export button:disabled { opacity: .5; cursor: default; }
+  .export :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  #report .next { display: block; margin-top: 6px; padding: 4px 6px; border-radius: 4px; background: var(--input-bg);
+    font: 11px ui-monospace, Menlo, monospace; overflow-wrap: anywhere; user-select: all; }
   #report { margin-top: 6px; font-size: 12px; }
   #report .path { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
   #report .facts { margin: 4px 0; }
@@ -150,6 +158,13 @@
       </select>
       <button id="export" type="button">Export &amp; check</button>
     </div>
+    <div class="controls send">
+      <label>Base settings <select id="base"></select></label>
+      <label>New source name <input id="vname" autocomplete="off" spellcheck="false"></label>
+      <label>Note (optional) <input id="vnote" autocomplete="off"></label>
+      <button id="send" type="button">Send to lab</button>
+    </div>
+    <div class="hint">Send to lab saves a new sources/&lt;name&gt;.3mf with the base's print settings and registers it. Existing sources are never overwritten.</div>
     <div id="report" aria-live="polite"></div>
   </details>
 </footer>
@@ -378,11 +393,29 @@ function renderProjects() {
   if (projects.includes(current)) select.value = current;
   select.disabled = !projects.length;
   const broken = state.problems && state.problems.errors && state.problems.errors.length;
-  if (!exporting) $("export").disabled = !projects.length || !state.design || !(state.model && state.model.bodies) || !!broken;
+  const unusable = !projects.length || !state.design || !(state.model && state.model.bodies) || !!broken;
+  if (!exporting) $("export").disabled = unusable;
   $("export").title = broken ? "Fix the failed timeline steps first" : "";
+  renderBases(unusable, broken);
   if (!projects.length && !$("report").textContent) {
     $("report").replaceChildren(el("p", "err", "print-lab checkout not found next to this add-in."));
   }
+}
+
+function renderBases(unusable, broken) {
+  const select = $("base");
+  const bases = (state.bases || {})[$("project").value] || [];
+  const current = select.value || (loadPrefs().bases || {})[$("project").value];
+  select.replaceChildren(...bases.map((path) => {
+    const o = el("option", "", path.replace(/^sources\//, "")); o.value = path; return o;
+  }));
+  if (bases.includes(current)) select.value = current;
+  select.disabled = !bases.length;
+  const name = $("vname");
+  if (!name.dataset.touched && state.suggested_name) name.value = state.suggested_name;
+  if (!exporting) $("send").disabled = unusable || !bases.length || !name.value.trim();
+  $("send").title = broken ? "Fix the failed timeline steps first"
+    : !bases.length ? "This project has no registered 3MF sources to take settings from" : "";
 }
 
 function renderReport(r) {
@@ -390,7 +423,12 @@ function renderReport(r) {
   if (!r) { box.replaceChildren(el("p", "err", "No answer from Fusion.")); return; }
   const parts = [];
   if (r.export_error) parts.push(el("p", "err", r.export_error));
-  if (r.relative || r.path) parts.push(el("div", "path", "Saved: " + (r.relative || r.path)));
+  if (r.source && r.source.path) {
+    parts.push(el("p", "clean", "Registered " + r.source.path));
+    if (r.source.change) parts.push(el("div", "path", r.source.change));
+    if (r.extents) parts.push(el("div", "facts", r.extents.map((v) => Number(v).toFixed(1)).join(" × ") + " mm, as printed"));
+  }
+  if (!r.source && (r.relative || r.path)) parts.push(el("div", "path", "Saved: " + (r.relative || r.path)));
   if (r.facts) {
     const f = r.facts;
     const bits = [];
@@ -411,7 +449,37 @@ function renderReport(r) {
       parts.push(d);
     }
   }
+  if (r.next) {
+    parts.push(el("div", "hint", "Next, plan an experiment with it:"));
+    const code = el("code", "next", r.next);
+    code.tabIndex = 0;
+    parts.push(code);
+  }
   box.replaceChildren(...parts);
+}
+
+function runSend() {
+  if (exporting) return;
+  const name = $("vname").value.trim();
+  if (!name) return;
+  exporting = true;
+  const button = $("send");
+  button.disabled = true;
+  $("export").disabled = true;
+  button.textContent = "Sending to lab…";
+  $("report").replaceChildren(el("p", "", "Exporting, writing sources/" + name + ".3mf and checking it…"));
+  send("send", { project: $("project").value, base: $("base").value, name, note: $("vnote").value,
+                 upright: $("orient").value === "upright" })
+    .then((r) => {
+      renderReport(r);
+      if (r && r.source) { $("vnote").value = ""; delete $("vname").dataset.touched; }
+    })
+    .catch((err) => renderReport({ export_error: "Could not reach Fusion: " + err.message }))
+    .finally(() => {
+      exporting = false;
+      button.textContent = "Send to lab";
+      if (state) renderProjects();
+    });
 }
 
 function runExport() {
@@ -463,7 +531,18 @@ window.fusionJavaScriptHandler = {
 
 $("filter").addEventListener("input", () => { if (state) renderParams(); });
 $("export").addEventListener("click", runExport);
-$("project").addEventListener("change", () => savePrefs({ project: $("project").value }));
+$("send").addEventListener("click", runSend);
+$("vname").addEventListener("input", () => {
+  $("vname").dataset.touched = "1";
+  if (!exporting) $("send").disabled = !$("vname").value.trim() || $("base").disabled;
+});
+$("vname").addEventListener("keydown", (e) => { if (e.key === "Enter") runSend(); });
+$("base").addEventListener("change", () => {
+  const bases = loadPrefs().bases || {};
+  bases[$("project").value] = $("base").value;
+  savePrefs({ bases });
+});
+$("project").addEventListener("change", () => { savePrefs({ project: $("project").value }); if (state) renderProjects(); });
 $("orient").addEventListener("change", () => savePrefs({ orient: $("orient").value }));
 for (const id of ["sec-model", "sec-export"]) {
   const d = $(id);

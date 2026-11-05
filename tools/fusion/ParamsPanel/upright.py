@@ -2,7 +2,8 @@
 
 Fusion exports in model coordinates. The hex tiles are modelled lying flat (face +Z,
 top edge +Y) and printed standing up, face toward the printer's -Y: model +Y becomes
-up and model +Z becomes -Y, the same turn as the SCAD sources' upright() module.
+up and model +Z becomes -Y, the same turn as the SCAD sources' upright() module
+(lab/geometry/upright.py).
 The result sits on the bed (min Z = 0) and is centred in X and Y.
 
 Run by the Parameters Panel add-in: uv run python -I upright.py FILE.stl
@@ -11,8 +12,9 @@ Run by the Parameters Panel add-in: uv run python -I upright.py FILE.stl
 import sys
 from pathlib import Path
 
-import numpy as np
 import trimesh
+
+from lab.geometry.upright import upright
 
 
 def main(argv: list[str]) -> int:
@@ -27,9 +29,7 @@ def main(argv: list[str]) -> int:
     if mesh.is_empty:
         print(f'no geometry in {path}', file=sys.stderr)
         return 1
-    mesh.apply_transform(trimesh.transformations.rotation_matrix(np.pi / 2, [1, 0, 0]))
-    lo, hi = mesh.bounds
-    mesh.apply_translation([-(lo[0] + hi[0]) / 2, -(lo[1] + hi[1]) / 2, -lo[2]])
+    mesh = upright(mesh)
     mesh.export(path)
     print(' x '.join(f'{v:.2f}' for v in mesh.extents))
     return 0
