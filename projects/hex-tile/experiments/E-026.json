@@ -61,7 +61,7 @@
     "tabs": true,
     "notes": []
   },
-  "status": "needs_approval",
+  "status": "approved",
   "variants": [
     {
       "id": "E-026-A",
@@ -674,7 +674,7 @@
       "sliced_sha256": "f41046d05ffb15ca85e8a8da4aff32510746ba693694ea90c174948840d5e62c",
       "check": {
         "status": "needs_approval",
-        "at": "2026-11-05T03:05:06+00:00",
+        "at": "2026-11-05T16:14:28+00:00",
         "guards": [
           {
             "code": "owner_stopped",
@@ -788,7 +788,16 @@
       }
     }
   ],
-  "approval": null,
+  "approval": {
+    "build_id": "BLD-026-01",
+    "artifact_sha256": "a30476eb318d4bbe97951e6dae2577d1955b1c7e9ee250d5a8e1c0842dd75960",
+    "approved_reasons": [
+      "per_test_time"
+    ],
+    "by": "owner",
+    "at": "2026-11-05T16:14:54+00:00",
+    "reason": "47.9 min is fine for this test"
+  },
   "print_runs": [],
   "owner_verdict": null,
   "superseded_verdicts": [],
@@ -796,5 +805,43 @@
   "ai_observations": [],
   "comparison_validity": null,
   "prediction_outcome": null,
-  "analysis": []
+  "analysis": [],
+  "criteria": [
+    {
+      "key": "stripes",
+      "label": "Diagonal stripes in the top band?",
+      "choices": [
+        "none",
+        "faint",
+        "bad"
+      ]
+    },
+    {
+      "key": "dashes",
+      "label": "Row of dashes across the face?",
+      "choices": [
+        "none",
+        "faint",
+        "bad"
+      ]
+    },
+    {
+      "key": "atswitch",
+      "label": "Dashes about 11.6 mm above the strip base?",
+      "choices": [
+        "yes",
+        "no",
+        "none"
+      ]
+    },
+    {
+      "key": "roof",
+      "label": "Inner roof clean through the open top?",
+      "choices": [
+        "clean",
+        "flawed",
+        "failed"
+      ]
+    }
+  ]
 }
