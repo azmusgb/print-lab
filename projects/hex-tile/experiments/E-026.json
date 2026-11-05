@@ -802,7 +802,16 @@
   "owner_verdict": null,
   "superseded_verdicts": [],
   "anchors": [],
-  "ai_observations": [],
+  "ai_observations": [
+    {
+      "type": "photo_reading",
+      "variant": null,
+      "assessment": "RIFT full tiles, 4 Nov (IMG_1475-1509; photos turned 90 deg, print top at left). Rows of dashes along single layers parallel to the top edge, a few mm in, across the whole face: 1475 terracotta (two rows: ~2-3 mm in, and one further in starting at the corner), 1484 grey, 1496 and 1502 pink. A diagonal crosshatch patch just below the top corner, ~5-15 mm in: clearest 1484, faint 1475. Same dashes and diagonal texture inside, on the sloped roof and where it meets the inner wall: 1503. Diagonal texture plus fixed-height dash rows fits grid infill printing through (E-026 hypothesis) better than top wobble, which would ripple along layers; the only possible wobble is faint along-layer waviness at the corner in 1475. Two dash rows in 1475 may mean two transitions (solid-to-grid switch and the top solid layers); not measured. Not ripple: edge ridge on grey 1486/1489, small scratches pink 1499-1501, a string 1503. Large faces, lettering (1504, 1508) and backs clean.",
+      "confidence": 0.6,
+      "confirmed": false,
+      "at": "2026-11-05T22:55:23+00:00"
+    }
+  ],
   "comparison_validity": null,
   "prediction_outcome": null,
   "analysis": [],
