@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import trimesh
-from shapely.geometry import Polygon
+from shapely.geometry import Point, Polygon
 from shapely.ops import unary_union
 
 
@@ -41,15 +41,27 @@ def outline_jumps(layers: list[Layer], min_jump_mm: float = 30.0) -> list[tuple[
 
 
 def thin_regions(m: trimesh.Trimesh, line_w: float, layer_h: float = 0.2, max_lines: float = 2.0,
-                 min_area: float = 0.05) -> list[tuple[float, float]]:
+                 min_area: float = 0.05, with_reach: bool = False) -> list[tuple]:
     """Layers with material narrower than max_lines printed lines: what vanishes when each layer is opened (shrunk and
-    grown back) by max_lines/2 line widths. Narrower than 2 lines means the slicer can't fit a closed loop there."""
+    grown back) by max_lines/2 line widths. Narrower than 2 lines means the slicer can't fit a closed loop there.
+    with_reach adds how far the lost material reaches from what stays (mm): a shallow cut into a surface, such as
+    lettering 0.6 mm deep, leaves slivers that reach its depth; a free-standing thin wall reaches its own length."""
     out = []
     r = max_lines * line_w / 2
     for z, poly in _layer_polygons(m, layer_h):
         if poly.is_empty:
             continue
-        lost = poly.area - poly.buffer(-r, join_style="mitre").buffer(r, join_style="mitre").area
+        kept = poly.buffer(-r, join_style="mitre").buffer(r, join_style="mitre")
+        lost = poly.area - kept.area
         if lost > min_area:
-            out.append((round(z, 3), round(float(lost), 3)))
+            row = (round(z, 3), round(float(lost), 3))
+            out.append(row + (round(_reach(poly.difference(kept), kept), 2),) if with_reach else row)
     return out
+
+
+def _reach(lost, kept) -> float:
+    """The furthest any vertex of the lost pieces lies from the kept material; inf when nothing is kept."""
+    if kept.is_empty:
+        return float("inf")
+    rings = [g.exterior for g in getattr(lost, "geoms", [lost]) if g.geom_type == "Polygon" and g.area > 0.005]
+    return max((kept.distance(Point(c)) for ring in rings for c in ring.coords), default=0.0)
