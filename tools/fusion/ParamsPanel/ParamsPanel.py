@@ -130,6 +130,8 @@ def _state(message=None, error=None, field=None):
         'model': _model_info(design),
         'problems': _timeline_problems(design),
         'projects': _lab_projects(),
+        'bases': _lab_bases(),
+        'suggested_name': _suggested_name(),
         'message': message,
         'error': error,
         'field': field,
@@ -217,32 +219,94 @@ def _run(args, timeout):
     return subprocess.run(args, cwd=str(LAB_ROOT), env=env, capture_output=True, text=True, timeout=timeout)
 
 
-def _export_and_check(project, upright):
-    """Export the visible solid bodies as one STL into projects/<project>/fusion/ and run lab inspect."""
+def _export_stl(project, suffix):
+    """Export the visible solid bodies as one STL into projects/<project>/fusion/; (path, None) or (None, error)."""
     design = _design()
     if not design:
-        return {'export_error': 'Open a design to export it.'}
+        return None, 'Open a design to export it.'
     if project not in _lab_projects():
-        return {'export_error': 'Pick a print-lab project (none found at {}).'.format(LAB_ROOT)}
+        return None, 'Pick a print-lab project (none found at {}).'.format(LAB_ROOT)
     if not _model_info(design).get('bodies'):
-        return {'export_error': 'Nothing to export: no visible solid bodies.'}
-    uv = _uv()
-    if not uv:
-        return {'export_error': 'uv not found; print-lab checks need it (~/.local/bin/uv).'}
-
+        return None, 'Nothing to export: no visible solid bodies.'
+    if _timeline_problems(design)['errors']:
+        return None, 'Fix the failed timeline steps first.'
     out_dir = LAB_ROOT / 'projects' / project / 'fusion'
     out_dir.mkdir(parents=True, exist_ok=True)
-    stem = re.sub(r'[^A-Za-z0-9._-]+', '-', _app.activeDocument.name).strip('-') or 'design'
     stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-    path = out_dir / '{}-{}{}.stl'.format(stem, stamp, '-upright' if upright else '')
-
+    path = out_dir / '{}-{}{}.stl'.format(_doc_stem(), stamp, suffix)
     em = design.exportManager
     options = em.createSTLExportOptions(design.rootComponent, str(path))
     options.meshRefinement = adsk.fusion.MeshRefinementSettings.MeshRefinementHigh
     options.isBinaryFormat = True
     if not em.execute(options) or not path.is_file():
-        return {'export_error': 'Fusion could not write {}.'.format(path)}
+        return None, 'Fusion could not write {}.'.format(path)
+    return path, None
 
+
+def _doc_stem():
+    return re.sub(r'[^A-Za-z0-9._-]+', '_', _app.activeDocument.name).strip('_.-') or 'design'
+
+
+def _doc_version():
+    try:
+        data_file = _app.activeDocument.dataFile
+        return data_file.versionNumber if data_file else None
+    except Exception:  # an unsaved document has no data file
+        return None
+
+
+def _own_value(um, param):
+    """A parameter's value in its own unit (Fusion keeps lengths in cm and angles in radians)."""
+    if not param.unit:
+        return round(param.value, 6)
+    for internal in (um.internalUnits, 'rad'):
+        try:
+            value = um.convert(param.value, internal, param.unit)
+        except Exception:
+            continue
+        if isinstance(value, float) and value != -1:
+            return round(value, 6)
+    return None
+
+
+def _params_doc(design):
+    um = design.unitsManager
+    return {
+        'document': _app.activeDocument.name,
+        'version': _doc_version(),
+        'parameters': [{'name': p.name, 'expression': p.expression, 'value': _own_value(um, p), 'unit': p.unit,
+                        'comment': p.comment} for p in design.userParameters],
+    }
+
+
+def _lab_bases():
+    """{project: [registered 3MF sources, newest first]} for the Send to lab base picker."""
+    out = {}
+    for project in _lab_projects():
+        registry = LAB_ROOT / 'projects' / project / 'sources' / 'sources.json'
+        try:
+            entries = json.loads(registry.read_text())
+        except (OSError, ValueError):
+            continue
+        paths = [e.get('path') for e in entries if isinstance(e, dict) and str(e.get('path', '')).endswith('.3mf')]
+        out[project] = [p for p in reversed(paths) if (LAB_ROOT / 'projects' / project / p).is_file()]
+    return out
+
+
+def _suggested_name():
+    version = _doc_version()
+    # Fusion's version is the save count; the document's own name may already carry a design version (v4).
+    return _doc_stem() + ('_save{}'.format(version) if version else '')
+
+
+def _export_and_check(project, upright):
+    """Export the visible solid bodies as one STL and run lab inspect on it."""
+    uv = _uv()
+    if not uv:
+        return {'export_error': 'uv not found; print-lab checks need it (~/.local/bin/uv).'}
+    path, error = _export_stl(project, '-upright' if upright else '')
+    if error:
+        return {'export_error': error}
     try:
         if upright:
             turned = _run([uv, 'run', 'python', '-I', str(HERE / 'upright.py'), str(path)], 120)
@@ -262,7 +326,52 @@ def _export_and_check(project, upright):
         'relative': str(path.relative_to(LAB_ROOT)),
         'upright': bool(upright),
         'facts': report.get('facts', {}),
-        'findings': [{k: f.get(k) for k in ('severity', 'where', 'why', 'fix', 'rule')} for f in report.get('findings', [])],
+        'findings': _findings(report),
+    }
+
+
+def _findings(report):
+    return [{k: f.get(k) for k in ('severity', 'where', 'why', 'fix', 'rule')} for f in report.get('findings', [])]
+
+
+def _send_to_lab(project, base, name, note, upright):
+    """Export the design and register it as a new source 3MF with `lab variant add`."""
+    name = (name or '').strip()
+    if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,79}', name):
+        return {'export_error': 'Name the source with letters, digits, _ - and . (up to 80).'}
+    if base not in _lab_bases().get(project, []):
+        return {'export_error': 'Pick a registered base 3MF for {}.'.format(project)}
+    uv = _uv()
+    if not uv:
+        return {'export_error': 'uv not found; print-lab needs it (~/.local/bin/uv).'}
+    path, error = _export_stl(project, '')
+    if error:
+        return {'export_error': error}
+    params = path.with_suffix('.params.json')
+    params.write_text(json.dumps(_params_doc(_design()), indent=2))
+    args = [uv, 'run', 'lab', '--project', project, 'variant', 'add', '--mesh', str(path), '--base', base,
+            '--name', name, '--params', str(params), '--json']
+    if (note or '').strip():
+        args += ['--note', note.strip()]
+    if not upright:
+        args.append('--flat')
+    try:
+        added = _run(args, 180)
+    except subprocess.TimeoutExpired:
+        return {'export_error': 'lab variant add timed out.', 'path': str(path)}
+    try:
+        report = json.loads(added.stdout)
+    except ValueError:
+        return {'export_error': (added.stderr or added.stdout).strip()[-400:] or 'lab variant add failed.',
+                'path': str(path)}
+    source = report.get('source', {})
+    return {
+        'source': source,
+        'extents': report.get('extents'),
+        'findings': _findings(report),
+        'next': 'uv run lab exp plan <question> "<what it asks>" --source {} --object {} --base {} '
+                '--factor … --values … --hypothesis … --prediction …'.format(
+                    source.get('path'), name, source.get('derived_from')),
     }
 
 
@@ -291,6 +400,13 @@ class _Incoming(adsk.core.HTMLEventHandler):
                     result = _export_and_check(data.get('project'), data.get('upright'))
                 except Exception as e:
                     result = {'export_error': 'Export failed: {}'.format(e)}
+                html_args.returnData = json.dumps(result)
+            elif html_args.action == 'send':
+                try:
+                    result = _send_to_lab(data.get('project'), data.get('base'), data.get('name'), data.get('note'),
+                                          data.get('upright'))
+                except Exception as e:
+                    result = {'export_error': 'Send to lab failed: {}'.format(e)}
                 html_args.returnData = json.dumps(result)
             elif html_args.action == 'response':
                 pass

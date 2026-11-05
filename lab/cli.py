@@ -277,12 +277,13 @@ def main(argv=None) -> int:
     from lab import cli_loop, observe_cli
     cli_loop.register(sub)
     observe_cli.register(sub)
-    from lab import page, pull, source, status, sync, watch
+    from lab import page, pull, source, status, sync, variant, watch
     page.register(sub)
     pull.register(sub)
     source.register(sub)
     status.register(sub)
     sync.register(sub)
+    variant.register(sub)
     watch.register(sub)
 
     args = p.parse_args(argv)
