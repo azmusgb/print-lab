@@ -1,0 +1,798 @@
+{
+  "schema": 1,
+  "record_type": "experiment",
+  "id": "E-026",
+  "project": "hex-tile",
+  "question": "Q-007",
+  "provenance": "prospective",
+  "question_text": "Top-band print-through: control strip at the baseline's 3 wall loops",
+  "hypothesis": "The ripples in the top band of every RIFT tile (photos IMG_1475, 1484, 1496, 1503; 4 Nov) are 15% grid infill printing through the face: the slice of the 10-inch baseline switches from solid to grid infill at 203.6 mm, where the cavity roof closes, and keeps grid about 0.8 mm behind the face's outer wall, under 3 walls, to 219.2 mm, the band's height in the photos. The dashes sit at that switch.",
+  "prediction": "The strip reproduces the full tiles' top band: diagonal stripes and a row of dashes from about 203.6 mm (11.6 mm above the strip's base). If it prints clean, the band needs the full tile (its height or print time) and E-027 can't be judged against it.",
+  "why_this_test": "A strip of the top 28 mm keeps the geometry and toolpath that make the band, at a fraction of a full tile's 5 h 47 m. Wall loops apply to the whole plate, so the control prints on its own plate.",
+  "test_kind": "height_strip",
+  "factor": {
+    "name": "wall_loops",
+    "values": [
+      "3"
+    ],
+    "unit": ""
+  },
+  "factor_scope": "specific",
+  "dependent_adjustments": {},
+  "controlled": {},
+  "baseline": {},
+  "findings": [],
+  "judge_on": "the display face's top 20 mm under one low side light: diagonal stripes (none|faint|bad) and the rows of dashes (none|faint|bad); then the sloped inner roof seen through the open top",
+  "expect": null,
+  "derived_from_artifact": [],
+  "derived_from_result": [],
+  "controls": {
+    "witness_required": false,
+    "anchor": null
+  },
+  "reference_variants": [],
+  "build_spec": {
+    "kind": "height_strip",
+    "source": "sources/RIFT_10IN_batch5_shadow_storm.3mf",
+    "object": "RIFT_MARKED_10IN_SINGLE.stl",
+    "z": [
+      192.0,
+      220.0
+    ],
+    "judged": [
+      198.0,
+      214.0
+    ],
+    "base": "sources/RIFT_10IN_batch5_shadow_storm.3mf",
+    "variants": [
+      {
+        "id": "E-026-A",
+        "tab": "26A",
+        "settings_patch": {
+          "wall_loops": "3"
+        },
+        "copies": 1
+      }
+    ],
+    "witness": false,
+    "anchor": null,
+    "tabs": true,
+    "notes": []
+  },
+  "status": "needs_approval",
+  "variants": [
+    {
+      "id": "E-026-A",
+      "tab": "26A",
+      "factor_value": "3",
+      "copies": 1
+    }
+  ],
+  "builds": [
+    {
+      "id": "BLD-026-01",
+      "ok": true,
+      "at": "2026-11-05T02:57:27+00:00",
+      "inputs": {
+        "model": {
+          "sources/RIFT_10IN_batch5_shadow_storm.3mf": "c3520ae94c90b2c8b44894409266ee9e510a9ed5afd6882134980a728329a7fd"
+        },
+        "settings": "c3520ae94c90b2c8b44894409266ee9e510a9ed5afd6882134980a728329a7fd",
+        "build_spec_sha256": "28f8872993ad68153aef5bff9cd1f684be2234fbc28460bef984f96e39abc374",
+        "builder_version": "1a1.1",
+        "builder_fingerprint": "d2af4a8f9f07dd1c080aec25b5d9fa06e574195a30fd417f30e78c73ce8fa27a",
+        "openscad": "2026.10.11",
+        "bambu_studio": "02.08.02.61"
+      },
+      "job": "job-20261105T025727-4814",
+      "artifact": "prints/hex-tile_E-026_BLD-026-01.3mf",
+      "artifact_sha256": "a30476eb318d4bbe97951e6dae2577d1955b1c7e9ee250d5a8e1c0842dd75960",
+      "sliced": "prints/sliced/hex-tile_E-026_BLD-026-01.gcode.3mf",
+      "estimate": {
+        "minutes": 47.9,
+        "g": 19.77
+      },
+      "plate": {
+        "objects": [
+          "E-026-A"
+        ],
+        "placements": [
+          [
+            128.0,
+            128.0
+          ]
+        ]
+      },
+      "measured": {
+        "layer_time_median_s": 10.33,
+        "layer_time_profile": [
+          [
+            0.2,
+            599.1
+          ],
+          [
+            0.4,
+            11.51
+          ],
+          [
+            0.6,
+            11.64
+          ],
+          [
+            0.8,
+            11.13
+          ],
+          [
+            1.0,
+            11.23
+          ],
+          [
+            1.2,
+            10.34
+          ],
+          [
+            1.4,
+            10.34
+          ],
+          [
+            1.6,
+            10.33
+          ],
+          [
+            1.8,
+            9.86
+          ],
+          [
+            2.0,
+            9.83
+          ],
+          [
+            2.2,
+            9.82
+          ],
+          [
+            2.4,
+            9.81
+          ],
+          [
+            2.6,
+            9.8
+          ],
+          [
+            2.8,
+            9.78
+          ],
+          [
+            3.0,
+            9.77
+          ],
+          [
+            3.2,
+            9.76
+          ],
+          [
+            3.4,
+            9.74
+          ],
+          [
+            3.6,
+            9.73
+          ],
+          [
+            3.8,
+            9.72
+          ],
+          [
+            4.0,
+            9.71
+          ],
+          [
+            4.2,
+            9.69
+          ],
+          [
+            4.4,
+            9.68
+          ],
+          [
+            4.6,
+            9.67
+          ],
+          [
+            4.8,
+            9.66
+          ],
+          [
+            5.0,
+            9.64
+          ],
+          [
+            5.2,
+            9.63
+          ],
+          [
+            5.4,
+            9.62
+          ],
+          [
+            5.6,
+            9.61
+          ],
+          [
+            5.8,
+            9.59
+          ],
+          [
+            6.0,
+            9.58
+          ],
+          [
+            6.2,
+            9.57
+          ],
+          [
+            6.4,
+            9.56
+          ],
+          [
+            6.6,
+            9.54
+          ],
+          [
+            6.8,
+            9.53
+          ],
+          [
+            7.0,
+            9.52
+          ],
+          [
+            7.2,
+            9.5
+          ],
+          [
+            7.4,
+            9.49
+          ],
+          [
+            7.6,
+            9.48
+          ],
+          [
+            7.8,
+            9.47
+          ],
+          [
+            8.0,
+            9.46
+          ],
+          [
+            8.2,
+            9.44
+          ],
+          [
+            8.4,
+            9.43
+          ],
+          [
+            8.6,
+            9.42
+          ],
+          [
+            8.8,
+            9.4
+          ],
+          [
+            9.0,
+            9.39
+          ],
+          [
+            9.2,
+            9.38
+          ],
+          [
+            9.4,
+            9.37
+          ],
+          [
+            9.6,
+            9.35
+          ],
+          [
+            9.8,
+            9.34
+          ],
+          [
+            10.0,
+            9.58
+          ],
+          [
+            10.2,
+            9.61
+          ],
+          [
+            10.4,
+            9.66
+          ],
+          [
+            10.6,
+            10.0
+          ],
+          [
+            10.8,
+            9.99
+          ],
+          [
+            11.0,
+            10.17
+          ],
+          [
+            11.2,
+            10.44
+          ],
+          [
+            11.4,
+            10.66
+          ],
+          [
+            11.6,
+            10.16
+          ],
+          [
+            11.8,
+            10.3
+          ],
+          [
+            12.0,
+            10.02
+          ],
+          [
+            12.2,
+            10.27
+          ],
+          [
+            12.4,
+            10.25
+          ],
+          [
+            12.6,
+            10.89
+          ],
+          [
+            12.8,
+            10.63
+          ],
+          [
+            13.0,
+            10.87
+          ],
+          [
+            13.2,
+            10.59
+          ],
+          [
+            13.4,
+            10.75
+          ],
+          [
+            13.6,
+            10.61
+          ],
+          [
+            13.8,
+            10.47
+          ],
+          [
+            14.0,
+            10.44
+          ],
+          [
+            14.2,
+            10.45
+          ],
+          [
+            14.4,
+            10.42
+          ],
+          [
+            14.6,
+            10.39
+          ],
+          [
+            14.8,
+            10.38
+          ],
+          [
+            15.0,
+            10.36
+          ],
+          [
+            15.2,
+            10.35
+          ],
+          [
+            15.4,
+            10.34
+          ],
+          [
+            15.6,
+            10.33
+          ],
+          [
+            15.8,
+            10.32
+          ],
+          [
+            16.0,
+            10.31
+          ],
+          [
+            16.2,
+            10.3
+          ],
+          [
+            16.4,
+            10.3
+          ],
+          [
+            16.6,
+            10.35
+          ],
+          [
+            16.8,
+            10.4
+          ],
+          [
+            17.0,
+            10.45
+          ],
+          [
+            17.2,
+            10.48
+          ],
+          [
+            17.4,
+            10.4
+          ],
+          [
+            17.6,
+            10.44
+          ],
+          [
+            17.8,
+            10.74
+          ],
+          [
+            18.0,
+            10.64
+          ],
+          [
+            18.2,
+            10.67
+          ],
+          [
+            18.4,
+            10.72
+          ],
+          [
+            18.6,
+            10.74
+          ],
+          [
+            18.8,
+            10.78
+          ],
+          [
+            19.0,
+            10.81
+          ],
+          [
+            19.2,
+            10.86
+          ],
+          [
+            19.4,
+            10.75
+          ],
+          [
+            19.6,
+            10.81
+          ],
+          [
+            19.8,
+            10.92
+          ],
+          [
+            20.0,
+            10.9
+          ],
+          [
+            20.2,
+            10.86
+          ],
+          [
+            20.4,
+            10.83
+          ],
+          [
+            20.6,
+            10.82
+          ],
+          [
+            20.8,
+            10.79
+          ],
+          [
+            21.0,
+            10.78
+          ],
+          [
+            21.2,
+            10.76
+          ],
+          [
+            21.4,
+            10.75
+          ],
+          [
+            21.6,
+            10.72
+          ],
+          [
+            21.8,
+            10.72
+          ],
+          [
+            22.0,
+            10.69
+          ],
+          [
+            22.2,
+            10.68
+          ],
+          [
+            22.4,
+            10.66
+          ],
+          [
+            22.6,
+            10.65
+          ],
+          [
+            22.8,
+            10.65
+          ],
+          [
+            23.0,
+            10.7
+          ],
+          [
+            23.2,
+            10.73
+          ],
+          [
+            23.4,
+            10.78
+          ],
+          [
+            23.6,
+            10.82
+          ],
+          [
+            23.8,
+            10.87
+          ],
+          [
+            24.0,
+            10.91
+          ],
+          [
+            24.2,
+            10.34
+          ],
+          [
+            24.4,
+            10.32
+          ],
+          [
+            24.6,
+            10.31
+          ],
+          [
+            24.8,
+            10.29
+          ],
+          [
+            25.0,
+            10.28
+          ],
+          [
+            25.2,
+            10.25
+          ],
+          [
+            25.4,
+            10.24
+          ],
+          [
+            25.6,
+            10.19
+          ],
+          [
+            25.8,
+            10.17
+          ],
+          [
+            26.0,
+            10.14
+          ],
+          [
+            26.2,
+            10.12
+          ],
+          [
+            26.4,
+            10.09
+          ],
+          [
+            26.6,
+            10.06
+          ],
+          [
+            26.8,
+            10.03
+          ],
+          [
+            27.0,
+            10.9
+          ],
+          [
+            27.2,
+            44.88
+          ],
+          [
+            27.4,
+            21.32
+          ],
+          [
+            27.6,
+            21.22
+          ],
+          [
+            27.8,
+            21.14
+          ],
+          [
+            28.0,
+            22.14
+          ]
+        ]
+      },
+      "error": null,
+      "sliced_sha256": "f41046d05ffb15ca85e8a8da4aff32510746ba693694ea90c174948840d5e62c",
+      "check": {
+        "status": "needs_approval",
+        "at": "2026-11-05T02:57:37+00:00",
+        "guards": [
+          {
+            "code": "owner_stopped",
+            "ok": true,
+            "result": "blocked",
+            "message": "question active"
+          },
+          {
+            "code": "auto_stopped",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "no automatic stop"
+          },
+          {
+            "code": "full_part_required",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "diagnostic test type"
+          },
+          {
+            "code": "autonomy_level",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "autonomy level 2"
+          },
+          {
+            "code": "refuted_dependency",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "no contradicted reasoning"
+          },
+          {
+            "code": "artifact_integrity",
+            "ok": true,
+            "result": "rebuild",
+            "message": "frozen bytes unchanged"
+          },
+          {
+            "code": "no_estimate",
+            "ok": true,
+            "result": "rebuild",
+            "message": "estimate present"
+          },
+          {
+            "code": "stale_build",
+            "ok": true,
+            "result": "rebuild",
+            "message": "inputs unchanged since the build"
+          },
+          {
+            "code": "factor_not_applied",
+            "ok": true,
+            "result": "blocked",
+            "message": "the declared factor differs between the variants"
+          },
+          {
+            "code": "reference_not_comparable",
+            "ok": true,
+            "result": "blocked",
+            "message": "references compared"
+          },
+          {
+            "code": "undeclared_difference",
+            "ok": true,
+            "result": "blocked",
+            "message": "only the declared factor differs"
+          },
+          {
+            "code": "geometry_blocking",
+            "ok": true,
+            "result": "blocked",
+            "message": "no blocking geometry findings"
+          },
+          {
+            "code": "per_test_time",
+            "ok": false,
+            "result": "needs_approval",
+            "message": "47.9 / 45 min per test"
+          },
+          {
+            "code": "per_test_material",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "19.8 / 25 g per test"
+          },
+          {
+            "code": "question_time",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "0 + 47.9 / 180 min for Q-007"
+          },
+          {
+            "code": "question_material",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "0 + 19.8 / 120 g for Q-007"
+          },
+          {
+            "code": "retry_limit",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "0 / 2 failed attempts"
+          },
+          {
+            "code": "plate_mismatch",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "plate timing matches the compared plates"
+          }
+        ]
+      }
+    }
+  ],
+  "approval": null,
+  "print_runs": [],
+  "owner_verdict": null,
+  "superseded_verdicts": [],
+  "anchors": [],
+  "ai_observations": [],
+  "comparison_validity": null,
+  "prediction_outcome": null,
+  "analysis": []
+}
