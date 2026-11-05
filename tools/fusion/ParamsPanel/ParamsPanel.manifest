@@ -1,0 +1,13 @@
+{
+	"autodeskProduct": "Fusion",
+	"type": "addin",
+	"id": "6c0a8a52-3f7e-4a43-9a3c-2f4d1b8e7a11",
+	"author": "print-lab",
+	"description": {
+		"": "Dockable panel listing the active design's user parameters; each edit is one Undo step. Also shows body size, volume and estimated PLA weight."
+	},
+	"version": "1.0.0",
+	"runOnStartup": true,
+	"supportedOS": "windows|mac",
+	"editEnabled": true
+}

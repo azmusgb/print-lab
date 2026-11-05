@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parameters</title>
+<style>
+  :root {
+    --bg: #2b2f36;
+    --surface: #343941;
+    --line: #444a53;
+    --text: #e6e8eb;
+    --muted: #a3aab4;
+    --accent: #4fa3e0;
+    --error: #f08a7e;
+    --error-bg: #4a2f2d;
+    --warn: #d9a441;
+    --ok: #8fcf9a;
+    --input-bg: #23272d;
+    --btn-bg: #3d434c;
+    color-scheme: dark;
+  }
+  /* Fusion sends its active UI theme as data-theme; the media query covers the moment before. */
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f4f5f7; --surface: #ffffff; --line: #d6d9de; --text: #1f2328; --muted: #5c6470;
+      --accent: #1f6fb2; --error: #b3261e; --error-bg: #fbe9e7; --warn: #9a6700; --ok: #2e7d32;
+      --input-bg: #ffffff; --btn-bg: #e8eaed;
+      color-scheme: light;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f5f7; --surface: #ffffff; --line: #d6d9de; --text: #1f2328; --muted: #5c6470;
+    --accent: #1f6fb2; --error: #b3261e; --error-bg: #fbe9e7; --warn: #9a6700; --ok: #2e7d32;
+    --input-bg: #ffffff; --btn-bg: #e8eaed;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: flex; flex-direction: column;
+  }
+  header { padding: 10px 12px 8px; border-bottom: 1px solid var(--line); }
+  .doc { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #filter {
+    margin-top: 8px; width: 100%; padding: 5px 8px; border-radius: 4px;
+    border: 1px solid var(--line); background: var(--input-bg); color: var(--text); font: inherit;
+  }
+  #health:empty { display: none; }
+  #health {
+    margin: 8px 12px 0; padding: 6px 8px; border-radius: 4px; font-size: 12px;
+    background: var(--error-bg); color: var(--error); border: 1px solid var(--error);
+  }
+  #health.warn { background: transparent; color: var(--warn); border-color: var(--warn); }
+  #status { padding: 6px 12px 0; font-size: 12px; color: var(--muted); }
+  #status:empty { display: none; }
+  #status.error { color: var(--error); }
+  #status.ok { color: var(--ok); }
+  main { flex: 1; min-height: 120px; overflow-y: auto; padding: 4px 0 8px; }
+  .empty { padding: 16px 12px; color: var(--muted); }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li { padding: 6px 12px; border-bottom: 1px solid var(--line); }
+  li.unused label { color: var(--muted); }
+  .row { display: flex; align-items: center; gap: 4px; }
+  label { flex: 1 1 auto; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+  .star { color: var(--accent); font-weight: normal; }
+  input.expr {
+    flex: 0 0 104px; width: 104px; padding: 4px 6px; border-radius: 4px;
+    border: 1px solid var(--line); background: var(--input-bg); color: var(--text);
+    font: 12px/1.3 ui-monospace, Menlo, monospace; text-align: right;
+  }
+  input.expr.dirty { border-color: var(--accent); }
+  input.expr.invalid { border-color: var(--error); }
+  input:disabled, button:disabled { opacity: .5; }
+  button.step, button.reset {
+    flex: 0 0 22px; width: 22px; height: 24px; padding: 0; border-radius: 4px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--btn-bg); color: var(--text); font: 13px/1 inherit;
+  }
+  button.reset { color: var(--accent); }
+  button.reset[hidden] { display: block; visibility: hidden; }
+  button:disabled { cursor: default; }
+  .sub { margin-top: 2px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+  .sub.computed { text-align: right; font-size: 11px; margin-top: 1px; }
+  /* Compact by default: one line of comment; the full comment and what it drives show on hover or focus. */
+  .sub.comment { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .drives { font-size: 11px; display: none; }
+  .drives.none { color: var(--warn); display: block; }
+  li:hover .sub.comment, li:focus-within .sub.comment { white-space: normal; }
+  li:hover .drives, li:focus-within .drives { display: block; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  footer { border-top: 1px solid var(--line); background: var(--surface); padding: 0 12px 8px; max-height: 55%; overflow-y: auto; }
+  details { border-bottom: 1px solid var(--line); padding: 6px 0; }
+  details:last-of-type { border-bottom: 0; }
+  summary {
+    cursor: pointer; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--muted); padding: 2px 0; list-style-position: inside;
+  }
+  summary .peek { text-transform: none; letter-spacing: 0; font-weight: normal; margin-left: 6px; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 6px 0 0; font-size: 12px; }
+  dt { color: var(--muted); }
+  dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+  .hint { margin-top: 6px; color: var(--muted); font-size: 11px; }
+  .export .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+  .export select, .export button {
+    width: 100%; padding: 4px 6px; border-radius: 4px; font: inherit; font-size: 12px;
+    border: 1px solid var(--line); background: var(--input-bg); color: var(--text);
+  }
+  .export button {
+    grid-column: 1 / -1; background: var(--accent); border-color: var(--accent); color: #fff;
+    font-weight: 600; cursor: pointer;
+  }
+  #report { margin-top: 6px; font-size: 12px; }
+  #report .path { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+  #report .facts { margin: 4px 0; }
+  .finding { margin-top: 6px; padding-left: 8px; border-left: 3px solid var(--line); }
+  .finding.blocking { border-color: var(--error); }
+  .finding.warning { border-color: var(--warn); }
+  .finding .sev { font-weight: 600; text-transform: capitalize; }
+  .finding .fix { color: var(--muted); }
+  .clean { color: var(--ok); }
+  .err { color: var(--error); }
+  @media (prefers-reduced-motion: no-preference) {
+    input.expr, button { transition: border-color .12s ease, background-color .12s ease; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="doc" id="doc">Loading…</div>
+  <input id="filter" type="search" placeholder="Filter parameters" aria-label="Filter parameters" autocomplete="off">
+</header>
+<div id="health" role="alert"></div>
+<div id="status" role="status" aria-live="polite"></div>
+<main id="main"><p class="empty">Loading parameters…</p></main>
+<footer>
+  <details id="sec-model">
+    <summary>Model<span class="peek" id="model-peek"></span></summary>
+    <dl id="model"><dt>Bodies</dt><dd>—</dd></dl>
+    <div class="hint">Enter applies, Esc reverts. −/+ step 1 (Shift 10, Alt 0.1). ↺ restores the value from when the panel opened. Cmd+Z undoes a change.</div>
+  </details>
+  <details id="sec-export" class="export">
+    <summary>Print-lab check</summary>
+    <div class="controls">
+      <select id="project" aria-label="print-lab project"></select>
+      <select id="orient" aria-label="print orientation">
+        <option value="upright">Upright (top +Y up)</option>
+        <option value="flat">Flat (as modelled)</option>
+      </select>
+      <button id="export" type="button">Export &amp; check</button>
+    </div>
+    <div id="report" aria-live="polite"></div>
+  </details>
+</footer>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+let state = null;
+let pendingField = null;
+let exporting = false;
+const originals = {}; // design name -> {param: expression when first seen this session}
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+const PREFS_KEY = "paramsPanel.prefs";
+function loadPrefs() {
+  try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; } catch { return {}; }
+}
+function savePrefs(patch) {
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify({ ...loadPrefs(), ...patch })); }
+  catch { /* storage unavailable: preferences just aren't remembered */ }
+}
+
+function send(action, data) {
+  if (!window.adsk || typeof window.adsk.fusionSendData !== "function") {
+    return Promise.reject(new Error("Fusion bridge not ready"));
+  }
+  return Promise.resolve(window.adsk.fusionSendData(action, JSON.stringify(data || {})))
+    .then((text) => (text ? JSON.parse(text) : null));
+}
+
+function setStatus(text, kind) {
+  const s = $("status");
+  s.textContent = text || "";
+  s.className = kind || "";
+}
+
+function render(next) {
+  if (!next) return;
+  if (next.pending) { pendingField = next.field; markPending(); return; }
+  state = next;
+  pendingField = null;
+  if (state.theme) document.documentElement.dataset.theme = state.theme;
+  $("doc").textContent = state.design || "No design open";
+  if (state.design && !originals[state.design]) {
+    originals[state.design] = Object.fromEntries((state.params || []).map((p) => [p.name, p.expression]));
+  }
+  if (state.design) {
+    for (const p of state.params || []) {
+      if (!(p.name in originals[state.design])) originals[state.design][p.name] = p.expression;
+    }
+  }
+  if (state.error) setStatus(state.error, "error");
+  else if (state.message) setStatus(state.message, "ok");
+  else if (state.busy) setStatus("A command is open — finish or cancel it to edit.", "");
+  else setStatus("", "");
+  renderHealth();
+  renderParams();
+  renderModel();
+  renderProjects();
+  if (state.error && state.field) {
+    const input = fieldInput(state.field);
+    if (input) { input.classList.add("invalid"); input.focus(); }
+  }
+}
+
+function fieldInput(name) {
+  return document.querySelector(`input.expr[data-name="${CSS.escape(name || "")}"]`);
+}
+
+function renderHealth() {
+  const box = $("health");
+  const pr = state.problems || { errors: [], warnings: [] };
+  if (pr.errors && pr.errors.length) {
+    const n = pr.errors.length;
+    box.className = "";
+    box.textContent = `${n} timeline step${n > 1 ? "s" : ""} failed: ${pr.errors.join(", ")}. ` +
+      "The model is broken — undo the last change (Cmd+Z) or press ↺.";
+  } else if (pr.warnings && pr.warnings.length) {
+    box.className = "warn";
+    box.textContent = "Timeline warnings: " + pr.warnings.join(", ") + ".";
+  } else {
+    box.className = "";
+    box.textContent = "";
+  }
+}
+
+const NUMBER_RE = /^\s*(-?\d+(?:\.\d+)?)\s*([A-Za-z°]*)\s*$/;
+function stepped(expression, delta) {
+  const m = NUMBER_RE.exec(expression);
+  if (!m) return null;
+  const decimals = Math.max((m[1].split(".")[1] || "").length, delta % 1 ? 1 : 0);
+  const v = (parseFloat(m[1]) + delta).toFixed(decimals);
+  return m[2] ? `${v} ${m[2]}` : v;
+}
+function stepSize(e) { return e.shiftKey ? 10 : e.altKey ? 0.1 : 1; }
+
+function renderParams() {
+  const main = $("main");
+  const active = document.activeElement;
+  const keepFocus = active && active.dataset && active.dataset.name ? [active.dataset.name, active.className] : null;
+  const drafts = {};
+  main.querySelectorAll("input.expr.dirty").forEach((i) => { drafts[i.dataset.name] = i.value; });
+
+  if (!state.design) { main.replaceChildren(el("p", "empty", "Open a design to see its parameters.")); return; }
+  const params = state.params || [];
+  if (!params.length) {
+    main.replaceChildren(el("p", "empty", "No user parameters yet. Add one in Modify › Change Parameters."));
+    return;
+  }
+  const q = $("filter").value.trim().toLowerCase();
+  const shown = params
+    .filter((p) => !q || p.name.toLowerCase().includes(q) || (p.comment || "").toLowerCase().includes(q))
+    .sort((a, b) => (b.favorite - a.favorite));
+  if (!shown.length) { main.replaceChildren(el("p", "empty", "No parameters match the filter.")); return; }
+
+  const orig = originals[state.design] || {};
+  const ul = el("ul");
+  for (const p of shown) {
+    const li = el("li");
+    const id = "p-" + p.name;
+    const drives = p.drives || [];
+    if (!drives.length) li.classList.add("unused");
+    const row = el("div", "row");
+    const label = el("label", "", p.name);
+    label.htmlFor = id;
+    if (p.favorite) {
+      const star = el("span", "star", " ★");
+      star.setAttribute("aria-label", "favorite");
+      label.append(star);
+    }
+    const canStep = NUMBER_RE.test(p.expression);
+    const minus = el("button", "step", "−");
+    const plus = el("button", "step", "+");
+    for (const [b, sign] of [[minus, -1], [plus, 1]]) {
+      b.type = "button"; b.dataset.name = p.name;
+      b.setAttribute("aria-label", `${sign < 0 ? "Decrease" : "Increase"} ${p.name}`);
+      b.title = `${sign < 0 ? "−" : "+"}1 (Shift ×10, Alt ×0.1)`;
+      b.disabled = !!state.busy || !canStep;
+      b.addEventListener("click", (e) => {
+        const next = stepped(p.expression, sign * stepSize(e));
+        if (next) submit(p.name, next);
+      });
+    }
+    const input = el("input", "expr");
+    input.id = id; input.type = "text"; input.spellcheck = false;
+    input.dataset.name = p.name; input.dataset.saved = p.expression;
+    input.value = p.name in drafts ? drafts[p.name] : p.expression;
+    if (p.name in drafts) input.classList.add("dirty");
+    input.disabled = !!state.busy;
+    const described = [];
+    input.addEventListener("input", () => {
+      input.classList.toggle("dirty", input.value !== input.dataset.saved);
+      input.classList.remove("invalid");
+    });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); apply(input); }
+      else if (e.key === "Escape") {
+        input.value = input.dataset.saved; input.classList.remove("dirty", "invalid");
+        setStatus("", "");
+      } else if ((e.key === "ArrowUp" || e.key === "ArrowDown") && NUMBER_RE.test(input.value)) {
+        e.preventDefault();
+        input.value = stepped(input.value, (e.key === "ArrowUp" ? 1 : -1) * stepSize(e));
+        input.classList.toggle("dirty", input.value !== input.dataset.saved);
+      }
+    });
+    input.addEventListener("change", () => apply(input));
+    const reset = el("button", "reset", "↺");
+    reset.type = "button"; reset.dataset.name = p.name;
+    const original = orig[p.name];
+    reset.hidden = original === undefined || original === p.expression;
+    reset.title = `Back to ${original}`;
+    reset.setAttribute("aria-label", `Reset ${p.name} to ${original}`);
+    reset.disabled = !!state.busy;
+    reset.addEventListener("click", () => submit(p.name, original));
+    row.append(label, minus, input, plus, reset);
+    li.append(row);
+    // Show the computed value only for formulas; for a plain number it just repeats the field.
+    if (p.value && !NUMBER_RE.test(p.expression)) {
+      li.append(el("div", "sub computed", "= " + p.value));
+    }
+    if (p.comment) {
+      const c = el("div", "sub comment", p.comment);
+      c.title = p.comment;
+      c.id = id + "-c"; described.push(c.id);
+      li.append(c);
+    }
+    const d = el("div", "sub drives" + (drives.length ? "" : " none"),
+      drives.length ? "Drives: " + drives.join(", ") : "Not used by the model — changing it does nothing");
+    d.id = id + "-d"; described.push(d.id);
+    li.append(d);
+    input.setAttribute("aria-describedby", described.join(" "));
+    ul.append(li);
+  }
+  main.replaceChildren(ul);
+  if (keepFocus) {
+    const sel = keepFocus[1].includes("expr") ? "input.expr" : keepFocus[1].includes("reset") ? "button.reset" : null;
+    const again = sel && document.querySelector(`${sel}[data-name="${CSS.escape(keepFocus[0])}"]`);
+    if (again && !again.disabled) again.focus();
+  }
+}
+
+function renderModel() {
+  const m = state.model || { bodies: 0 };
+  const rows = [["Bodies", String(m.bodies || 0)]];
+  if (m.bodies) {
+    rows.push(["Size", m.size_mm.map((v) => v.toFixed(1)).join(" × ") + " mm"]);
+    rows.push(["Volume", m.volume_cm3.toFixed(2) + " cm³"]);
+    rows.push(["PLA, if solid", "≈ " + m.pla_g.toFixed(1) + " g"]);
+  }
+  $("model").replaceChildren(...rows.flatMap(([k, v]) => [el("dt", "", k), el("dd", "", v)]));
+  $("model-peek").textContent = m.bodies ? `${m.volume_cm3.toFixed(2)} cm³` : "";
+}
+
+function renderProjects() {
+  const select = $("project");
+  const projects = state.projects || [];
+  const current = select.value || loadPrefs().project || "hex-tile";
+  select.replaceChildren(...projects.map((name) => {
+    const o = el("option", "", name); o.value = name; return o;
+  }));
+  if (projects.includes(current)) select.value = current;
+  select.disabled = !projects.length;
+  const broken = state.problems && state.problems.errors && state.problems.errors.length;
+  if (!exporting) $("export").disabled = !projects.length || !state.design || !(state.model && state.model.bodies) || !!broken;
+  $("export").title = broken ? "Fix the failed timeline steps first" : "";
+  if (!projects.length && !$("report").textContent) {
+    $("report").replaceChildren(el("p", "err", "print-lab checkout not found next to this add-in."));
+  }
+}
+
+function renderReport(r) {
+  const box = $("report");
+  if (!r) { box.replaceChildren(el("p", "err", "No answer from Fusion.")); return; }
+  const parts = [];
+  if (r.export_error) parts.push(el("p", "err", r.export_error));
+  if (r.relative || r.path) parts.push(el("div", "path", "Saved: " + (r.relative || r.path)));
+  if (r.facts) {
+    const f = r.facts;
+    const bits = [];
+    if (f.extents) bits.push(f.extents.map((v) => Number(v).toFixed(1)).join(" × ") + " mm");
+    if (f.volume_cm3 != null) bits.push(Number(f.volume_cm3).toFixed(2) + " cm³");
+    bits.push(f.watertight ? "closed mesh" : "NOT closed");
+    if (f.bed_contact_mm2 != null) bits.push("bed contact " + Math.round(f.bed_contact_mm2) + " mm²");
+    parts.push(el("div", "facts", bits.join(" · ")));
+  }
+  if (r.findings) {
+    if (!r.findings.length) parts.push(el("p", "clean", "No findings."));
+    for (const f of r.findings) {
+      const d = el("div", "finding " + (f.severity || ""));
+      const head = el("div");
+      head.append(el("span", "sev", f.severity || "note"), document.createTextNode(" · " + (f.where || "")));
+      d.append(head, el("div", "", f.why || ""));
+      if (f.fix) d.append(el("div", "fix", "Fix: " + f.fix));
+      parts.push(d);
+    }
+  }
+  box.replaceChildren(...parts);
+}
+
+function runExport() {
+  if (exporting) return;
+  exporting = true;
+  const button = $("export");
+  button.disabled = true;
+  button.textContent = "Exporting and checking…";
+  $("report").replaceChildren(el("p", "", "Exporting the visible bodies and running lab inspect…"));
+  send("export", { project: $("project").value, upright: $("orient").value === "upright" })
+    .then(renderReport)
+    .catch((err) => renderReport({ export_error: "Could not reach Fusion: " + err.message }))
+    .finally(() => {
+      exporting = false;
+      button.textContent = "Export & check";
+      if (state) renderProjects();
+    });
+}
+
+function markPending() {
+  document.querySelectorAll(`[data-name="${CSS.escape(pendingField || "")}"]`).forEach((e) => { e.disabled = true; });
+  setStatus("Applying " + pendingField + "…", "");
+}
+
+function submit(name, expression) {
+  if (pendingField || !state || state.busy) return;
+  send("set", { name, expression })
+    .then(render)
+    .catch((err) => setStatus("Could not reach Fusion: " + err.message, "error"));
+}
+
+function apply(input) {
+  const value = input.value.trim();
+  if (value === input.dataset.saved || pendingField) return;
+  if (!value) { input.classList.add("invalid"); setStatus("Enter a value.", "error"); return; }
+  submit(input.dataset.name, value);
+}
+
+window.fusionJavaScriptHandler = {
+  handle(action, data) {
+    try {
+      if (action === "state") render(JSON.parse(data));
+    } catch (err) {
+      setStatus("Panel error: " + err.message, "error");
+    }
+    return "OK";
+  },
+};
+
+$("filter").addEventListener("input", () => { if (state) renderParams(); });
+$("export").addEventListener("click", runExport);
+$("project").addEventListener("change", () => savePrefs({ project: $("project").value }));
+$("orient").addEventListener("change", () => savePrefs({ orient: $("orient").value }));
+for (const id of ["sec-model", "sec-export"]) {
+  const d = $(id);
+  const saved = loadPrefs()[id];
+  if (saved !== undefined) d.open = saved;
+  d.addEventListener("toggle", () => savePrefs({ [id]: d.open }));
+}
+(() => { const p = loadPrefs(); if (p.orient) $("orient").value = p.orient; })();
+
+(function waitForBridge(tries) {
+  if (window.adsk && typeof window.adsk.fusionSendData === "function") {
+    send("ready").then(render).catch((err) => setStatus("Could not reach Fusion: " + err.message, "error"));
+  } else if (tries > 0) {
+    setTimeout(() => waitForBridge(tries - 1), 100);
+  } else {
+    setStatus("Fusion bridge not available. Reopen the panel.", "error");
+    $("main").replaceChildren(el("p", "empty", "Not connected to Fusion."));
+  }
+})(50);
+</script>
+</body>
+</html>
