@@ -32,6 +32,7 @@ _ui = None
 _handlers = []
 _pending = {}  # name -> expression waiting for the Apply command
 _last_result = {}  # message/error/field from the Apply command, sent when it terminates
+_lab_status = {}  # project -> its last `lab status` reading, refreshed on open, project change and lab actions
 _project = {'name': 'hex-tile'}  # the panel's chosen print-lab project; its design-rules.json sets the limits
 
 
@@ -135,6 +136,8 @@ def _state(message=None, error=None, field=None):
         'projects': _lab_projects(),
         'bases': _lab_bases(),
         'project': _project['name'],
+        'waiting': _lab_status.get(_project['name']),
+        'history': _history(_project['name'], design),
         'suggested_name': _suggested_name(),
         'message': message,
         'error': error,
@@ -333,6 +336,45 @@ def _lab_bases():
     return out
 
 
+def _refresh_lab_status(project):
+    """Read `lab status --json --no-printer` (read-only) into the cache: what the lab is waiting for."""
+    uv = _uv()
+    if not uv or project not in _lab_projects():
+        return
+    try:
+        done = _run([uv, 'run', 'lab', '--project', project, 'status', '--json', '--no-printer'], 60)
+        st = json.loads(done.stdout)
+    except (subprocess.TimeoutExpired, ValueError):
+        _lab_status[project] = {'error': 'lab status did not answer.'}
+        return
+    q = st.get('question') or {}
+    needs = sorted(st.get('needs') or [], key=lambda n: n.get('urgency', 9))
+    _lab_status[project] = {
+        'question': {'id': q.get('id'), 'text': q.get('question')} if q.get('id') else None,
+        'needs': [{k: n.get(k) for k in ('id', 'action', 'why', 'command')} for n in needs],
+        'problems': st.get('problems') or [],
+    }
+
+
+def _history(project, design):
+    """Which registered source's parameters the open design matches, or the nearest one and what differs."""
+    sources = LAB_ROOT / 'projects' / project / 'sources'
+    mine = {p.name: p.expression for p in design.userParameters}
+    best = None
+    for f in sorted(sources.glob('*.params.json')) if sources.is_dir() else []:
+        try:
+            theirs = {q['name']: q['expression'] for q in json.loads(f.read_text()).get('parameters', [])}
+        except (OSError, ValueError, KeyError, TypeError, AttributeError):
+            continue
+        if not set(theirs) & set(mine):
+            continue
+        diffs = ['{} {} → {}'.format(n, theirs[n], mine[n]) for n in mine if n in theirs and theirs[n] != mine[n]]
+        diffs += ['{} new'.format(n) for n in mine if n not in theirs]
+        if best is None or len(diffs) < len(best['diffs']):
+            best = {'source': 'sources/' + f.name.replace('.params.json', '.3mf'), 'diffs': diffs}
+    return best
+
+
 def _suggested_name():
     version = _doc_version()
     # Fusion's version is the save count; the document's own name may already carry a design version (v4).
@@ -433,6 +475,8 @@ class _Incoming(adsk.core.HTMLEventHandler):
             data = json.loads(html_args.data) if html_args.data else {}
             if data.get('project') in _lab_projects():
                 _project['name'] = data['project']
+            if html_args.action == 'ready' or data.get('lab_status'):
+                _refresh_lab_status(_project['name'])
             if html_args.action in ('ready', 'refresh'):
                 html_args.returnData = json.dumps(_state())
             elif html_args.action == 'set':
@@ -440,6 +484,7 @@ class _Incoming(adsk.core.HTMLEventHandler):
             elif html_args.action == 'export':
                 try:
                     result = _export_and_check(data.get('project'), data.get('upright'))
+                    _refresh_lab_status(_project['name'])
                 except Exception as e:
                     result = {'export_error': 'Export failed: {}'.format(e)}
                 html_args.returnData = json.dumps(result)
@@ -447,6 +492,7 @@ class _Incoming(adsk.core.HTMLEventHandler):
                 try:
                     result = _send_to_lab(data.get('project'), data.get('base'), data.get('name'), data.get('note'),
                                           data.get('upright'))
+                    _refresh_lab_status(_project['name'])
                 except Exception as e:
                     result = {'export_error': 'Send to lab failed: {}'.format(e)}
                 html_args.returnData = json.dumps(result)
