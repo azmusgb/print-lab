@@ -323,8 +323,9 @@ def cmd_exp_check(args) -> int:
 def cmd_exp_approve(args) -> int:
     from lab.loop.guards import approve
     e = approve(_paths(args), args.id, args.reason)
-    print(f"Approved {e['approval']['build_id']} for: {', '.join(e['approval']['approved_reasons'])}. "
-          f"Start it with `lab exp start {args.id}` when you send it.")
+    print(f"Approved {e['approval']['build_id']} for: {', '.join(e['approval']['approved_reasons'])}.\n"
+          f"The next `lab pull` stages it once the printer has been idle 10 minutes; Start on Pi Hub then records "
+          f"the start itself. Only if you send it from Bambu Connect, run `lab exp start {args.id}` once it's printing.")
     return 0
 
 
