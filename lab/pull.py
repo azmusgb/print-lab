@@ -82,6 +82,49 @@ def _act(paths: ProjectPaths, kind: str, eid: str, run_seen, payload: dict) -> s
     return f"{eid} abandoned."
 
 
+ONE_TAP_WINDOW = timedelta(days=7)  # Pi Hub stamps the tap with its own clock; a week covers a Mac asleep for days
+BUILD_ID = re.compile(r"BLD-\d{3,}-\d{2,}")
+
+
+def _one_tap(paths: ProjectPaths, eid: str, payload: dict, by) -> str:
+    """Pi Hub's Start of a staged build (one tap to print, S6): open the run as `lab exp start` would, at the tap time,
+    and mark who started it. The print has already begun, so if the print log linked it first (a run is open on the
+    same build), that run is marked instead of opening a second."""
+    from lab.records.store import record_lock
+    from lab.loop.commands import save_experiment
+    build, item, lfile = payload.get("build"), payload.get("queue_item"), payload.get("library_file")
+    if not (isinstance(build, str) and BUILD_ID.fullmatch(build)):
+        raise ValueError("A one-tap start must name its build.")
+    if not all(isinstance(x, int) and not isinstance(x, bool) and x > 0 for x in (item, lfile)):
+        raise ValueError("A one-tap start must name its queue item and library file.")
+    try:
+        t = datetime.fromisoformat(str(payload.get("tapped_at")))
+    except ValueError:
+        t = None
+    n = datetime.now(timezone.utc)
+    if t is None or t.tzinfo is None or not n - ONE_TAP_WINDOW <= t <= n + timedelta(minutes=1):
+        raise ValueError("A one-tap start must carry Pi Hub's tap time from the last week.")
+    tapped = t.astimezone(timezone.utc).isoformat(timespec="seconds")
+    e = load_experiment(paths, eid)
+    warn = []
+    if e["status"] != "printing":
+        e, warn = start(paths, eid, started_at=tapped, started_from="one-tap")
+    with record_lock(paths.locks, eid, f"lab pull: one-tap {eid}"):
+        e = load_experiment(paths, eid)
+        run = (e.get("print_runs") or [{}])[-1]
+        if run.get("build_id") != build:
+            raise ValueError(f"{eid}'s latest run is on {run.get('build_id') or 'no build'}, not {build}; "
+                             "link the print by hand with `lab exp link`.")
+        if run.get("started_by"):
+            return f"{eid} {run['id']} was already marked as started from Pi Hub."
+        run["started_by"] = "pi-hub one-tap"
+        run.setdefault("started_from", "one-tap")
+        run["one_tap"] = {"device": str(by or "")[:80] or None, "queue_item": item, "library_file": lfile,
+                          "tapped_at": tapped}
+        save_experiment(paths, e)
+    return " ".join([f"{eid} printing as {run['id']}, started from Pi Hub" + (f" ({by})" if by else "") + ".", *warn])
+
+
 def _post_result(target: Target, project: str, req_id: str, status: str, message: str, timeout: float) -> None:
     """Tell the target what happened. A failure is printed and left: the request is on disk as handled, so the next
     run answers it `duplicate` and the target stops showing it as pending."""
@@ -199,7 +242,7 @@ def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]
             run_id = req.get("run")
             payload = req.get("payload") or {}
 
-            bad = (kind in ("verdict", "start", "approve", "abandon", "qualification") and not (isinstance(eid, str) and EXP_ID.fullmatch(eid))) \
+            bad = (kind in ("verdict", "start", "approve", "abandon", "qualification", "one_tap") and not (isinstance(eid, str) and EXP_ID.fullmatch(eid))) \
                 or (run_id is not None and not (isinstance(run_id, str) and RUN_ID.fullmatch(run_id)))
             if bad:
                 status, message = "refused", f"Not an experiment id or run id: {str(eid)[:40]!r}, {str(run_id)[:40]!r}."
@@ -270,6 +313,11 @@ def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]
                 try:
                     rec = apply_qualification(paths, eid, payload, request_id=req_id)
                     status, message = "applied", qualification_message(rec)
+                except ValueError as e:
+                    status, message = "refused", str(e)
+            elif kind == "one_tap":
+                try:
+                    status, message = "applied", _one_tap(paths, eid, payload, req.get("by"))
                 except ValueError as e:
                     status, message = "refused", str(e)
             elif kind in ("start", "approve", "abandon"):
@@ -571,6 +619,18 @@ def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]
         pass
     finally:
         lock_fd.close()  # releases the lock
+    if seen.get("entries") is not None:  # staging needs the print log this pull read: idle for 10 minutes
+        from lab.loop.stage import stage_waiting
+        failed = dict(_load_state(pdir).get("stage_failed") or {})
+        try:
+            staged = stage_waiting(ProjectPaths(pdir), seen["entries"], failed)
+        except Exception as e:  # staging must never stop the rest of the pull
+            staged = [{"id": "stage", "status": "error", "message": f"staging failed: {e}"}]
+        for ev in staged:
+            if ev["status"] == "error":
+                print(f"lab pull: {ev['message']}", file=sys.stderr)
+        applied += staged
+        _save_state(pdir, {**_load_state(pdir), "stage_failed": failed})
     event = check_active_print(ProjectPaths(pdir), localai_base(base), timeout)  # telemetry is Local AI's
     entries = seen.get("entries")
     outside_changed = False
