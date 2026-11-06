@@ -1,0 +1,85 @@
+{
+  "about": "Rules a generated hex-tile design must keep (lab/design/constraints.py). Unlike design-rules.json, which only warns in the Fusion panel, a failed 'block' constraint drops a design at the gate; 'warn' shows with it. Each names its evidence; a verdict that contradicts one updates or retires it.",
+  "constraints": [
+    {
+      "id": "skin-gap",
+      "family": "faceted_hex",
+      "check": "min",
+      "parameter": "edge_depth",
+      "min": "skin_axial + land_thickness + 1.6 mm",
+      "severity": "block",
+      "reason": "nothing joins or touches within 1.6 mm of the skin",
+      "source": "hex-tile skill, 'Keep the skin clear'; the same limit as design-rules.json"
+    },
+    {
+      "id": "skin-two-lines",
+      "family": "faceted_hex",
+      "check": "min",
+      "parameter": "skin_axial",
+      "min": "0.9 mm",
+      "severity": "block",
+      "reason": "two printed lines, so the skin prints as a real wall",
+      "source": "lab/checks/feature_width.py (0.42 mm lines, 0.4 nozzle)"
+    },
+    {
+      "id": "wall-two-lines",
+      "family": "faceted_hex",
+      "check": "min",
+      "parameter": "perimeter_wall",
+      "min": "0.9 mm",
+      "severity": "block",
+      "reason": "two printed lines, so the side walls print as real walls",
+      "source": "lab/checks/feature_width.py"
+    },
+    {
+      "id": "land-two-lines",
+      "family": "faceted_hex",
+      "check": "min",
+      "parameter": "land_thickness",
+      "min": "0.9 mm",
+      "severity": "block",
+      "reason": "two printed lines, so the land prints as a real wall",
+      "source": "lab/checks/feature_width.py"
+    },
+    {
+      "id": "roof-two-lines",
+      "family": "faceted_hex",
+      "check": "min",
+      "parameter": "roof_wall",
+      "min": "0.9 mm",
+      "severity": "block",
+      "reason": "two printed lines, so the roof plate prints as a real wall",
+      "source": "lab/checks/feature_width.py"
+    },
+    {
+      "id": "no-infill-behind-face",
+      "family": "faceted_hex",
+      "check": "infill_bands",
+      "min_area_mm2": 20,
+      "max_band_mm": 3.0,
+      "ends": "perimeter_wall + 0.2 mm",
+      "severity": "block",
+      "reason": "sparse infill close behind the face likely prints through as dashes and diagonal stripes; a narrow band where two walls meet at an angle is allowed and left to the slice risk predictor",
+      "source": "E-026 hypothesis and AI-photo reading (RIFT top band, 15.6 mm of grid behind the face); 5 Nov section analysis: v4's solid roof left a ~10 mm band, v6's roof plate meeting the skin leaves 2.2 mm"
+    },
+    {
+      "id": "top-wall-all-shells",
+      "family": "faceted_hex",
+      "check": "max",
+      "parameter": "perimeter_wall",
+      "max": "(top_shell_layers + bottom_shell_layers) * layer_height",
+      "severity": "warn",
+      "reason": "the top wall over the hollow roof prints solid only when the top and bottom shell layers fill it; otherwise sparse infill sits just below the top edge (raise bottom_shell_layers, or thin the wall)",
+      "source": "5 Nov analysis: a 2.4 mm wall under 5 top + 3 bottom shells at 0.2 mm leaves about 0.8 mm of sparse infill"
+    },
+    {
+      "id": "mark-on-land",
+      "family": "faceted_hex",
+      "check": "mark_clearance",
+      "min_mm": 1.0,
+      "severity": "block",
+      "reason": "the lettering stays on the land, clear of its edges and the open top",
+      "source": "Fusion lettering, 5 Nov 2026 (letters 2.7 mm clear at land_width 17.7, 1.4 mm at 15, 0.9 mm at 14)"
+    }
+  ]
+}
