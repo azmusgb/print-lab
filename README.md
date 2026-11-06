@@ -44,4 +44,4 @@ starts use that same lock for eligibility checks and run creation, so a second s
 Tests disable default Bambuddy access and refuse non-loopback socket connections and DNS lookups. Loopback fake
 servers and mocked clients remain available. `uv run pytest --live-network` explicitly enables live networking;
 record isolation still applies. Run live checks only in an environment configured for the intended services.
-The full suite also needs Bambu Studio 02.08.02.61, OpenSCAD 2025+ and macOS photo utilities.
+The full suite also needs Bambu Studio 02.09.01.70, OpenSCAD 2025+ and macOS photo utilities.

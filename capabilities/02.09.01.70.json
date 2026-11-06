@@ -1,0 +1,78 @@
+{
+  "CAP-BAMBU-HEIGHT-RANGE-inner_wall_speed": {
+    "name": "CAP-BAMBU-HEIGHT-RANGE-inner_wall_speed",
+    "passed": true,
+    "at": "2026-11-06T04:31:58+00:00",
+    "bambu_studio": "02.09.01.70",
+    "evidence": {
+      "asked": [
+        60,
+        120
+      ],
+      "boundary_mm": 6.0,
+      "first_layer_at_high": 6.2,
+      "below": [
+        60
+      ],
+      "above": [
+        120
+      ]
+    }
+  },
+  "CAP-BAMBU-HEIGHT-RANGE-outer_wall_speed": {
+    "name": "CAP-BAMBU-HEIGHT-RANGE-outer_wall_speed",
+    "passed": false,
+    "at": "2026-11-06T04:32:00+00:00",
+    "bambu_studio": "02.09.01.70",
+    "evidence": {
+      "asked": [
+        60,
+        120
+      ],
+      "boundary_mm": 6.0,
+      "first_layer_at_high": null,
+      "below": [
+        60
+      ],
+      "above": [
+        67,
+        70,
+        73,
+        75,
+        78,
+        80,
+        83,
+        85,
+        87,
+        89,
+        91,
+        93,
+        95,
+        97,
+        99,
+        100,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109
+      ]
+    }
+  },
+  "CAP-TAB-ISOLATION": {
+    "name": "CAP-TAB-ISOLATION",
+    "passed": true,
+    "at": "2026-11-06T04:32:02+00:00",
+    "bambu_studio": "02.09.01.70",
+    "evidence": {
+      "judged_from_mm": 2.0,
+      "layers": 51,
+      "worst_time_pct": 0.01,
+      "speeds_identical": true,
+      "fan_identical": true
+    }
+  }
+}
