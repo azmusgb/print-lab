@@ -59,6 +59,22 @@ def cmd_design_gallery(args) -> int:
     return 0
 
 
+def cmd_design_choose(args) -> int:
+    from lab.cli import project_dir
+    from lab.design.choose import choose
+    from lab.records.project import ProjectPaths
+
+    e = choose(ProjectPaths(project_dir(args.project)), args.design, name=args.name, note=args.note)
+    if args.json:
+        print(json.dumps(e, indent=2))
+        return 0
+    print(f"Registered {e['path']} (from {e['derived_from']})\nChange  {e['change']}")
+    print(f"\nNext: uv run lab exp plan <question> \"<what it asks>\" --source {e['path']} "
+          f"--object {Path(e['path']).stem} --base {e['derived_from']} --factor … --values … --hypothesis … "
+          "--prediction …")
+    return 0
+
+
 def register(sub) -> None:
     s = sub.add_parser("design", help="make candidate models from a family, gated before anyone looks")
     ds = s.add_subparsers(dest="design_cmd", required=True)
@@ -74,6 +90,13 @@ def register(sub) -> None:
     m.add_argument("--json", action="store_true")
     m.add_argument("--project", default=argparse.SUPPRESS)
     m.set_defaults(fn=cmd_design_make)
+    c = ds.add_parser("choose", help="register a kept candidate as a source (lab variant add, with its parameters)")
+    c.add_argument("design", help="the design id from the gallery (a unique prefix is enough)")
+    c.add_argument("--name", help="the source's name (default <family>_s<seed>_<id>)")
+    c.add_argument("--note")
+    c.add_argument("--json", action="store_true")
+    c.add_argument("--project", default=argparse.SUPPRESS)
+    c.set_defaults(fn=cmd_design_choose)
     g = ds.add_parser("gallery", help="(re)write a run's gallery page")
     g.add_argument("run", nargs="?", help="the run id (designs/runs/<run>.json); the latest when left out")
     g.add_argument("--project", default=argparse.SUPPRESS)

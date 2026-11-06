@@ -90,9 +90,7 @@ def _candidate(paths: ProjectPaths, gate: dict, run: dict, shared: set[str]) -> 
         facts, risk = "", '<p class="note">Not sliced (made with --no-slice).</p>'
     warns = "".join(f'<li><span class="ui-chip ui-chip--warn">Warning</span><span>{escape(w)}</span></li>'
                     for w in gate.get("warnings", []) if w not in shared)
-    rel = f"projects/{paths.name}/designs/{gate['family']}/{did}/model.stl"
-    cmd = (f"uv run lab variant add --mesh {rel} --base {run['base'].removeprefix('sources/')} "
-           f"--name {gate['family']}_s{seed}_{did}")
+    cmd = f"uv run lab design choose {did}"
     return (f'<li class="cand" id="d-{did}">{svg}<h3>Seed {seed} <code>{did}</code></h3>{facts}{risk}'
             + (f'<ul class="warns">{warns}</ul>' if warns else "")
             + f'<div class="cmd"><code id="c-{did}">{escape(cmd)}</code>'

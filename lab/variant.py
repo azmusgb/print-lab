@@ -80,8 +80,9 @@ def change_line(params: dict | None, base_params: dict | None, base: str) -> str
 
 
 def add_variant(paths: ProjectPaths, *, mesh: Path, base: str, name: str, params: Path | None = None,
-                note: str | None = None, flat: bool = False) -> dict:
-    """Write and register sources/<name>.3mf; returns its sources.json entry. Nothing is left behind on failure."""
+                note: str | None = None, flat: bool = False, change: str | None = None) -> dict:
+    """Write and register sources/<name>.3mf; returns its sources.json entry. Nothing is left behind on failure.
+    `change` replaces the change line worked out from the parameters (a generated design says what made it)."""
     import trimesh
 
     from lab.adapters.threemf import load_object, write_print_3mf
@@ -111,7 +112,7 @@ def add_variant(paths: ProjectPaths, *, mesh: Path, base: str, name: str, params
     m = m if flat else upright(m)
     meta: dict = {"made_by": "lab variant add", "from": Path(mesh).name, "base": base}
     if p:
-        meta["design"] = {k: p[k] for k in ("document", "version") if k in p}
+        meta["design"] = {k: p[k] for k in ("document", "version", "family", "seed", "design") if k in p}
     try:
         write_print_3mf(base_path, [(name, m, PLATE_CENTRE)], out, meta)
         back = load_object(out, name)
@@ -122,7 +123,7 @@ def add_variant(paths: ProjectPaths, *, mesh: Path, base: str, name: str, params
         if p:
             atomic_write_json(side, p)
         new = {"path": rel, "sha256": sha256(out), "source": "derived", "derived_from": base,
-               "change": change_line(p, base_p, base), "added": now()}
+               "change": change or change_line(p, base_p, base), "added": now()}
         if p:
             new["params"] = f"sources/{side.name}"
         if note:
