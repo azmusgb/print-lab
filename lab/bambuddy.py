@@ -91,7 +91,7 @@ def archive(archive_id: int, timeout: float = 5.0) -> dict | None:
 
 # --- staging (A12): the only writes ---
 
-SUPPORTED_VERSION = "1.2.5.7"  # checked by the one-tap probe (spec 2026-11-06-one-tap-print-design.md)
+SUPPORTED_VERSION = "1.3.0"  # checked by the one-tap probe (spec 2026-11-06-one-tap-print-design.md)
 STAGING_FOLDER = "print-lab"
 WRITE_TIMEOUT = 60.0
 

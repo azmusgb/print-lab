@@ -19,7 +19,7 @@ from test_guards import built, edit, proj  # noqa: F401  (fixture)
 class FakeBambuddy:
     """The adapter's staging calls, in memory. `corrupt` makes the download differ from the upload."""
 
-    def __init__(self, ver="1.2.5.7", corrupt=False):
+    def __init__(self, ver="1.3.0", corrupt=False):
         self.ver, self.corrupt = ver, corrupt
         self.files, self.calls, self.next_id = {}, [], 1
 
@@ -65,7 +65,7 @@ def test_stage_uploads_the_checked_build_and_records_it(proj):
                  "folder": 7, "already": False}
     assert fake.files[1] == (proj.root / b["sliced"]).read_bytes()
     assert b["staged"]["library_file"] == 1 and b["staged"]["sha256"] == b["sliced_sha256"]
-    assert b["staged"]["bambuddy"] == "1.2.5.7" and b["staged"]["folder"] == 7
+    assert b["staged"]["bambuddy"] == "1.3.0" and b["staged"]["folder"] == 7
     # the lab name goes up as the file name, so the print-log entry links back to the build (one-print P2)
     assert bambuddy.parse_lab_name(r["file"].removesuffix(".gcode.3mf"))["build"] == b["id"]
 
@@ -141,8 +141,8 @@ def test_stage_refuses_a_sliced_file_changed_since_the_build(proj, monkeypatch):
 
 def test_stage_refuses_another_bambuddy_version(proj):
     eid = built(proj)
-    fake = FakeBambuddy(ver="1.3.0")
-    with pytest.raises(bambuddy.BambuddyError, match="1.3.0"):
+    fake = FakeBambuddy(ver="1.4.0")
+    with pytest.raises(bambuddy.BambuddyError, match="1.4.0"):
         stage(proj, eid, client=fake)
     assert fake.files == {}
 
@@ -191,7 +191,7 @@ class _Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.seen.append(("GET", self.path, self.headers.get("X-API-Key")))
         if self.path == "/api/v1/updates/version":
-            return self._send(200, {"version": self.store.get("version", "1.2.5.7")})
+            return self._send(200, {"version": self.store.get("version", "1.3.0")})
         if self.path == "/api/v1/library/folders/":
             return self._send(200, self.store.get("folders", [{"id": 3, "name": "print-lab", "parent_id": None}]))
         if self.path == "/api/v1/library/files/5/download":
@@ -227,7 +227,7 @@ def server(monkeypatch, tmp_path):
 def test_adapter_uploads_and_reads_back_the_same_bytes(server, tmp_path):
     f = tmp_path / "hex-tile_E-001_BLD-001-01.gcode.3mf"
     f.write_bytes(bytes(range(256)) * 10)
-    assert bambuddy.version() == "1.2.5.7"
+    assert bambuddy.version() == "1.3.0"
     folder = bambuddy.staging_folder()
     rec = bambuddy.upload(f, folder)
     assert folder == 3 and rec["id"] == 5
@@ -237,8 +237,8 @@ def test_adapter_uploads_and_reads_back_the_same_bytes(server, tmp_path):
 
 
 def test_adapter_refuses_another_version(server):
-    server.store["version"] = "1.3.0"
-    with pytest.raises(bambuddy.BambuddyError, match="1.3.0.*proven on 1.2.5.7"):
+    server.store["version"] = "1.4.0"
+    with pytest.raises(bambuddy.BambuddyError, match="1.4.0.*proven on 1.3.0"):
         bambuddy.version()
 
 
