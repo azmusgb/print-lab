@@ -21,21 +21,44 @@ that wasn't), only the owner starts a print, and nothing starts on a plate that 
 - Bambuddy can take a file and start it: `POST /api/v1/library/files/` (multipart upload), `POST /api/v1/queue/`
   (`library_file_id`, `printer_id`, `manual_start`, `confirm_outcome`, `require_previous_success`, `ams_mapping`, …),
   `POST /api/v1/queue/{item_id}/start`, and stop, pause, resume.
-- It has camera plate detection (`/printers/{id}/camera/plate-detection/calibrate`, reference images) and a
-  `plate_not_empty` notification; whether it gates a queued start on the X2D is **not yet verified**.
+- It has camera plate detection, but it **does not gate a start**: it runs in `on_print_start` and, if it sees objects,
+  *pauses* the print that already began (probe, below). On the X2D it is off and uncalibrated.
 - `/api/v1/printers/developer-mode-warnings` is empty: the X2D is reachable for control.
-- The print-lab API key can't make admin changes (settings, keys); whether it can upload and queue is **not yet
-  verified**. Pi Hub's key is the one the baseline lets act.
+- Both keys can upload, queue and start (probe, below). The print-lab key can't make admin changes (settings, keys).
+  Pi Hub's key is the one the baseline lets act.
 - Lab prints are recognised by name (`one-print` P2: `<project>_<E-nnn>_<BLD-nnn-nn>`), and `lab pull` already creates a
   run from a print-log entry the lab wasn't told about. A print started this way is recorded without `lab exp start`.
 - Bambuddy hashes the file the printer receives, so its `content_hash` never matched a lab artifact before (one-print).
   The staged file's identity has to be checked another way (decision S3).
 
+## Probe (6 Nov 2026, Bambuddy 1.2.5.7; PR 2)
+
+Nothing was queued or started; the printer was running the owner's print throughout.
+
+- **Scopes.** Each route checks its scope in a dependency before the handler runs, so a request with a nonexistent id
+  that returns 404 (not 403) proves the key holds the scope. Both the print-lab key (Mac) and Pi Hub's key (on the Pi)
+  got past: `POST /queue/` (`can_queue`), `POST /queue/{id}/start` (`can_queue`, Bambuddy's `QUEUE_UPDATE_*`), and
+  library download and delete (`can_manage_library`, which also covers upload). **So the Mac's key can start a print
+  today**; S1's "the Mac never starts" holds only by the lab's code until the owner removes *Queue* from the print-lab
+  key (Bambuddy › Settings › API keys; an admin change only the owner can make).
+- **The start path.** `POST /library/files/{id}/print` is gone (410: "Create a print queue item with POST /queue/").
+  Pi Hub adds a queue item with `manual_start: true`, then `POST /queue/{id}/start` clears the flag and the scheduler
+  sends it. An item added **without** `manual_start` is dispatched by the scheduler on its own, so Pi Hub always sets
+  it. Start returns 409 with the deficit when the assigned spool lacks the grams, unless `skip_filament_check`.
+- **The file round trip.** The lab created the library folder `print-lab` (id 1), uploaded
+  `hex-tile_E003_PR005.gcode.3mf` (187,972 bytes), and downloaded it back: same size, same sha256 (`52a4700d…`), so S3's
+  check works as written. Bambuddy reads the file's metadata on upload (objects, 2041 s, 9.35 g, filament slots). The
+  probe file was deleted after; delete moves a file to Bambuddy's trash.
+- **Plate detection.** `plate_detection_enabled` is false and the X2D has no reference images ("Not calibrated - please
+  calibrate with empty plate"). When enabled it checks the plate after the print starts and pauses if it sees objects.
+  S4's tick stays the gate; calibrating detection (owner, with an empty plate) adds a backstop that pauses a wrong
+  start within its first seconds.
+
 ## Decisions
 
 | # | Decision |
 |---|---|
-| S1 | **Two halves.** The Mac *stages* (uploads the checked file, never starts it); Pi Hub *starts* (the one printer-control path, owner-only, logs the device). No other app starts a print. |
+| S1 | **Two halves.** The Mac *stages* (uploads the checked file, never starts it); Pi Hub *starts* (the one printer-control path, owner-only, logs the device). No other app starts a print. The print-lab key keeps only *Read status* and *Manage library*, so Bambuddy enforces this, not just the lab's code (probe). |
 | S2 | **Only a build that passes `lab exp check` and is approved can be staged.** Staging re-runs the check, as `lab exp send` does today. |
 | S3 | **The file is proven, not trusted.** After the upload the lab downloads the library file back and compares its sha256 with the build's `sliced_sha256`; a mismatch deletes it and stages nothing. At start, Pi Hub confirms the queue item names that library file. |
 | S4 | **The start is one tap, never zero.** The owner opens "Ready to print" on the phone, sees what will print, ticks *Plate is clear and dry* and *Filament matches* (pre-filled from the AMS reading; a mismatch blocks), and presses **Start E-0nn**. Nothing starts from a notification button or on a schedule. |
@@ -100,6 +123,8 @@ Each PR: tests green, and anything touching the printer proven on the real one o
 
 - **A stale start.** A build rebuilt after staging, or a plate cleared in the sheet but not in fact. S3 and S5 catch the
   first; the second is the owner's tick, as pressing Print in Bambu Connect is today.
+- **A queue item that starts itself.** One added without `manual_start` is dispatched at once (probe). Pi Hub's adapter
+  always sets it, and a test with the fake Bambuddy fails if it doesn't.
 - **Bambuddy changes its API.** Every call is behind one adapter on each side, with its version checked
   (1.2.5.7 today); a different version disables Start until the probe of PR 2 passes again.
 - **Developer Mode exposure.** Anything on the home network with the access code can command the printer; that is
