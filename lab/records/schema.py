@@ -34,7 +34,8 @@ BUILD = {"id": F(S, True), "ok": F(B, True), "at": F((S, NUL)), "inputs": F(D), 
 RUN = {"id": F(S, True), "build_id": F((S, NUL)), "started_at": F((S, NUL)), "setup": F((D, NUL)),
        "baseline_missing": F(L), "usage": F((D, NUL)), "failed": F((D, NUL)), "photos": F(L), "legacy": F(A),
        "printer_log": F((D, NUL)), "usage_revisions": F(L),
-       "started_from": F(S, choices=("page",)), "bambuddy": F((D, NUL))}
+       "started_from": F(S, choices=("page", "one-tap")), "started_by": F(S, choices=("pi-hub one-tap",)),
+       "one_tap": F((D, NUL)), "bambuddy": F((D, NUL))}
 CRITERION = {"key": F(S, True), "label": F(S, True), "choices": F(L, True)}
 MARK = {"variant": F(S, True), "mark_z_mm": F((N, NUL)), "defect_z_mm": F((N, NUL))}
 WITNESS = {"id": F(S, True), "condition": F(S, True, WITNESS_CONDITIONS), "note": F((S, NUL))}

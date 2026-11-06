@@ -57,3 +57,54 @@ def stage(paths: ProjectPaths, exp_id: str, *, client=bambuddy) -> dict:
                            "bambuddy": version}
         save_experiment(paths, e)
     return out | {"library_file": fid, "folder": folder, "already": False}
+
+
+IDLE_MINUTES = 10  # the spec's "idle for 10 minutes" before `lab pull` stages, so a just-finished plate isn't offered
+RETRY_SECONDS = 3600  # a build that failed to stage is tried again an hour later, not on every pull
+
+
+def idle_since(entries: list[dict] | None):
+    """When the printer last finished, from Bambuddy's print log (newest first): None while a print is running or the
+    log can't be read; the epoch when it has no prints."""
+    from datetime import datetime, timezone
+    if entries is None:
+        return None
+    if any(x.get("status") == "printing" for x in entries[:5]):
+        return None
+    ends = [bambuddy.parse_time(x.get("completed_at")) for x in entries]
+    ends = [t for t in ends if t is not None]
+    return max(ends) if ends else datetime.fromtimestamp(0, timezone.utc)
+
+
+def stage_waiting(paths: ProjectPaths, entries: list[dict] | None, failed: dict, *, client=bambuddy,
+                  now=None) -> list[dict]:
+    """`lab pull`'s staging (A12 plan, decision 7): every ready or approved experiment whose newest build isn't staged
+    yet is staged, once the printer has been idle IDLE_MINUTES. `failed` ({build id: epoch seconds}) is updated in place
+    so a failure waits RETRY_SECONDS. Events like apply_pending's: applied, or error with the reason."""
+    import time
+    from datetime import datetime, timedelta, timezone
+    from lab.loop.commands import all_experiments
+    now = now or datetime.now(timezone.utc)
+    since = idle_since(entries)
+    if since is None or now - since < timedelta(minutes=IDLE_MINUTES):
+        return []
+    events = []
+    for e in all_experiments(paths).values():
+        if e["status"] not in ("ready", "approved"):
+            continue
+        b = next((x for x in reversed(e.get("builds") or []) if x.get("ok")), None)
+        if not b or (b.get("staged") or {}).get("sha256") == b.get("sliced_sha256"):
+            continue
+        if time.time() - failed.get(b["id"], 0) < RETRY_SECONDS:
+            continue
+        try:
+            r = stage(paths, e["id"], client=client)
+            failed.pop(b["id"], None)
+            events.append({"id": f"stage-{b['id']}", "status": "applied",
+                           "message": f"{e['id']} staged in Bambuddy ({b['id']}, library file {r['library_file']}): "
+                                      "ready to start from Pi Hub."})
+        except (ValueError, bambuddy.BambuddyError) as err:
+            failed[b["id"]] = time.time()
+            events.append({"id": f"stage-{b['id']}", "status": "error",
+                           "message": f"Couldn't stage {e['id']} ({b['id']}): {err}"})
+    return events
