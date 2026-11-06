@@ -112,9 +112,10 @@ on a schedule or unattended; automatic plate clearing; changing what the experim
 1. This spec, and amendment A12 in pi-hub.
 2. Probe and record (no behaviour): whether each key can upload, queue and start, and whether plate detection gates a
    start on the X2D. Results go into this spec's facts; a "no" changes S1–S5 before anything is built.
-3. print-lab: `lab exp stage` (S2, S3), the staged state in the mirror, `lab pull` recording S6. Tests with a fake
-   Bambuddy.
-4. Pi Hub: the Needs-you item, the sheet, S5 checks, start through the printer-control path. Tests with a fake Bambuddy.
+3. print-lab: `lab exp stage` (S2, S3) and the staged state in the mirror. Tests with a fake Bambuddy.
+4. Pi Hub: the Needs-you item, the sheet, S5 checks, start through the printer-control path, and the start record
+   (device, queue item) that `lab pull` reads for S6; then print-lab's S6. Tests with a fake Bambuddy. (S6 moved here
+   from PR 3: only Pi Hub knows a print was its start, so the lab has nothing to read until Pi Hub records it.)
 5. One real lab print started this way, with its run showing S6's fields: the acceptance.
 
 Each PR: tests green, and anything touching the printer proven on the real one only in PR 5, with the owner present.
