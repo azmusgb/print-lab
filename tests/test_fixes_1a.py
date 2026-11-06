@@ -75,7 +75,7 @@ def test_hung_bambu_help_times_out(tmp_path, monkeypatch):
 
 def test_missing_bambu_says_where_to_get_it(tmp_path, monkeypatch):
     monkeypatch.setenv("LAB_BAMBU", str(tmp_path / "nope"))
-    with pytest.raises(FileNotFoundError, match=r"github.com/bambulab/BambuStudio/releases/tag/v02.08.02.61"):
+    with pytest.raises(FileNotFoundError, match=r"github.com/bambulab/BambuStudio/releases/tag/v02.09.01.70"):
         bambu.bambu_binary()
 
 

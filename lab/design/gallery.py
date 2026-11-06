@@ -7,6 +7,7 @@ import json
 from html import escape
 from pathlib import Path
 
+from lab.adapters.bambu import EXPECTED_VERSION
 from lab.records.project import ProjectPaths
 
 _UI = Path(__file__).resolve().parent / "assets" / "ui"
@@ -148,7 +149,7 @@ def render(paths: ProjectPaths, run_path: Path) -> str:
             'front (relief exaggerated 3×). The bar is the print height, bed on the left; marks are where the slice '
             f'prints sparse infill.</p>{kept}</section>{drop}'
             f'<p class="ui-sources"><span>Base: {escape(run["base"])}</span><span>Started {escape(run["started"])}'
-            '</span><span>Slices: Bambu Studio 02.08.02.61</span></p>'
+            f'</span><span>Slices: Bambu Studio {EXPECTED_VERSION}</span></p>'
             f'</main></div>\n<script>{_SCRIPT}</script>\n')
 
 

@@ -132,7 +132,7 @@ def test_missing_bambu_message(monkeypatch):
     monkeypatch.setenv("LAB_BAMBU", "/nonexistent/BambuStudio")
     with pytest.raises(FileNotFoundError) as e:
         bambu.bambu_binary()
-    assert "02.08.02.61" in str(e.value)
+    assert "02.09.01.70" in str(e.value)
 
 
 @pytest.mark.slow

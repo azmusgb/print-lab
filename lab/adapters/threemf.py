@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 import trimesh
 
-from lab.adapters.bambu import list_objects
+from lab.adapters.bambu import EXPECTED_VERSION, list_objects
 from lab.jobs import sha256
 
 NS = {"m": "http://schemas.microsoft.com/3dmanufacturing/core/2015/02"}
@@ -221,7 +221,7 @@ def write_print_3mf(base_3mf: Path, meshes: list[tuple[str, trimesh.Trimesh, tup
     model = ('<?xml version="1.0" encoding="UTF-8"?>\n<model unit="millimeter" xml:lang="en-US" '
              'xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" '
              'xmlns:BambuStudio="http://schemas.bambulab.com/package/2021">'
-             '<metadata name="Application">BambuStudio-02.08.02.61</metadata>'
+             f'<metadata name="Application">BambuStudio-{EXPECTED_VERSION}</metadata>'
              '<metadata name="BambuStudio:3mfVersion">1</metadata>'
              f'<resources>{"".join(objs)}</resources><build>{"".join(items)}</build></model>')
     comments_xml, tags_xml = _format_model_settings_tags(meta)

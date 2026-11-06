@@ -34,7 +34,7 @@ def fake_tool(tmp_path, name, output):
 
 def test_wrong_bambu_version_refused(tmp_path, monkeypatch, hex_dir):
     monkeypatch.setenv("LAB_BAMBU", str(fake_tool(tmp_path, "BambuStudio", "BambuStudio-02.09.00.10:")))
-    with pytest.raises(LabToolError, match="02.09.00.10.*02.08.02.61"):
+    with pytest.raises(LabToolError, match="02.09.00.10.*02.09.01.70"):
         bambu.slice_3mf(hex_dir / "hexagon_v57_X2D_0.4nozzle.3mf", tmp_path / "out", 1, tmp_path / "jobs")
     assert list((tmp_path / "jobs").glob("*.json"))
 
@@ -50,7 +50,7 @@ def test_old_openscad_refused(tmp_path, monkeypatch):
 
 def test_missing_bambu_writes_job(tmp_path, monkeypatch, hex_dir):
     monkeypatch.setenv("LAB_BAMBU", "/nonexistent/BambuStudio")
-    with pytest.raises(LabToolError, match="02.08.02.61"):
+    with pytest.raises(LabToolError, match="02.09.01.70"):
         bambu.slice_3mf(hex_dir / "hexagon_v57_X2D_0.4nozzle.3mf", tmp_path / "out", 1, tmp_path / "jobs")
     job = json.loads(next((tmp_path / "jobs").glob("*.json")).read_text())
     assert job["ok"] is False and "not found" in job["stderr"]

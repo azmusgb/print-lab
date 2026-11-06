@@ -5,7 +5,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-EXPECTED_VERSION = "02.08.02.61"
+EXPECTED_VERSION = "02.09.01.70"
 DEFAULT = "/Applications/BambuStudio.app/Contents/MacOS/BambuStudio"
 DOWNLOAD = f"https://github.com/bambulab/BambuStudio/releases/tag/v{EXPECTED_VERSION}"
 HELP_TIMEOUT_S = 60
