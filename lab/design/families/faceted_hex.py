@@ -99,13 +99,30 @@ def _land(p: dict[str, float]) -> Solid:
                          p["land_thickness"] + 1)
 
 
-def _mark(p: dict[str, float]) -> Solid:
-    """The RAHE/RIFT letters as solids 0.6 mm deep from the back, placed as Fusion places them: the anchor moves with
-    corner_diameter and land_width by the same linear terms Rift v6's sketch dimensions use."""
-    data = json.loads(_MARK.read_text())
+def _mark_anchor(p: dict[str, float]) -> tuple[float, float]:
+    """Where the mark's anchor sits: it moves with corner_diameter and land_width by the same linear terms Rift v6's
+    sketch dimensions use."""
     dcd, dlw = p["corner_diameter"] - 152.4, p["land_width"] - 17.7
-    ax = 54.9481 + dcd * 0.36056 - dlw * 0.43301
-    ay = 19.1407 + dcd * 0.24151 - dlw * 0.25000
+    return 54.9481 + dcd * 0.36056 - dlw * 0.43301, 19.1407 + dcd * 0.24151 - dlw * 0.25000
+
+
+def mark_outline(p: dict[str, float]):
+    """The mark's letter outline points as placed, and the land segment it sits on: (points, (outward normal of that
+    segment, its outer edge and inner edge as distances along the normal, the open top's y))."""
+    data = json.loads(_MARK.read_text())
+    ax, ay = _mark_anchor(p)
+    pts = [(ax + x, ay + y) for loops in data["faces"] for loop in loops for x, y in loop]
+    r = p["corner_diameter"] / 2
+    outer = r * _COS30
+    inner = outer - p["land_width"]
+    normal = (_COS30, 0.5)  # the side between the corners at 0° and 60°
+    return pts, (normal, outer, inner, inner)
+
+
+def _mark(p: dict[str, float]) -> Solid:
+    """The RAHE/RIFT letters as solids 0.6 mm deep from the back, placed as Fusion places them."""
+    data = json.loads(_MARK.read_text())
+    ax, ay = _mark_anchor(p)
     letters = None
     for loops in data["faces"]:
         wires = [Wire(Polyline(*[(ax + x, ay + y, 0) for x, y in loop], close=True)) for loop in loops]
