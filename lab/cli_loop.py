@@ -348,6 +348,23 @@ def cmd_exp_send(args) -> int:
     return 0
 
 
+def cmd_exp_stage(args) -> int:
+    from lab.bambuddy import BambuddyError
+    from lab.loop import stage as staging
+    try:
+        r = staging.stage(_paths(args), args.id)
+    except BambuddyError as e:
+        raise ValueError(f"Can't stage {args.id}: {e}") from None
+    if args.json:
+        print(json.dumps(r, indent=2))
+        return 0
+    print(f"{'Already staged' if r['already'] else 'Staged'}: {r['file']} ({r['build']}, the build the check passed) is "
+          f"Bambuddy library file {r['library_file']} in the print-lab folder, checked byte for byte.\n"
+          f"Nothing is queued or started. Pi Hub's Start (one-tap PR 4) isn't built yet; until it is, print it the old "
+          f"way: uv run lab exp send {args.id}")
+    return 0
+
+
 def cmd_exp_abandon(args) -> int:
     from lab.loop.commands import abandon
     abandon(_paths(args), args.id, args.reason)
@@ -512,6 +529,11 @@ def register(sub) -> None:
     se.add_argument("--dry-run", action="store_true", help="say which file it would open, and open nothing")
     se.add_argument("--project", default="hex-tile")
     se.set_defaults(fn=cmd_exp_send)
+    st = es.add_parser("stage", help="upload the checked build to Bambuddy's print-lab folder, for Pi Hub to start")
+    st.add_argument("id")
+    st.add_argument("--json", action="store_true")
+    st.add_argument("--project", default="hex-tile")
+    st.set_defaults(fn=cmd_exp_stage)
     ab = es.add_parser("abandon", help="stop an experiment on purpose")
     ab.add_argument("id")
     ab.add_argument("--reason", required=True)

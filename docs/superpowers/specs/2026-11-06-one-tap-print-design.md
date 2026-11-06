@@ -33,6 +33,10 @@ that wasn't), only the owner starts a print, and nothing starts on a plate that 
 
 ## Probe (6 Nov 2026, Bambuddy 1.2.5.7; PR 2)
 
+Re-run on 1.3.0 the same day, after the owner updated Bambuddy: the same scopes for both keys, the same start path
+(`manual_start`, then start), plate detection still in `on_print_start`, and a byte-identical round trip of
+`hex-tile_E-026_BLD-026-01.gcode.3mf` (deleted after). Staging is pinned to 1.3.0.
+
 Nothing was queued or started; the printer was running the owner's print throughout.
 
 - **Scopes.** Each route checks its scope in a dependency before the handler runs, so a request with a nonexistent id
@@ -112,9 +116,10 @@ on a schedule or unattended; automatic plate clearing; changing what the experim
 1. This spec, and amendment A12 in pi-hub.
 2. Probe and record (no behaviour): whether each key can upload, queue and start, and whether plate detection gates a
    start on the X2D. Results go into this spec's facts; a "no" changes S1–S5 before anything is built.
-3. print-lab: `lab exp stage` (S2, S3), the staged state in the mirror, `lab pull` recording S6. Tests with a fake
-   Bambuddy.
-4. Pi Hub: the Needs-you item, the sheet, S5 checks, start through the printer-control path. Tests with a fake Bambuddy.
+3. print-lab: `lab exp stage` (S2, S3) and the staged state in the mirror. Tests with a fake Bambuddy.
+4. Pi Hub: the Needs-you item, the sheet, S5 checks, start through the printer-control path, and the start record
+   (device, queue item) that `lab pull` reads for S6; then print-lab's S6. Tests with a fake Bambuddy. (S6 moved here
+   from PR 3: only Pi Hub knows a print was its start, so the lab has nothing to read until Pi Hub records it.)
 5. One real lab print started this way, with its run showing S6's fields: the acceptance.
 
 Each PR: tests green, and anything touching the printer proven on the real one only in PR 5, with the owner present.
@@ -126,6 +131,6 @@ Each PR: tests green, and anything touching the printer proven on the real one o
 - **A queue item that starts itself.** One added without `manual_start` is dispatched at once (probe). Pi Hub's adapter
   always sets it, and a test with the fake Bambuddy fails if it doesn't.
 - **Bambuddy changes its API.** Every call is behind one adapter on each side, with its version checked
-  (1.2.5.7 today); a different version disables Start until the probe of PR 2 passes again.
+  (1.3.0 today); a different version disables Start until the probe of PR 2 passes again.
 - **Developer Mode exposure.** Anything on the home network with the access code can command the printer; that is
   true already. One-tap adds no new listener: Pi Hub is behind Tailscale and owner sign-in.
