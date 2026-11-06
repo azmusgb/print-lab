@@ -58,8 +58,9 @@ which heights are at risk, why, and how sure you are, from measurements of the m
 
 ## Calibration from past work (use as reference, not as rules)
 
-- E-026 (RIFT 10", 28 mm top strip): grid infill begins at 203.6 mm full-tile height, about 0.8 mm behind the face's
-  outer wall under 3 walls, up to 219.2 mm. Photos IMG_1475–1509 show rows of dashes at fixed heights and a diagonal
+- E-026 (RIFT 10", 28 mm top strip; full-tile height = strip height + 192.0): grid infill begins at 203.6 mm and runs
+  to 219.0 mm, its line centres 1.15 mm behind the face's outer-wall centreline under 3 walls (measured 5 Nov; the
+  experiment's hypothesis says "about 0.8 mm", a different reference). Say which reference your distances use. Photos IMG_1475–1509 show rows of dashes at fixed heights and a diagonal
   crosshatch below the top corner (AI-photo reading on E-026).
 - Fusion "Rift simplified" v4 without the hollow roof: about 250–520 mm² of room for infill at print heights
   136–140 mm; with the hollow roof (v6) about 5–9 mm². The 2.4 mm top wall above a void leaves about 0.8 mm of sparse
