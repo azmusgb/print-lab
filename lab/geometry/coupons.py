@@ -30,16 +30,28 @@ def height_strip(m: trimesh.Trimesh, z0: float, z1: float) -> trimesh.Trimesh:
 
 
 def plate_layout(parts: list[tuple[str, trimesh.Trimesh]], gap: float = 15.0) -> list[tuple[str, trimesh.Trimesh, tuple[float, float]]]:
-    """Parts in a row along X, centred on the plate; each (name, mesh, (x, y)) is the part's centre."""
+    """Parts in a row along X, centred on the plate; when the row is wider than the plate (full-width strips of a
+    big tile), a column along Y instead, front to back in the same order. Each (name, mesh, (x, y)) is the part's
+    centre."""
     widths = [float(p.extents[0]) for _, p in parts]
+    depths = [float(p.extents[1]) for _, p in parts]
     total = sum(widths) + gap * (len(parts) - 1) + 2 * BRIM
-    depth = max(float(p.extents[1]) for _, p in parts) + 2 * BRIM
-    if total > PLATE or depth > PLATE:
-        raise ValueError(f"The row doesn't fit: it needs {total:.0f} × {depth:.0f} mm with brims, the plate is "
-                         f"{PLATE:g} × {PLATE:g} mm. Print fewer parts per plate.")
-    x = (PLATE - total) / 2 + BRIM
-    out = []
-    for (name, p), w in zip(parts, widths):
-        out.append((name, p, (round(x + w / 2, 3), PLATE / 2)))
-        x += w + gap
-    return out
+    depth = max(depths) + 2 * BRIM
+    if total <= PLATE and depth <= PLATE:
+        x = (PLATE - total) / 2 + BRIM
+        out = []
+        for (name, p), w in zip(parts, widths):
+            out.append((name, p, (round(x + w / 2, 3), PLATE / 2)))
+            x += w + gap
+        return out
+    col_w, col_d = max(widths) + 2 * BRIM, sum(depths) + gap * (len(parts) - 1) + 2 * BRIM
+    if col_w <= PLATE and col_d <= PLATE:
+        y = (PLATE + col_d) / 2 - BRIM  # the first part at the back, like the first of a row on the left
+        out = []
+        for (name, p), d in zip(parts, depths):
+            out.append((name, p, (PLATE / 2, round(y - d / 2, 3))))
+            y -= d + gap
+        return out
+    raise ValueError(f"The parts don't fit: a row needs {total:.0f} × {depth:.0f} mm with brims and a column "
+                     f"{col_w:.0f} × {col_d:.0f} mm; the plate is {PLATE:g} × {PLATE:g} mm. Print fewer parts per "
+                     "plate.")

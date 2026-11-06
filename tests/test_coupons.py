@@ -46,7 +46,15 @@ def test_plate_layout_two_strips_fit(v53):
     assert len(placed) == 2 and all(0 < y < 256 for y in ys) and ys[0] != ys[1]
 
 
+def test_plate_layout_stacks_strips_too_wide_for_a_row():
+    wide = trimesh.creation.box((165.4, 19, 30))  # full-width strips of the 6" faceted_hex
+    placed = plate_layout([("a", wide), ("b", wide.copy())])
+    (xa, ya), (xb, yb) = placed[0][2], placed[1][2]
+    assert xa == xb == 128 and ya - yb == pytest.approx(19 + 15) and ya > yb
+    assert all(10 <= y - 9.5 and y + 9.5 <= 246 for y in (ya, yb))
+
+
 def test_plate_layout_overflow_message():
-    big = trimesh.creation.box((150, 20, 20))
-    with pytest.raises(ValueError, match="doesn't fit"):
+    big = trimesh.creation.box((150, 120, 20))
+    with pytest.raises(ValueError, match="don't fit"):
         plate_layout([("a", big), ("b", big.copy())])

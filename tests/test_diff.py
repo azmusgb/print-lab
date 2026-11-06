@@ -85,3 +85,15 @@ def test_cross_plate_reference_compared(proj):
     e, b = _plan(proj, values=["80"], expect="", references=[f"{first['id']}-A"])
     diffs = actual_differences(proj, e, b)
     assert [(d["where"], d["key"]) for d in diffs] == [("settings", "inner_wall_speed")]
+
+
+def test_model_version_compares_sources_whose_objects_have_their_own_names(proj):
+    # A source registered by `lab design choose` names its one object after itself, not after the reference's object.
+    box = trimesh.creation.box((20, 150, 132))
+    write_print_3mf(proj.sources / "hexagon_v57_X2D_0.4nozzle.3mf", [("faceted_hex_s3_abc", box, (128, 128))],
+                    proj.sources / "generated.3mf", {})
+    e, b = _plan(proj, factor="model_version", values=["sources/hexagon_v58_X2D_0.6nozzle.3mf",
+                                                       "sources/generated.3mf"], expect="A=B")
+    assert b["ok"], b.get("error")
+    bad, bundle = undeclared(actual_differences(proj, e, b), e)
+    assert bad == [] and ("geometry", "mesh") in [(d["where"], d["key"]) for d in bundle]
