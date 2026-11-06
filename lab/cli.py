@@ -278,6 +278,8 @@ def main(argv=None) -> int:
     cli_loop.register(sub)
     observe_cli.register(sub)
     from lab import page, pull, source, status, sync, variant, watch
+    from lab.design import cli as design_cli
+    design_cli.register(sub)
     page.register(sub)
     pull.register(sub)
     source.register(sub)

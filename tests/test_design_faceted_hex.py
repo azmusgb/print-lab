@@ -64,9 +64,27 @@ def test_build_is_deterministic(v6_part):
     assert abs(again.volume - v6_part.volume) < 0.001
 
 
-def test_only_seed_zero_until_make():
-    with pytest.raises(NotImplementedError):
-        fh.build(resolve(fh.PARAMS), seed=1)
+@pytest.mark.parametrize("seed", [1, 7, 12])
+def test_seeded_layouts_build_valid_tiles_with_the_sealed_roof(seed):
+    part = fh.build(resolve(fh.PARAMS), seed)
+    assert part.is_valid and len(part.solids()) == 1 and len(part.shells()) == 2
+
+
+def test_seeded_layouts_are_deterministic_and_differ():
+    a, b = fh.layout(5), fh.layout(5)
+    assert a == b and a != fh.layout(6) and fh.layout(0) is fh.V6_LAYOUT
+    pts = a["points"]
+    corners = sorted((round(x, 6), round(y, 6), h) for x, y, h in pts[:6])
+    assert corners == sorted((round(x, 6), round(y, 6), h) for x, y, h in fh.V6_LAYOUT["points"][:6])  # at the edge
+    assert 3 <= len(pts) - 6 <= 6 and max(h for _, _, h in pts) == 1.0
+    for tri in a["triangles"]:  # counter-clockwise from the face, as v6's
+        (x0, y0, _), (x1, y1, _), (x2, y2, _) = (pts[i] for i in tri)
+        assert (x1 - x0) * (y2 - y0) - (y1 - y0) * (x2 - x0) > 0
+
+
+def test_render_svg_draws_one_polygon_per_facet():
+    svg = fh.render_svg(resolve(fh.PARAMS), 3)
+    assert svg.startswith("<svg") and svg.count("<polygon") == len(fh.layout(3)["triangles"])
 
 
 def test_resolve_refuses_unknown_names_and_out_of_range_values():

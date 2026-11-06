@@ -132,11 +132,68 @@ def _mark(p: dict[str, float]) -> Solid:
     return letters
 
 
+def layout(seed: int) -> dict:
+    """The facet layout for a seed: 0 is Rift v6's; any other seed picks 3–6 interior peaks inside 0.7 of the corner
+    radius, at least 0.22 apart and 0.2 in from the rim, with heights 0.4–1.0 of facet_rise (the highest at 1.0), and
+    triangulates them to the six corners."""
+    if seed == 0:
+        return V6_LAYOUT
+    import numpy as np
+    from scipy.spatial import Delaunay
+
+    rng = np.random.default_rng(seed)
+    corners = [(math.cos(math.radians(a)), math.sin(math.radians(a))) for a in range(0, 360, 60)]
+    want, peaks = int(rng.integers(3, 7)), []
+    for _ in range(2000):
+        if len(peaks) == want:
+            break
+        r, t = 0.7 * math.sqrt(rng.random()), rng.random() * 2 * math.pi
+        x, y = r * math.cos(t), r * math.sin(t)
+        # 0.2 in from every side of the unit hexagon (its apothem is cos 30°).
+        inside = all(x * math.cos(math.radians(a)) + y * math.sin(math.radians(a)) <= _COS30 - 0.2
+                     for a in range(30, 390, 60))
+        if inside and all(math.dist((x, y), q) >= 0.22 for q in peaks):
+            peaks.append((x, y))
+    heights = list(rng.uniform(0.4, 1.0, len(peaks)))
+    heights[int(np.argmax(heights))] = 1.0
+    xy = corners + peaks
+    tris = []
+    for tri in Delaunay(np.array(xy)).simplices.tolist():
+        a, b, c = (xy[i] for i in tri)
+        if (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]) < 0:
+            tri = [tri[0], tri[2], tri[1]]  # counter-clockwise from +z, as V6_LAYOUT's are
+        tris.append(tuple(tri))
+    return {"points": [(x, y, 0.0) for x, y in corners] + [(x, y, float(h)) for (x, y), h in zip(peaks, heights)],
+            "triangles": tris}
+
+
+def render_svg(params: dict[str, float], seed: int = 0, size: int = 240) -> str:
+    """The face seen from the front, each facet shaded by a light from the upper left (relief exaggerated 3× so shallow
+    facets read): enough to tell layouts apart without a renderer."""
+    layout_ = layout(seed)
+    r = params["corner_diameter"] / 2
+    pts = [(u * r, v * r, 3 * h * params["facet_rise"]) for u, v, h in layout_["points"]]
+    light = (-0.45, 0.55, 0.70)
+    k = size / (2 * r + 4)
+    polys = []
+    for tri in layout_["triangles"]:
+        a, b, c = (pts[i] for i in tri)
+        u = (b[0] - a[0], b[1] - a[1], b[2] - a[2])
+        v = (c[0] - a[0], c[1] - a[1], c[2] - a[2])
+        n = (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0])
+        ln = math.sqrt(sum(x * x for x in n)) or 1.0
+        lit = max(0.0, sum(x * y for x, y in zip(n, light)) / ln / math.sqrt(sum(x * x for x in light)))
+        g = round(40 + 205 * lit)
+        xy = " ".join(f"{(x + r + 2) * k:.1f},{(r + 2 - y) * k:.1f}" for x, y, _ in (a, b, c))
+        polys.append(f'<polygon points="{xy}" fill="rgb({g},{g},{g})" stroke="rgb({g},{g},{g})" stroke-width="0.6"/>')
+    h = round(size * _COS30 * r / (r + 2) + 4)
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 {(r + 2) * k - h / 2:.1f} {size} {h}" width="{size}" '
+            f'height="{h}" role="img" aria-label="Facet layout, seed {seed}">{"".join(polys)}</svg>')
+
+
 def build(params: dict[str, float], seed: int = 0) -> Solid:
     """The tile for these parameters (already resolved and in range) and facet seed."""
-    if seed != 0:
-        raise NotImplementedError("seeded facet layouts arrive with `lab design make`; seed 0 is Rift v6")
-    tile = _tile(params, V6_LAYOUT)
+    tile = _tile(params, layout(seed))
     part = (tile - _cavity(params, tile)) + _land(params)
     if params["mark"] >= 0.5:
         part = part - _mark(params)

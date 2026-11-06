@@ -23,3 +23,6 @@ projects/*/.pull-state.json
 
 # Local browser automation state
 .playwright-mcp/
+
+# Generated candidates (lab design make): rebuilt from their id; a chosen one becomes a source
+projects/*/designs/
