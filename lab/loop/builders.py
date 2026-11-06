@@ -5,7 +5,7 @@ import json
 import re
 from pathlib import Path
 
-from lab.adapters.bambu import extract_gcode, slice_estimate, slice_with_job
+from lab.adapters.bambu import extract_gcode, list_objects, slice_estimate, slice_with_job
 from lab.jobs import LabToolError, sha256
 from lab.loop.outcome import _factors
 from lab.loop.plate import layer_time_profile, median_layer_time, plate_of
@@ -266,7 +266,8 @@ def _meshes(paths: ProjectPaths, exp: dict) -> list[tuple[str, object, dict]]:
     for v in spec_variants:
         src = v.get("source") or spec["source"]
         if src not in cache:
-            cache[src] = height_strip(load_object(paths.root / src, spec["object"]), z0, z1)
+            cache[src] = height_strip(load_object(paths.root / src, _object_in(paths.root / src, spec["object"])),
+                                      z0, z1)
         own = {**(exp.get("dependent_adjustments") or {}), **v.get("settings_patch", {})}
         for k in range(v.get("copies", 1)):
             name = v["id"] if v.get("copies", 1) == 1 else f"{v['id']} ({k + 1} of {v['copies']})"
@@ -341,6 +342,15 @@ def same_output(paths: ProjectPaths, e: dict, build: dict) -> bool:
             if content_sha256(out) == have:
                 return True
     return False
+
+
+def _object_in(path: Path, name: str) -> str:
+    """The object to cut from a variant's own source: the plan's object when the source has it, else the source's
+    only object (a source made by `lab variant add` or `lab design choose` names its one object after itself)."""
+    names = {o.name for o in list_objects(path)}
+    if any(name in n for n in names) or len(names) != 1:
+        return name  # load_object reports a missing or ambiguous name, listing the choices
+    return names.pop()
 
 
 def build_experiment(paths: ProjectPaths, exp_id: str, *, replace: bool, slicer=slice_with_job) -> dict:
