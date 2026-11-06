@@ -262,3 +262,17 @@ def test_adapter_off_or_without_a_key_refuses(monkeypatch, tmp_path):
     monkeypatch.setenv("LAB_BAMBUDDY_KEY_FILE", str(tmp_path / "none"))
     with pytest.raises(bambuddy.BambuddyError, match="No Bambuddy API key"):
         bambuddy.version()
+
+
+def test_cli_approve_points_at_pi_hubs_start_not_lab_exp_start(proj, monkeypatch, capsys):
+    from lab import cli
+    from test_guards import edit as edit_
+    eid = built(proj)
+    edit_(proj, "Q-009", lambda q: q["budget"].update(max_minutes=10), "questions")
+    monkeypatch.setenv("LAB_HOME", str(proj.root.parent.parent))
+    monkeypatch.setenv("LAB_SYNC", "off")
+    assert cli.main(["exp", "check", eid]) == 2
+    assert cli.main(["exp", "approve", eid, "--reason", "worth it"]) == 0
+    out = capsys.readouterr().out
+    assert "Start on Pi Hub then records the start itself" in out
+    assert f"Only if you send it from Bambu Connect, run `lab exp start {eid}`" in out
