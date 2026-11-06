@@ -29,6 +29,20 @@ def _registry(paths: ProjectPaths) -> list[dict]:
     return data
 
 
+def registered_base(paths: ProjectPaths, base: str) -> tuple[str, Path]:
+    """("sources/<file>.3mf", its path) for a base that is registered, a 3MF, and unchanged since registration."""
+    base = base if base.startswith("sources/") else f"sources/{base}"
+    entry = next((e for e in _registry(paths) if e.get("path") == base), None)
+    if entry is None:
+        raise ValueError(f"{base} isn't a registered source of {paths.name}; pick one from sources/sources.json.")
+    base_path = paths.root / base
+    if base_path.suffix != ".3mf" or not base_path.is_file():
+        raise ValueError(f"The base must be a registered 3MF project that exists: {base}")
+    if entry.get("sha256") and sha256(base_path) != entry["sha256"]:
+        raise ValueError(f"{base} doesn't match its registered sha256; it changed since it was registered.")
+    return base, base_path
+
+
 def _read_params(path: Path) -> dict:
     try:
         p = json.loads(Path(path).read_text())
@@ -77,15 +91,7 @@ def add_variant(paths: ProjectPaths, *, mesh: Path, base: str, name: str, params
     if not NAME.fullmatch(name):
         raise ValueError(f"'{name}' can't be a source name: use letters, digits, '_', '-' and '.', up to 80.")
     reg = _registry(paths)
-    base = base if base.startswith("sources/") else f"sources/{base}"
-    entry = next((e for e in reg if e.get("path") == base), None)
-    if entry is None:
-        raise ValueError(f"{base} isn't a registered source of {paths.name}; pick one from sources/sources.json.")
-    base_path = paths.root / base
-    if base_path.suffix != ".3mf" or not base_path.is_file():
-        raise ValueError(f"The base must be a registered 3MF project that exists: {base}")
-    if entry.get("sha256") and sha256(base_path) != entry["sha256"]:
-        raise ValueError(f"{base} doesn't match its registered sha256; it changed since it was registered.")
+    base, base_path = registered_base(paths, base)
     rel = f"sources/{name}.3mf"
     out = paths.root / rel
     side = paths.sources / f"{name}.params.json"

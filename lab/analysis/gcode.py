@@ -218,3 +218,31 @@ def format_gcode_diff(res: dict, name_a: str = "A", name_b: str = "B", *, show_l
             lines.append(f"  … ({len(res['layers']) - max_rows} more layers)")
 
     return "\n".join(lines)
+
+
+def feature_bands(gcode: str, feature: str) -> list[tuple[float, float, int]]:
+    """(bottom z, top z, layers) of each run of consecutive layers that extrude `feature` (e.g. "Sparse infill")."""
+    zs, present, z, cur = [], [], 0.0, False
+    for raw in gcode.splitlines():
+        line = raw.strip()
+        if line.startswith("; CHANGE_LAYER"):
+            if zs:
+                present.append(cur)
+            zs.append(None)
+            cur = False
+        elif line.startswith("; Z_HEIGHT:") and zs:
+            zs[-1] = z = float(line.split(":", 1)[1])
+        elif line.startswith("; FEATURE:") and zs and line.split(":", 1)[1].strip() == feature:
+            cur = True
+    if zs:
+        present.append(cur)
+    zs = [v if v is not None else z for v in zs]
+    bands, start = [], None
+    for i, on in enumerate(present + [False]):
+        if on and start is None:
+            start = i
+        elif not on and start is not None:
+            lh = zs[start] - zs[start - 1] if start else zs[start]
+            bands.append((round(zs[start] - lh, 3), round(zs[i - 1], 3), i - start))
+            start = None
+    return bands
