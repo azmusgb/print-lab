@@ -9,11 +9,8 @@ from pathlib import Path
 if sys.platform == "win32":
     INSTALL = "winget install OpenSCAD.OpenSCAD.Nightly"
     _CANDIDATES = [
-        str(Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "OpenSCAD (Nightly)" / "openscad.com"),
-        str(Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "OpenSCAD (Nightly)" / "openscad.exe"),
         str(Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "OpenSCAD" / "openscad.com"),
         str(Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "OpenSCAD" / "openscad.exe"),
-        str(Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")) / "OpenSCAD (Nightly)" / "openscad.com"),
         str(Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")) / "OpenSCAD" / "openscad.com"),
     ]
 else:
