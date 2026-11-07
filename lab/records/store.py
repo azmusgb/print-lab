@@ -64,6 +64,7 @@ def record_lock(lock_dir: Path, record_id: str, command: str, timeout_s: float =
     lock_dir = Path(lock_dir)
     lock_dir.mkdir(parents=True, exist_ok=True)
     path = lock_dir / f"{record_id}.lock"
+    meta_path = lock_dir / f"{record_id}.lock.meta"
     fd = os.open(path, os.O_RDWR | os.O_CREAT, 0o644)
     deadline = time.monotonic() + timeout_s
     locked = False
@@ -85,24 +86,36 @@ def record_lock(lock_dir: Path, record_id: str, command: str, timeout_s: float =
                 else:
                     raise
             if time.monotonic() >= deadline:
-                try:
-                    held = json.loads(Path(path).read_text() or "{}")
-                except (OSError, json.JSONDecodeError):
-                    held = {}
+                held = {}
+                for p in (path, meta_path):
+                    try:
+                        held = json.loads(p.read_text() or "{}")
+                        if held:
+                            break
+                    except (OSError, json.JSONDecodeError):
+                        pass
                 raise RecordError(path, None, f"{record_id} is being changed by `{held.get('command', '?')}` "
                                               f"(PID {held.get('pid', '?')}, since {held.get('started_at', '?')}). "
                                               "Wait for it to finish and try again.") from None
             time.sleep(0.1)
+        info = json.dumps({"pid": os.getpid(), "command": command, "started_at": now()}).encode()
         os.ftruncate(fd, 0)
-        os.write(fd, json.dumps({"pid": os.getpid(), "command": command, "started_at": now()}).encode())
-        yield
-    finally:
-        if locked and sys.platform == "win32":
+        os.write(fd, info)
+        if sys.platform == "win32":
             try:
-                os.lseek(fd, 0, os.SEEK_SET)
-                msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+                meta_path.write_bytes(info)
             except OSError:
                 pass
+        yield
+    finally:
+        if sys.platform == "win32":
+            meta_path.unlink(missing_ok=True)
+            if locked:
+                try:
+                    os.lseek(fd, 0, os.SEEK_SET)
+                    msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+                except OSError:
+                    pass
         os.close(fd)  # closing the descriptor releases the flock on Unix
 
 
