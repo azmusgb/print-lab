@@ -6,6 +6,10 @@ its sha256 with the build's (S3): a mismatch deletes the upload and stages nothi
 file under `staged`, and the experiment the status the check found (ready or approved); Pi Hub starts only a file the mirror names there. Staging never queues or starts anything.
 """
 import hashlib
+import json
+import re
+import zipfile
+from pathlib import Path
 
 from lab import bambuddy
 from lab.loop.commands import load_experiment, save_experiment
@@ -29,6 +33,30 @@ def _file_filament(sliced) -> dict | None:
     pick = lambda key: next((str(v) for v in (cfg.get(key) or []) if v), None)  # noqa: E731
     out = {"type": pick("filament_type"), "colour": pick("filament_colour")}
     return out if any(out.values()) else None
+
+
+def _file_model(build: dict) -> str | None:
+    """The source model's plain name ("RIFT 10IN batch5 shadow storm"), from the first model the build was made from."""
+    models = (build.get("inputs") or {}).get("model") or {}
+    first = next(iter(models), None)
+    name = Path(first).name.split(".")[0].replace("_", " ").strip() if first else ""
+    return name or None
+
+
+def _file_size(sliced) -> dict | None:
+    """What the plate prints, in mm: {"x", "y", "z", "brim"} from the slicer's plate box and its top layer. The box
+    includes any brim, so `brim` says whether to expect that. None when the file doesn't say."""
+    try:
+        with zipfile.ZipFile(sliced) as z:
+            box = json.loads(z.read("Metadata/plate_1.json"))["bbox_all"]
+            top = re.search(rb"^; max_z_height: ([0-9.]+)", z.read("Metadata/plate_1.gcode"), re.M)
+            from lab.adapters.bambu import read_settings
+            brim = (read_settings(sliced) or {}).get("brim_type") not in (None, "no_brim", "auto_brim")
+        out = {"x": round(box[2] - box[0], 1), "y": round(box[3] - box[1], 1),
+               "z": float(top.group(1)) if top else None, "brim": bool(brim)}
+        return out if out["x"] > 0 and out["y"] > 0 else None
+    except Exception:
+        return None
 
 
 def stage(paths: ProjectPaths, exp_id: str, *, client=bambuddy) -> dict:
@@ -67,7 +95,8 @@ def stage(paths: ProjectPaths, exp_id: str, *, client=bambuddy) -> dict:
         if e["status"] in ("built", "ready", "needs_approval", "approved"):
             e["status"] = r.status  # what the check just found, as `lab exp check` records it
         build["staged"] = {"library_file": fid, "folder": folder, "sha256": b["sliced_sha256"], "at": now(),
-                           "bambuddy": version, "filament": _file_filament(f)}
+                           "bambuddy": version, "filament": _file_filament(f),
+                           "model": _file_model(b), "size": _file_size(f)}
         save_experiment(paths, e)
     return out | {"library_file": fid, "folder": folder, "already": False}
 
