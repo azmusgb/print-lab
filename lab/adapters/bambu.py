@@ -2,17 +2,58 @@
 import os
 import re
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
 EXPECTED_VERSION = "02.09.01.70"
-DEFAULT = "/Applications/BambuStudio.app/Contents/MacOS/BambuStudio"
+if sys.platform == "win32":
+    DEFAULT = str(Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "Bambu Studio" / "bambu-studio.exe")
+else:
+    DEFAULT = "/Applications/BambuStudio.app/Contents/MacOS/BambuStudio"
 DOWNLOAD = f"https://github.com/bambulab/BambuStudio/releases/tag/v{EXPECTED_VERSION}"
 HELP_TIMEOUT_S = 60
 
 
+def _read_windows_version(path: Path) -> str | None:
+    """Read FileVersion on Windows from PE metadata via PowerShell or registry."""
+    try:
+        cmd = ["powershell", "-NoProfile", "-Command",
+               f"[System.Diagnostics.FileVersionInfo]::GetVersionInfo('{path}').FileVersion"]
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        ver = res.stdout.strip()
+        if re.fullmatch(r"\d+\.\d+\.\d+\.\d+", ver):
+            return ver
+    except Exception:
+        pass
+
+    try:
+        import winreg
+        for hkey in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
+            for subkey in (r"Software\Microsoft\Windows\CurrentVersion\Uninstall",
+                           r"Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"):
+                try:
+                    with winreg.OpenKey(hkey, subkey) as root:
+                        for i in range(winreg.QueryInfoKey(root)[0]):
+                            try:
+                                child_name = winreg.EnumKey(root, i)
+                                with winreg.OpenKey(root, child_name) as child:
+                                    name, _ = winreg.QueryValueEx(child, "DisplayName")
+                                    if "Bambu Studio" in str(name):
+                                        ver, _ = winreg.QueryValueEx(child, "DisplayVersion")
+                                        if re.fullmatch(r"\d+\.\d+\.\d+\.\d+", str(ver).strip()):
+                                            return str(ver).strip()
+                            except (OSError, FileNotFoundError):
+                                pass
+                except (OSError, FileNotFoundError):
+                    pass
+    except Exception:
+        pass
+    return None
+
+
 def bambu_binary() -> tuple[Path, str]:
-    """The Bambu Studio CLI (LAB_BAMBU, else the app) and its version, read from --help."""
+    """The Bambu Studio CLI (LAB_BAMBU, else the app) and its version, read from --help or OS metadata."""
     path = Path(os.environ.get("LAB_BAMBU", DEFAULT))
     if not path.exists():
         raise FileNotFoundError(f"Bambu Studio not found at {path}. Install Bambu Studio {EXPECTED_VERSION} from "
@@ -26,9 +67,12 @@ def bambu_binary() -> tuple[Path, str]:
             raise FileNotFoundError(f"Bambu Studio at {path} didn't answer within {HELP_TIMEOUT_S} s. Close any "
                                     "open Studio windows and try again.") from None
     m = re.search(r"BambuStudio-(\d+\.\d+\.\d+\.\d+)", out.stdout + out.stderr)
-    if not m:
+    version = m.group(1) if m else None
+    if not version and sys.platform == "win32":
+        version = _read_windows_version(path)
+    if not version:
         raise FileNotFoundError(f"Couldn't read the Bambu Studio version from {path}.")
-    return path, m.group(1)
+    return path, version
 
 
 import json

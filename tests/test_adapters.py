@@ -135,6 +135,18 @@ def test_missing_bambu_message(monkeypatch):
     assert "02.09.01.70" in str(e.value)
 
 
+def test_bambu_binary_windows_fallback(monkeypatch, tmp_path):
+    fake_exe = tmp_path / "bambu-studio.exe"
+    fake_exe.touch()
+    monkeypatch.setenv("LAB_BAMBU", str(fake_exe))
+    monkeypatch.setattr(bambu.sys, "platform", "win32")
+    monkeypatch.setattr(bambu.subprocess, "run", lambda *args, **kwargs: type("Proc", (), {"stdout": "", "stderr": ""})())
+    monkeypatch.setattr(bambu, "_read_windows_version", lambda path: "02.09.01.70")
+    p, v = bambu.bambu_binary()
+    assert p == fake_exe
+    assert v == "02.09.01.70"
+
+
 @pytest.mark.slow
 def test_render_cube(tmp_path):
     scad = tmp_path / "cube.scad"
