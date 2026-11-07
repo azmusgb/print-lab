@@ -1,12 +1,15 @@
 """Per-layer facts from Bambu Studio G-code: height, an estimated layer time, outer-wall speeds, fan and seam.
 
 The time is the sum of move lengths over their feed rates, ignoring acceleration: an estimate for spotting changes
-between layers, not a print-time prediction (Bambu Studio's own estimate is the authority)."""
+between layers, not a print-time prediction (Bambu Studio's own estimate is the authority).
+
+Bambu Studio writes relative extrusion (M83), so that is assumed until an M82 says otherwise. Arcs (G2/G3 with I/J) are
+measured along the arc; an arc given with R is measured as its chord, an underestimate."""
 import math
 import re
 from dataclasses import dataclass, field
 
-_WORD = re.compile(r"([XYZEFS])(-?\d*\.?\d+)")
+_WORD = re.compile(r"([XYZEFSIJ])(-?\d*\.?\d+)")
 
 
 @dataclass
@@ -19,12 +22,29 @@ class LayerInfo:
     seam_xy: tuple[float, float] | None = None
 
 
+def _arc_length(x: float, y: float, nx: float, ny: float, i: float, j: float, clockwise: bool) -> float:
+    """Length of the G2/G3 arc from (x, y) to (nx, ny) about the centre (x + i, y + j); the chord if there is no radius."""
+    r = math.hypot(i, j)
+    if r == 0:
+        return math.hypot(nx - x, ny - y)
+    cx, cy = x + i, y + j
+    sweep = math.atan2(ny - cy, nx - cx) - math.atan2(y - cy, x - cx)
+    if clockwise:
+        while sweep >= 0:
+            sweep -= 2 * math.pi
+    else:
+        while sweep <= 0:
+            sweep += 2 * math.pi
+    return r * abs(sweep)
+
+
 def read_layers(gcode: str) -> list[LayerInfo]:
     layers: list[LayerInfo] = []
     x = y = 0.0
     feed = 0.0  # mm/s
     feature = ""
     fan: float | None = None
+    relative_e, last_e = True, 0.0
     for raw in gcode.splitlines():
         line = raw.strip()
         if line.startswith(";"):
@@ -44,13 +64,28 @@ def read_layers(gcode: str) -> list[LayerInfo]:
             fan = round(float(words["S"]) / 255 * 100, 1)
             if layers:
                 layers[-1].fan_pct = fan
+        if cmd == "M82":
+            relative_e = False
+        elif cmd == "M83":
+            relative_e = True
+        elif cmd == "G92" and "E" in words:
+            last_e = float(words["E"])
         if cmd not in ("G0", "G1", "G2", "G3"):
             continue
         if "F" in words:
             feed = float(words["F"]) / 60
         nx, ny = float(words.get("X", x)), float(words.get("Y", y))
-        dist = math.hypot(nx - x, ny - y)
-        extruding = "E" in words and float(words["E"]) > 0
+        if cmd in ("G2", "G3") and ("I" in words or "J" in words):
+            dist = _arc_length(x, y, nx, ny, float(words.get("I", 0)), float(words.get("J", 0)), cmd == "G2")
+        else:
+            dist = math.hypot(nx - x, ny - y)
+        pushed = 0.0
+        if "E" in words:
+            e = float(words["E"])
+            pushed = e if relative_e else e - last_e
+            if not relative_e:
+                last_e = e
+        extruding = pushed > 0
         if layers:
             cur = layers[-1]
             if feed > 0 and dist > 0:
@@ -104,7 +139,8 @@ def diff_layers(layers_a: list[LayerInfo], layers_b: list[LayerInfo],
             speed_delta = (sb - sa) if (sa is not None and sb is not None) else None
             t_delta = round(lb.est_time_s - la.est_time_s, 2)
             t_ratio = (lb.est_time_s / la.est_time_s) if la.est_time_s > 0 else 1.0
-            fan_delta = round((lb.fan_pct or 0.0) - (la.fan_pct or 0.0), 1)
+            fan_delta = (round(lb.fan_pct - la.fan_pct, 1)
+                         if la.fan_pct is not None and lb.fan_pct is not None else None)  # unknown is not 0 %
             seam_dist = None
             if la.seam_xy and lb.seam_xy:
                 seam_dist = round(math.hypot(lb.seam_xy[0] - la.seam_xy[0], lb.seam_xy[1] - la.seam_xy[1]), 1)
@@ -128,7 +164,7 @@ def diff_layers(layers_a: list[LayerInfo], layers_b: list[LayerInfo],
                 speed_diffs.append(entry)
             if abs(t_ratio - 1.0) > 0.25 and (la.est_time_s > 2.0 or lb.est_time_s > 2.0):
                 time_jumps.append(entry)
-            if abs(fan_delta) > 1.0:
+            if fan_delta is not None and abs(fan_delta) > 1.0:
                 fan_diffs.append(entry)
         else:
             layer_diffs.append({
@@ -221,7 +257,8 @@ def format_gcode_diff(res: dict, name_a: str = "A", name_b: str = "B", *, show_l
 
 
 def feature_bands(gcode: str, feature: str) -> list[tuple[float, float, int]]:
-    """(bottom z, top z, layers) of each run of consecutive layers that extrude `feature` (e.g. "Sparse infill")."""
+    """(bottom z, top z, layers) of each run of consecutive layers whose G-code announces `feature` (a "; FEATURE:"
+    comment, e.g. "Sparse infill"). It does not check that the feature extrudes."""
     zs, present, z, cur = [], [], 0.0, False
     for raw in gcode.splitlines():
         line = raw.strip()
