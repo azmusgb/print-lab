@@ -28,6 +28,18 @@ that wasn't), only the owner starts a print, and nothing starts on a plate that 
   Pi Hub's key is the one the baseline lets act.
 - Lab prints are recognised by name (`one-print` P2: `<project>_<E-nnn>_<BLD-nnn-nn>`), and `lab pull` already creates a
   run from a print-log entry the lab wasn't told about. A print started this way is recorded without `lab exp start`.
+- **The X2D needs a USB stick for Bambuddy to send a file** (found at the first live Start, 6 Nov 2026). Bambuddy
+  1.3.0 sends by FTPS, which on the X2D reaches only external storage; with no stick every upload fails
+  `553 Could not create file`, and the queue item waits (and retries every ~25 min) with that reason. Bambu Studio
+  sends to internal storage over a different route, which Bambuddy doesn't have yet (maziggy/bambuddy#2762). The probe
+  never started a real print, so it missed this. Until #2762 lands, a FAT32/exFAT stick must stay in the printer.
+- A queue item stuck on that error is not cancelled by waiting: Bambuddy's retry gate is per printer, a restart of
+  Bambuddy cancels queued items, and a retry that succeeds starts the print on its own. Pi Hub's sheet shows the
+  waiting reason instead of staying on "Accepted".
+- The file says which filament it expects (`filament_type` and `filament_colour` in its project settings), and the
+  AMS tray in slot 1 may hold another colour: Bambuddy then sends it anyway and only logs a warning (6 Nov 2026,
+  green loaded for a terracotta build). `lab exp stage` records the file's type and colour in `staged.filament`, and
+  the sheet compares them with slot 1.
 - Bambuddy hashes the file the printer receives, so its `content_hash` never matched a lab artifact before (one-print).
   The staged file's identity has to be checked another way (decision S3).
 
