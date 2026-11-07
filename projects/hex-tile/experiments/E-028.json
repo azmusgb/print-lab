@@ -1,0 +1,846 @@
+{
+  "schema": 1,
+  "record_type": "experiment",
+  "id": "E-028",
+  "project": "hex-tile",
+  "question": "Q-007",
+  "provenance": "prospective",
+  "question_text": "Top-band lines: 6 wall loops against a 3-wall control on the same plate",
+  "hypothesis": "E-027's 6-wall strip showed no ripples, but the owner saw its horizontal face lines more evident than E-026's. The slice shows the outer wall identical; the 6-wall build has no sparse infill from 11.6 to 16.6 mm and its layers run 4-6 s longer. On separate plates this is confounded (witness abnormal, layer time 16.9 s vs 10.3 s).",
+  "prediction": "On one plate, with equal layer times, the 6-wall strip shows the same faint or no ripples as the 3-wall strip. If its face lines are still more evident, wall count is a likely cause; if they match, the plate or the witness piece caused the earlier difference.",
+  "why_this_test": "Puts both wall counts on one plate with a shared anchor, so the earlier comparison's three confounds drop out.",
+  "test_kind": "height_strip",
+  "factor": {
+    "name": "wall_loops",
+    "values": [
+      "6"
+    ],
+    "unit": ""
+  },
+  "factor_scope": "specific",
+  "dependent_adjustments": {},
+  "controlled": {},
+  "baseline": {},
+  "findings": [],
+  "judge_on": "the display face's top 20 mm under one low side light, both strips side by side: diagonal stripes (none|faint|bad), the rows of dashes (none|faint|bad), and which strip's horizontal face lines are more evident; then the sloped inner roof",
+  "expect": null,
+  "derived_from_artifact": [],
+  "derived_from_result": [],
+  "controls": {
+    "witness_required": true,
+    "anchor": "E-026-A"
+  },
+  "reference_variants": [],
+  "build_spec": {
+    "kind": "height_strip",
+    "source": "sources/RIFT_10IN_batch5_shadow_storm.3mf",
+    "object": "RIFT_MARKED_10IN_SINGLE.stl",
+    "z": [
+      192.0,
+      220.0
+    ],
+    "judged": [
+      198.0,
+      214.0
+    ],
+    "base": "sources/RIFT_10IN_batch5_shadow_storm.3mf",
+    "variants": [
+      {
+        "id": "E-028-A",
+        "tab": "28A",
+        "settings_patch": {
+          "wall_loops": "6"
+        },
+        "copies": 1
+      }
+    ],
+    "witness": true,
+    "anchor": {
+      "same_as": "E-026-A",
+      "source": "sources/RIFT_10IN_batch5_shadow_storm.3mf",
+      "object": "RIFT_MARKED_10IN_SINGLE.stl",
+      "z": [
+        192.0,
+        220.0
+      ],
+      "base": "sources/RIFT_10IN_batch5_shadow_storm.3mf",
+      "settings_patch": {
+        "wall_loops": "3"
+      },
+      "placement": [
+        128.0,
+        128.0
+      ],
+      "build_id": "BLD-026-02",
+      "inputs": {
+        "model": "c3520ae94c90b2c8b44894409266ee9e510a9ed5afd6882134980a728329a7fd",
+        "settings": "c3520ae94c90b2c8b44894409266ee9e510a9ed5afd6882134980a728329a7fd"
+      }
+    },
+    "tabs": true,
+    "notes": []
+  },
+  "status": "built",
+  "variants": [
+    {
+      "id": "E-028-A",
+      "tab": "28A",
+      "factor_value": "6",
+      "copies": 1
+    },
+    {
+      "id": "WITNESS-01",
+      "tab": null,
+      "role": "control"
+    },
+    {
+      "id": "E-028-ANCHOR",
+      "tab": null,
+      "role": "anchor",
+      "same_as": "E-026-A"
+    }
+  ],
+  "builds": [
+    {
+      "id": "BLD-028-01",
+      "ok": true,
+      "at": "2026-11-07T16:02:15+00:00",
+      "inputs": {
+        "model": {
+          "sources/RIFT_10IN_batch5_shadow_storm.3mf": "c3520ae94c90b2c8b44894409266ee9e510a9ed5afd6882134980a728329a7fd"
+        },
+        "settings": "c3520ae94c90b2c8b44894409266ee9e510a9ed5afd6882134980a728329a7fd",
+        "build_spec_sha256": "0902d9a147989ed321a9e186fbfdd6067015f47e6e073a1eec2618161df267f8",
+        "builder_version": "1a1.1",
+        "builder_fingerprint": "613678ae536046e04f77fb9e1df3fb5be6bb559ea992449eb3f769d2e20ed1ec",
+        "openscad": "2026.10.11",
+        "bambu_studio": "02.09.01.70"
+      },
+      "job": "job-20261107T160215-a6f1",
+      "artifact": "prints/hex-tile_E-028_BLD-028-01.3mf",
+      "artifact_sha256": "60acc6a4d27cf20b4ca42709ba8bcd26acd00f33b1e264422bd64044f82f2e57",
+      "sliced": "prints/sliced/hex-tile_E-028_BLD-028-01.gcode.3mf",
+      "estimate": {
+        "minutes": 95.5,
+        "g": 44.09
+      },
+      "plate": {
+        "objects": [
+          "E-028-ANCHOR",
+          "E-028-A",
+          "WITNESS-01"
+        ],
+        "placements": [
+          [
+            128.0,
+            128.0
+          ],
+          [
+            154.98,
+            128.0
+          ],
+          [
+            186.4,
+            128.0
+          ]
+        ]
+      },
+      "measured": {
+        "layer_time_median_s": 25.3,
+        "layer_time_profile": [
+          [
+            0.2,
+            976.89
+          ],
+          [
+            0.4,
+            22.63
+          ],
+          [
+            0.6,
+            22.81
+          ],
+          [
+            0.8,
+            22.25
+          ],
+          [
+            1.0,
+            22.34
+          ],
+          [
+            1.2,
+            21.47
+          ],
+          [
+            1.4,
+            21.45
+          ],
+          [
+            1.6,
+            21.42
+          ],
+          [
+            1.8,
+            20.92
+          ],
+          [
+            2.0,
+            20.89
+          ],
+          [
+            2.2,
+            20.86
+          ],
+          [
+            2.4,
+            20.84
+          ],
+          [
+            2.6,
+            20.82
+          ],
+          [
+            2.8,
+            20.79
+          ],
+          [
+            3.0,
+            20.76
+          ],
+          [
+            3.2,
+            20.74
+          ],
+          [
+            3.4,
+            20.71
+          ],
+          [
+            3.6,
+            20.69
+          ],
+          [
+            3.8,
+            20.66
+          ],
+          [
+            4.0,
+            20.64
+          ],
+          [
+            4.2,
+            20.61
+          ],
+          [
+            4.4,
+            20.58
+          ],
+          [
+            4.6,
+            20.56
+          ],
+          [
+            4.8,
+            20.53
+          ],
+          [
+            5.0,
+            20.51
+          ],
+          [
+            5.2,
+            20.48
+          ],
+          [
+            5.4,
+            20.46
+          ],
+          [
+            5.6,
+            20.43
+          ],
+          [
+            5.8,
+            20.41
+          ],
+          [
+            6.0,
+            20.38
+          ],
+          [
+            6.2,
+            20.36
+          ],
+          [
+            6.4,
+            20.33
+          ],
+          [
+            6.6,
+            20.31
+          ],
+          [
+            6.8,
+            20.28
+          ],
+          [
+            7.0,
+            20.25
+          ],
+          [
+            7.2,
+            20.23
+          ],
+          [
+            7.4,
+            20.2
+          ],
+          [
+            7.6,
+            20.18
+          ],
+          [
+            7.8,
+            20.15
+          ],
+          [
+            8.0,
+            20.13
+          ],
+          [
+            8.2,
+            20.1
+          ],
+          [
+            8.4,
+            20.08
+          ],
+          [
+            8.6,
+            20.05
+          ],
+          [
+            8.8,
+            20.03
+          ],
+          [
+            9.0,
+            20.01
+          ],
+          [
+            9.2,
+            19.97
+          ],
+          [
+            9.4,
+            19.95
+          ],
+          [
+            9.6,
+            19.92
+          ],
+          [
+            9.8,
+            19.9
+          ],
+          [
+            10.0,
+            20.38
+          ],
+          [
+            10.2,
+            20.44
+          ],
+          [
+            10.4,
+            20.53
+          ],
+          [
+            10.6,
+            21.22
+          ],
+          [
+            10.8,
+            21.19
+          ],
+          [
+            11.0,
+            21.56
+          ],
+          [
+            11.2,
+            22.41
+          ],
+          [
+            11.4,
+            22.74
+          ],
+          [
+            11.6,
+            22.37
+          ],
+          [
+            11.8,
+            22.83
+          ],
+          [
+            12.0,
+            22.61
+          ],
+          [
+            12.2,
+            22.98
+          ],
+          [
+            12.4,
+            23.36
+          ],
+          [
+            12.6,
+            24.61
+          ],
+          [
+            12.8,
+            24.56
+          ],
+          [
+            13.0,
+            25.29
+          ],
+          [
+            13.2,
+            25.1
+          ],
+          [
+            13.4,
+            25.54
+          ],
+          [
+            13.6,
+            25.23
+          ],
+          [
+            13.8,
+            25.31
+          ],
+          [
+            14.0,
+            25.75
+          ],
+          [
+            14.2,
+            25.78
+          ],
+          [
+            14.4,
+            26.08
+          ],
+          [
+            14.6,
+            26.45
+          ],
+          [
+            14.8,
+            26.62
+          ],
+          [
+            15.0,
+            26.82
+          ],
+          [
+            15.2,
+            26.68
+          ],
+          [
+            15.4,
+            26.63
+          ],
+          [
+            15.6,
+            26.93
+          ],
+          [
+            15.8,
+            26.99
+          ],
+          [
+            16.0,
+            27.28
+          ],
+          [
+            16.2,
+            27.45
+          ],
+          [
+            16.4,
+            27.77
+          ],
+          [
+            16.6,
+            27.07
+          ],
+          [
+            16.8,
+            27.33
+          ],
+          [
+            17.0,
+            26.95
+          ],
+          [
+            17.2,
+            27.32
+          ],
+          [
+            17.4,
+            27.05
+          ],
+          [
+            17.6,
+            27.43
+          ],
+          [
+            17.8,
+            27.08
+          ],
+          [
+            18.0,
+            27.47
+          ],
+          [
+            18.2,
+            27.13
+          ],
+          [
+            18.4,
+            27.53
+          ],
+          [
+            18.6,
+            27.23
+          ],
+          [
+            18.8,
+            27.69
+          ],
+          [
+            19.0,
+            27.39
+          ],
+          [
+            19.2,
+            27.84
+          ],
+          [
+            19.4,
+            27.54
+          ],
+          [
+            19.6,
+            28.09
+          ],
+          [
+            19.8,
+            27.75
+          ],
+          [
+            20.0,
+            28.12
+          ],
+          [
+            20.2,
+            27.8
+          ],
+          [
+            20.4,
+            28.13
+          ],
+          [
+            20.6,
+            27.94
+          ],
+          [
+            20.8,
+            27.73
+          ],
+          [
+            21.0,
+            27.81
+          ],
+          [
+            21.2,
+            27.6
+          ],
+          [
+            21.4,
+            27.69
+          ],
+          [
+            21.6,
+            27.49
+          ],
+          [
+            21.8,
+            27.58
+          ],
+          [
+            22.0,
+            27.38
+          ],
+          [
+            22.2,
+            27.21
+          ],
+          [
+            22.4,
+            27.25
+          ],
+          [
+            22.6,
+            27.12
+          ],
+          [
+            22.8,
+            27.17
+          ],
+          [
+            23.0,
+            26.97
+          ],
+          [
+            23.2,
+            26.95
+          ],
+          [
+            23.4,
+            26.98
+          ],
+          [
+            23.6,
+            26.96
+          ],
+          [
+            23.8,
+            26.99
+          ],
+          [
+            24.0,
+            26.96
+          ],
+          [
+            24.2,
+            25.86
+          ],
+          [
+            24.4,
+            25.78
+          ],
+          [
+            24.6,
+            25.75
+          ],
+          [
+            24.8,
+            25.67
+          ],
+          [
+            25.0,
+            25.63
+          ],
+          [
+            25.2,
+            25.56
+          ],
+          [
+            25.4,
+            25.53
+          ],
+          [
+            25.6,
+            25.32
+          ],
+          [
+            25.8,
+            25.51
+          ],
+          [
+            26.0,
+            25.2
+          ],
+          [
+            26.2,
+            25.38
+          ],
+          [
+            26.4,
+            25.06
+          ],
+          [
+            26.6,
+            25.25
+          ],
+          [
+            26.8,
+            24.93
+          ],
+          [
+            27.0,
+            27.22
+          ],
+          [
+            27.2,
+            82.22
+          ],
+          [
+            27.4,
+            43.4
+          ],
+          [
+            27.6,
+            43.22
+          ],
+          [
+            27.8,
+            43.19
+          ],
+          [
+            28.0,
+            45.28
+          ]
+        ]
+      },
+      "error": null,
+      "sliced_sha256": "dc6abb5461a89f338014c397f4e64fd95d33b9f3fce09c22dbb897fe78aea9f3",
+      "check": {
+        "status": "blocked",
+        "at": "2026-11-07T16:02:23+00:00",
+        "guards": [
+          {
+            "code": "owner_stopped",
+            "ok": true,
+            "result": "blocked",
+            "message": "question active"
+          },
+          {
+            "code": "auto_stopped",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "no automatic stop"
+          },
+          {
+            "code": "full_part_required",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "diagnostic test type"
+          },
+          {
+            "code": "autonomy_level",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "autonomy level 2"
+          },
+          {
+            "code": "refuted_dependency",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "no contradicted reasoning"
+          },
+          {
+            "code": "artifact_integrity",
+            "ok": true,
+            "result": "rebuild",
+            "message": "frozen bytes unchanged"
+          },
+          {
+            "code": "no_estimate",
+            "ok": true,
+            "result": "rebuild",
+            "message": "estimate present"
+          },
+          {
+            "code": "stale_build",
+            "ok": true,
+            "result": "rebuild",
+            "message": "inputs unchanged since the build"
+          },
+          {
+            "code": "factor_not_applied",
+            "ok": true,
+            "result": "blocked",
+            "message": "the declared factor differs between the variants"
+          },
+          {
+            "code": "reference_not_comparable",
+            "ok": true,
+            "result": "blocked",
+            "message": "references compared"
+          },
+          {
+            "code": "undeclared_difference",
+            "ok": false,
+            "result": "blocked",
+            "message": "geometry mesh differs (E-026-A vs E-028-ANCHOR) \u2014 declare it as a dependent adjustment or fix the plan"
+          },
+          {
+            "code": "geometry_blocking",
+            "ok": true,
+            "result": "blocked",
+            "message": "no blocking geometry findings"
+          },
+          {
+            "code": "geometry_warning",
+            "ok": false,
+            "result": "info",
+            "message": "WITNESS-01: feature-below-line-width: 117 layers between 0.1 and 27.9 mm. Make them at least 0.9 mm wide, or check the slice preview at those heights that they print as real walls."
+          },
+          {
+            "code": "per_test_time",
+            "ok": false,
+            "result": "needs_approval",
+            "message": "95.5 / 45 min per test"
+          },
+          {
+            "code": "per_test_material",
+            "ok": false,
+            "result": "needs_approval",
+            "message": "44.1 / 25 g per test"
+          },
+          {
+            "code": "question_time",
+            "ok": false,
+            "result": "needs_approval",
+            "message": "115.9 + 95.5 / 180 min for Q-007"
+          },
+          {
+            "code": "question_material",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "65.9 + 44.1 / 120 g for Q-007"
+          },
+          {
+            "code": "retry_limit",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "0 / 2 failed attempts"
+          },
+          {
+            "code": "plate_mismatch",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "plate timing matches the compared plates"
+          }
+        ]
+      }
+    }
+  ],
+  "approval": null,
+  "print_runs": [],
+  "owner_verdict": null,
+  "superseded_verdicts": [],
+  "anchors": [],
+  "ai_observations": [],
+  "comparison_validity": null,
+  "prediction_outcome": null,
+  "analysis": []
+}
