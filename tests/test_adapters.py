@@ -125,7 +125,7 @@ def test_missing_openscad_message(monkeypatch):
     monkeypatch.setenv("LAB_OPENSCAD", "/nonexistent/openscad")
     with pytest.raises(FileNotFoundError) as e:
         openscad.openscad_binary()
-    assert "brew install --cask openscad@snapshot" in str(e.value)
+    assert openscad.INSTALL in str(e.value)
 
 
 def test_missing_bambu_message(monkeypatch):
