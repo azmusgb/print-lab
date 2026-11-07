@@ -1,5 +1,4 @@
 """`lab pull`: fetch and apply pending phone requests (verdicts, photos) from Local AI."""
-import fcntl
 import hashlib
 import http.client
 import json
@@ -13,6 +12,30 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+
+if sys.platform == "win32":
+    import msvcrt
+
+    def _flock_nb(f):
+        msvcrt.locking(f.fileno(), msvcrt.LK_NBLCK, 1)
+
+    def _funlock(f):
+        try:
+            os.lseek(f.fileno(), 0, os.SEEK_SET)
+            msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
+        except OSError:
+            pass
+else:
+    import fcntl
+
+    def _flock_nb(f):
+        fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+    def _funlock(f):
+        try:
+            fcntl.flock(f, fcntl.LOCK_UN)
+        except OSError:
+            pass
 
 from datetime import datetime, timedelta, timezone
 
@@ -193,7 +216,7 @@ def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]
     lock_file = pdir / ".pull.lock"
     lock_fd = open(lock_file, "a")
     try:
-        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        _flock_nb(lock_fd)
     except (BlockingIOError, OSError):
         lock_fd.close()
         return []
@@ -340,10 +363,7 @@ def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]
 
         return results
     finally:
-        try:
-            fcntl.flock(lock_fd, fcntl.LOCK_UN)
-        except OSError:
-            pass
+        _funlock(lock_fd)
         lock_fd.close()
 
 
@@ -610,14 +630,15 @@ def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]
     seen: dict = {}
     lock_fd = open(pdir / ".pull.lock", "a")
     try:
-        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)  # one pull links at a time; a busy lock skips linking
+        _flock_nb(lock_fd)  # one pull links at a time; a busy lock skips linking
         try:
             applied += link_new_prints(ProjectPaths(pdir), seen)
         except Exception as e:  # linking must never stop the rest of the pull
             print(f"lab pull: linking Bambuddy prints failed: {e}", file=sys.stderr)
-    except OSError:
+    except (BlockingIOError, OSError):
         pass
     finally:
+        _funlock(lock_fd)
         lock_fd.close()  # releases the lock
     if seen.get("entries") is not None:  # staging needs the print log this pull read: idle for 10 minutes
         from lab.loop.stage import stage_waiting
