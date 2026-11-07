@@ -1,0 +1,42 @@
+{
+  "schema": "print-lab-run/1",
+  "record_type": "run",
+  "id": "RUN-026-02",
+  "experiment": "E-026",
+  "build_id": "BLD-026-02",
+  "status": "completed",
+  "printer": null,
+  "started_at": "2026-11-07T12:07:04+00:00",
+  "finished_at": null,
+  "estimate": {
+    "minutes": 48.0,
+    "g": 19.77
+  },
+  "actual": {
+    "minutes": 51.1,
+    "g": 19.77,
+    "usage_source": "bambuddy"
+  },
+  "artifacts": {
+    "model": {
+      "path": "sources/RIFT_10IN_batch5_shadow_storm.3mf",
+      "sha256": "c3520ae94c90b2c8b44894409266ee9e510a9ed5afd6882134980a728329a7fd"
+    },
+    "process": {
+      "path": "prints/hex-tile_E-026_BLD-026-02.3mf",
+      "sha256": "e6937cdbc92506363639f7bdb3b824ac922186c92e736a85b850baf813507577"
+    },
+    "filament": {
+      "path": "sources/RIFT_10IN_batch5_shadow_storm.3mf",
+      "sha256": "c3520ae94c90b2c8b44894409266ee9e510a9ed5afd6882134980a728329a7fd"
+    },
+    "slice": {
+      "path": "prints/sliced/hex-tile_E-026_BLD-026-02.gcode.3mf",
+      "sha256": "0b8933f7af3c36365236480a04d1679b295b69fd4bc74c4e69e92798bd6dba2f"
+    }
+  },
+  "evidence": [],
+  "source_run": "PR-026-02",
+  "created_at": "2026-11-07T12:07:55+00:00",
+  "updated_at": "2026-11-07T12:59:10+00:00"
+}

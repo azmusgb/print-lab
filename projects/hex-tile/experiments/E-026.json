@@ -61,7 +61,7 @@
     "tabs": true,
     "notes": []
   },
-  "status": "approved",
+  "status": "answered",
   "variants": [
     {
       "id": "E-026-A",
@@ -786,20 +786,871 @@
           }
         ]
       }
+    },
+    {
+      "id": "BLD-026-02",
+      "ok": true,
+      "at": "2026-11-06T17:23:43+00:00",
+      "inputs": {
+        "model": {
+          "sources/RIFT_10IN_batch5_shadow_storm.3mf": "c3520ae94c90b2c8b44894409266ee9e510a9ed5afd6882134980a728329a7fd"
+        },
+        "settings": "c3520ae94c90b2c8b44894409266ee9e510a9ed5afd6882134980a728329a7fd",
+        "build_spec_sha256": "28f8872993ad68153aef5bff9cd1f684be2234fbc28460bef984f96e39abc374",
+        "builder_version": "1a1.1",
+        "builder_fingerprint": "613678ae536046e04f77fb9e1df3fb5be6bb559ea992449eb3f769d2e20ed1ec",
+        "openscad": "2026.10.11",
+        "bambu_studio": "02.09.01.70"
+      },
+      "job": "job-20261106T172343-9502",
+      "artifact": "prints/hex-tile_E-026_BLD-026-02.3mf",
+      "artifact_sha256": "e6937cdbc92506363639f7bdb3b824ac922186c92e736a85b850baf813507577",
+      "sliced": "prints/sliced/hex-tile_E-026_BLD-026-02.gcode.3mf",
+      "estimate": {
+        "minutes": 48.0,
+        "g": 19.77
+      },
+      "plate": {
+        "objects": [
+          "E-026-A"
+        ],
+        "placements": [
+          [
+            128.0,
+            128.0
+          ]
+        ]
+      },
+      "measured": {
+        "layer_time_median_s": 10.33,
+        "layer_time_profile": [
+          [
+            0.2,
+            599.1
+          ],
+          [
+            0.4,
+            11.51
+          ],
+          [
+            0.6,
+            11.62
+          ],
+          [
+            0.8,
+            11.13
+          ],
+          [
+            1.0,
+            11.23
+          ],
+          [
+            1.2,
+            10.34
+          ],
+          [
+            1.4,
+            10.34
+          ],
+          [
+            1.6,
+            10.33
+          ],
+          [
+            1.8,
+            9.86
+          ],
+          [
+            2.0,
+            9.83
+          ],
+          [
+            2.2,
+            9.82
+          ],
+          [
+            2.4,
+            9.81
+          ],
+          [
+            2.6,
+            9.8
+          ],
+          [
+            2.8,
+            9.78
+          ],
+          [
+            3.0,
+            9.77
+          ],
+          [
+            3.2,
+            9.76
+          ],
+          [
+            3.4,
+            9.74
+          ],
+          [
+            3.6,
+            9.73
+          ],
+          [
+            3.8,
+            9.72
+          ],
+          [
+            4.0,
+            9.71
+          ],
+          [
+            4.2,
+            9.69
+          ],
+          [
+            4.4,
+            9.68
+          ],
+          [
+            4.6,
+            9.67
+          ],
+          [
+            4.8,
+            9.66
+          ],
+          [
+            5.0,
+            9.64
+          ],
+          [
+            5.2,
+            9.63
+          ],
+          [
+            5.4,
+            9.62
+          ],
+          [
+            5.6,
+            9.61
+          ],
+          [
+            5.8,
+            9.59
+          ],
+          [
+            6.0,
+            9.58
+          ],
+          [
+            6.2,
+            9.57
+          ],
+          [
+            6.4,
+            9.56
+          ],
+          [
+            6.6,
+            9.54
+          ],
+          [
+            6.8,
+            9.53
+          ],
+          [
+            7.0,
+            9.52
+          ],
+          [
+            7.2,
+            9.5
+          ],
+          [
+            7.4,
+            9.49
+          ],
+          [
+            7.6,
+            9.48
+          ],
+          [
+            7.8,
+            9.47
+          ],
+          [
+            8.0,
+            9.46
+          ],
+          [
+            8.2,
+            9.44
+          ],
+          [
+            8.4,
+            9.43
+          ],
+          [
+            8.6,
+            9.42
+          ],
+          [
+            8.8,
+            9.4
+          ],
+          [
+            9.0,
+            9.39
+          ],
+          [
+            9.2,
+            9.38
+          ],
+          [
+            9.4,
+            9.37
+          ],
+          [
+            9.6,
+            9.35
+          ],
+          [
+            9.8,
+            9.34
+          ],
+          [
+            10.0,
+            9.58
+          ],
+          [
+            10.2,
+            9.61
+          ],
+          [
+            10.4,
+            9.66
+          ],
+          [
+            10.6,
+            10.0
+          ],
+          [
+            10.8,
+            9.99
+          ],
+          [
+            11.0,
+            10.17
+          ],
+          [
+            11.2,
+            10.44
+          ],
+          [
+            11.4,
+            10.66
+          ],
+          [
+            11.6,
+            10.16
+          ],
+          [
+            11.8,
+            10.3
+          ],
+          [
+            12.0,
+            10.02
+          ],
+          [
+            12.2,
+            10.27
+          ],
+          [
+            12.4,
+            10.25
+          ],
+          [
+            12.6,
+            10.89
+          ],
+          [
+            12.8,
+            10.63
+          ],
+          [
+            13.0,
+            10.87
+          ],
+          [
+            13.2,
+            10.59
+          ],
+          [
+            13.4,
+            10.75
+          ],
+          [
+            13.6,
+            10.61
+          ],
+          [
+            13.8,
+            10.47
+          ],
+          [
+            14.0,
+            10.44
+          ],
+          [
+            14.2,
+            10.45
+          ],
+          [
+            14.4,
+            10.42
+          ],
+          [
+            14.6,
+            10.39
+          ],
+          [
+            14.8,
+            10.38
+          ],
+          [
+            15.0,
+            10.36
+          ],
+          [
+            15.2,
+            10.35
+          ],
+          [
+            15.4,
+            10.34
+          ],
+          [
+            15.6,
+            10.33
+          ],
+          [
+            15.8,
+            10.32
+          ],
+          [
+            16.0,
+            10.31
+          ],
+          [
+            16.2,
+            10.3
+          ],
+          [
+            16.4,
+            10.3
+          ],
+          [
+            16.6,
+            10.35
+          ],
+          [
+            16.8,
+            10.4
+          ],
+          [
+            17.0,
+            10.45
+          ],
+          [
+            17.2,
+            10.48
+          ],
+          [
+            17.4,
+            10.4
+          ],
+          [
+            17.6,
+            10.44
+          ],
+          [
+            17.8,
+            10.74
+          ],
+          [
+            18.0,
+            10.64
+          ],
+          [
+            18.2,
+            10.67
+          ],
+          [
+            18.4,
+            10.72
+          ],
+          [
+            18.6,
+            10.74
+          ],
+          [
+            18.8,
+            10.78
+          ],
+          [
+            19.0,
+            10.81
+          ],
+          [
+            19.2,
+            10.86
+          ],
+          [
+            19.4,
+            10.75
+          ],
+          [
+            19.6,
+            10.81
+          ],
+          [
+            19.8,
+            10.92
+          ],
+          [
+            20.0,
+            10.9
+          ],
+          [
+            20.2,
+            10.86
+          ],
+          [
+            20.4,
+            10.83
+          ],
+          [
+            20.6,
+            10.82
+          ],
+          [
+            20.8,
+            10.79
+          ],
+          [
+            21.0,
+            10.78
+          ],
+          [
+            21.2,
+            10.76
+          ],
+          [
+            21.4,
+            10.75
+          ],
+          [
+            21.6,
+            10.72
+          ],
+          [
+            21.8,
+            10.72
+          ],
+          [
+            22.0,
+            10.69
+          ],
+          [
+            22.2,
+            10.68
+          ],
+          [
+            22.4,
+            10.66
+          ],
+          [
+            22.6,
+            10.65
+          ],
+          [
+            22.8,
+            10.65
+          ],
+          [
+            23.0,
+            10.7
+          ],
+          [
+            23.2,
+            10.73
+          ],
+          [
+            23.4,
+            10.78
+          ],
+          [
+            23.6,
+            10.82
+          ],
+          [
+            23.8,
+            10.87
+          ],
+          [
+            24.0,
+            10.91
+          ],
+          [
+            24.2,
+            10.34
+          ],
+          [
+            24.4,
+            10.32
+          ],
+          [
+            24.6,
+            10.31
+          ],
+          [
+            24.8,
+            10.29
+          ],
+          [
+            25.0,
+            10.28
+          ],
+          [
+            25.2,
+            10.25
+          ],
+          [
+            25.4,
+            10.24
+          ],
+          [
+            25.6,
+            10.19
+          ],
+          [
+            25.8,
+            10.17
+          ],
+          [
+            26.0,
+            10.14
+          ],
+          [
+            26.2,
+            10.12
+          ],
+          [
+            26.4,
+            10.09
+          ],
+          [
+            26.6,
+            10.06
+          ],
+          [
+            26.8,
+            10.03
+          ],
+          [
+            27.0,
+            10.9
+          ],
+          [
+            27.2,
+            44.88
+          ],
+          [
+            27.4,
+            21.32
+          ],
+          [
+            27.6,
+            21.22
+          ],
+          [
+            27.8,
+            21.26
+          ],
+          [
+            28.0,
+            22.02
+          ]
+        ]
+      },
+      "error": null,
+      "sliced_sha256": "0b8933f7af3c36365236480a04d1679b295b69fd4bc74c4e69e92798bd6dba2f",
+      "check": {
+        "status": "approved",
+        "at": "2026-11-07T12:04:49+00:00",
+        "guards": [
+          {
+            "code": "owner_stopped",
+            "ok": true,
+            "result": "blocked",
+            "message": "question active"
+          },
+          {
+            "code": "auto_stopped",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "no automatic stop"
+          },
+          {
+            "code": "full_part_required",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "diagnostic test type"
+          },
+          {
+            "code": "autonomy_level",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "autonomy level 2"
+          },
+          {
+            "code": "refuted_dependency",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "no contradicted reasoning"
+          },
+          {
+            "code": "artifact_integrity",
+            "ok": true,
+            "result": "rebuild",
+            "message": "frozen bytes unchanged"
+          },
+          {
+            "code": "no_estimate",
+            "ok": true,
+            "result": "rebuild",
+            "message": "estimate present"
+          },
+          {
+            "code": "stale_build",
+            "ok": true,
+            "result": "rebuild",
+            "message": "inputs unchanged since the build"
+          },
+          {
+            "code": "factor_not_applied",
+            "ok": true,
+            "result": "blocked",
+            "message": "the declared factor differs between the variants"
+          },
+          {
+            "code": "reference_not_comparable",
+            "ok": true,
+            "result": "blocked",
+            "message": "references compared"
+          },
+          {
+            "code": "undeclared_difference",
+            "ok": true,
+            "result": "blocked",
+            "message": "only the declared factor differs"
+          },
+          {
+            "code": "geometry_blocking",
+            "ok": true,
+            "result": "blocked",
+            "message": "no blocking geometry findings"
+          },
+          {
+            "code": "per_test_time",
+            "ok": false,
+            "result": "needs_approval",
+            "message": "48 / 45 min per test"
+          },
+          {
+            "code": "per_test_material",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "19.8 / 25 g per test"
+          },
+          {
+            "code": "question_time",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "1.4 + 48 / 180 min for Q-007"
+          },
+          {
+            "code": "question_material",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "19.8 + 19.8 / 120 g for Q-007"
+          },
+          {
+            "code": "retry_limit",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "0 / 2 failed attempts"
+          },
+          {
+            "code": "plate_mismatch",
+            "ok": true,
+            "result": "needs_approval",
+            "message": "plate timing matches the compared plates"
+          }
+        ]
+      },
+      "staged": {
+        "library_file": 4,
+        "folder": 1,
+        "sha256": "0b8933f7af3c36365236480a04d1679b295b69fd4bc74c4e69e92798bd6dba2f",
+        "at": "2026-11-06T17:33:34+00:00",
+        "bambuddy": "1.3.0"
+      }
     }
   ],
   "approval": {
-    "build_id": "BLD-026-01",
-    "artifact_sha256": "a30476eb318d4bbe97951e6dae2577d1955b1c7e9ee250d5a8e1c0842dd75960",
+    "build_id": "BLD-026-02",
+    "artifact_sha256": "e6937cdbc92506363639f7bdb3b824ac922186c92e736a85b850baf813507577",
     "approved_reasons": [
       "per_test_time"
     ],
     "by": "owner",
-    "at": "2026-11-05T16:14:54+00:00",
-    "reason": "47.9 min is fine for this test"
+    "at": "2026-11-06T17:33:25+00:00",
+    "reason": "48 min vs 45 budget: 3 min over, strip control for Q-007"
   },
-  "print_runs": [],
-  "owner_verdict": null,
+  "print_runs": [
+    {
+      "id": "PR-026-01",
+      "build_id": "BLD-026-02",
+      "started_at": "2026-11-06T21:25:37+00:00",
+      "setup": {
+        "filament_dried": {
+          "id": "SET-00001",
+          "at": "2026-10-25T01:40:55+00:00",
+          "fields": {}
+        },
+        "vibration_calibration": {
+          "id": "SET-00002",
+          "at": "2026-10-25T12:38:01+00:00",
+          "fields": {}
+        }
+      },
+      "baseline_missing": [
+        "nozzle_changed"
+      ],
+      "usage": {
+        "actual_minutes": 1.4,
+        "actual_g": null,
+        "usage_source": "bambuddy",
+        "completion_fraction": null
+      },
+      "failed": null,
+      "photos": [],
+      "started_from": "one-tap",
+      "started_by": "pi-hub one-tap",
+      "one_tap": {
+        "device": "iPhone",
+        "queue_item": 1,
+        "library_file": 4,
+        "tapped_at": "2026-11-06T20:15:23+00:00"
+      },
+      "bambuddy": {
+        "print": 61,
+        "archive": 61,
+        "linked": "auto",
+        "at": "2026-11-06T21:27:22+00:00",
+        "status": "cancelled",
+        "started": "2026-11-06T21:25:39+00:00",
+        "ended": "2026-11-06T21:27:04+00:00",
+        "minutes": 1.4,
+        "grams": null,
+        "failure_reason": "userCancelled",
+        "failed_at_estimate": null,
+        "snapshot_at": "2026-11-06T21:27:22+00:00"
+      },
+      "usage_revisions": [
+        {
+          "actual_minutes": null,
+          "actual_g": null,
+          "usage_source": "finished_unknown",
+          "completion_fraction": null,
+          "replaced_at": "2026-11-06T21:27:22+00:00",
+          "reason": "bambuddy print #61"
+        }
+      ]
+    },
+    {
+      "id": "PR-026-02",
+      "build_id": "BLD-026-02",
+      "started_at": "2026-11-07T12:07:04+00:00",
+      "setup": {
+        "filament_dried": {
+          "id": "SET-00001",
+          "at": "2026-10-25T01:40:55+00:00",
+          "fields": {}
+        },
+        "vibration_calibration": {
+          "id": "SET-00002",
+          "at": "2026-10-25T12:38:01+00:00",
+          "fields": {}
+        }
+      },
+      "baseline_missing": [
+        "nozzle_changed"
+      ],
+      "usage": {
+        "actual_minutes": 51.1,
+        "actual_g": 19.77,
+        "usage_source": "bambuddy",
+        "completion_fraction": null
+      },
+      "failed": null,
+      "photos": [],
+      "started_from": "one-tap",
+      "started_by": "pi-hub one-tap",
+      "one_tap": {
+        "device": "iPhone",
+        "queue_item": 6,
+        "library_file": 4,
+        "tapped_at": "2026-11-07T12:07:04+00:00"
+      },
+      "bambuddy": {
+        "print": 65,
+        "archive": 61,
+        "linked": "auto",
+        "at": "2026-11-07T12:59:10+00:00",
+        "status": "completed",
+        "started": "2026-11-07T12:07:27+00:00",
+        "ended": "2026-11-07T12:58:34+00:00",
+        "minutes": 51.1,
+        "grams": 19.77,
+        "failure_reason": null,
+        "failed_at_estimate": null,
+        "snapshot_at": "2026-11-07T12:59:10+00:00"
+      }
+    }
+  ],
+  "owner_verdict": {
+    "kind": "criteria",
+    "grades": {
+      "E-026-A": {
+        "stripes": "none",
+        "dashes": "none",
+        "atswitch": "no",
+        "roof": "clean"
+      }
+    },
+    "lighting": "diagnostic",
+    "print_runs": [
+      "PR-026-02"
+    ],
+    "note": "Looks better!",
+    "by": "owner",
+    "at": "2026-11-07T13:03:13+00:00"
+  },
   "superseded_verdicts": [],
   "anchors": [],
   "ai_observations": [
@@ -812,7 +1663,10 @@
       "at": "2026-11-05T22:55:23+00:00"
     }
   ],
-  "comparison_validity": null,
+  "comparison_validity": {
+    "status": "valid",
+    "reasons": []
+  },
   "prediction_outcome": null,
   "analysis": [],
   "criteria": [
