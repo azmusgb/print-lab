@@ -76,16 +76,23 @@ def record_lock(lock_dir: Path, record_id: str, command: str, timeout_s: float =
                     fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
                 locked = True
                 break
-            except (BlockingIOError, OSError):
-                if time.monotonic() >= deadline:
-                    try:
-                        held = json.loads(Path(path).read_text() or "{}")
-                    except (OSError, json.JSONDecodeError):
-                        held = {}
-                    raise RecordError(path, None, f"{record_id} is being changed by `{held.get('command', '?')}` "
-                                                  f"(PID {held.get('pid', '?')}, since {held.get('started_at', '?')}). "
-                                                  "Wait for it to finish and try again.") from None
-                time.sleep(0.1)
+            except BlockingIOError:
+                pass
+            except OSError as e:
+                # On Windows, msvcrt.locking raises OSError(errno=EACCES or EDEADLK) when locked
+                if sys.platform == "win32" and e.errno in (13, 36):
+                    pass
+                else:
+                    raise
+            if time.monotonic() >= deadline:
+                try:
+                    held = json.loads(Path(path).read_text() or "{}")
+                except (OSError, json.JSONDecodeError):
+                    held = {}
+                raise RecordError(path, None, f"{record_id} is being changed by `{held.get('command', '?')}` "
+                                              f"(PID {held.get('pid', '?')}, since {held.get('started_at', '?')}). "
+                                              "Wait for it to finish and try again.") from None
+            time.sleep(0.1)
         os.ftruncate(fd, 0)
         os.write(fd, json.dumps({"pid": os.getpid(), "command": command, "started_at": now()}).encode())
         yield
