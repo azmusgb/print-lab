@@ -3,11 +3,21 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
-INSTALL = "brew install --cask openscad@snapshot"
+if sys.platform == "win32":
+    INSTALL = "winget install OpenSCAD.OpenSCAD.Nightly"
+    _CANDIDATES = [
+        str(Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "OpenSCAD" / "openscad.com"),
+        str(Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "OpenSCAD" / "openscad.exe"),
+        str(Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")) / "OpenSCAD" / "openscad.com"),
+    ]
+else:
+    INSTALL = "brew install --cask openscad@snapshot"
+    _CANDIDATES = ["/opt/homebrew/bin/openscad", "/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD"]
+
 MIN_YEAR = 2025
-_CANDIDATES = ["/opt/homebrew/bin/openscad", "/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD"]
 
 
 def openscad_binary() -> tuple[Path, str]:
