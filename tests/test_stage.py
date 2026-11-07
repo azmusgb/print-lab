@@ -61,7 +61,7 @@ def test_stage_uploads_the_checked_build_and_records_it(proj):
     fake = FakeBambuddy()
     r = stage(proj, eid, client=fake)
     b = _build(proj, eid)
-    assert r == {"experiment": eid, "build": b["id"], "file": b["sliced"].split("/")[-1], "library_file": 1,
+    assert r == {"experiment": eid, "build": b["id"], "file": Path(b["sliced"]).name, "library_file": 1,
                  "folder": 7, "already": False}
     assert fake.files[1] == (proj.root / b["sliced"]).read_bytes()
     assert b["staged"]["library_file"] == 1 and b["staged"]["sha256"] == b["sliced_sha256"]
