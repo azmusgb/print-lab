@@ -18,6 +18,19 @@ def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def _file_filament(sliced) -> dict | None:
+    """What the sliced file asks slot 1 to hold: {"type", "colour"} from its first filament entry, so Pi Hub's Start
+    sheet can compare it with the AMS tray. None when the file doesn't say."""
+    try:
+        from lab.adapters.bambu import read_settings
+        cfg = read_settings(sliced) or {}
+    except Exception:
+        return None
+    pick = lambda key: next((str(v) for v in (cfg.get(key) or []) if v), None)  # noqa: E731
+    out = {"type": pick("filament_type"), "colour": pick("filament_colour")}
+    return out if any(out.values()) else None
+
+
 def stage(paths: ProjectPaths, exp_id: str, *, client=bambuddy) -> dict:
     """Stage the build the check passes; {"experiment", "build", "file", "library_file", "folder", "already"}.
     `client` is the Bambuddy adapter (a fake in tests)."""
@@ -54,7 +67,7 @@ def stage(paths: ProjectPaths, exp_id: str, *, client=bambuddy) -> dict:
         if e["status"] in ("built", "ready", "needs_approval", "approved"):
             e["status"] = r.status  # what the check just found, as `lab exp check` records it
         build["staged"] = {"library_file": fid, "folder": folder, "sha256": b["sliced_sha256"], "at": now(),
-                           "bambuddy": version}
+                           "bambuddy": version, "filament": _file_filament(f)}
         save_experiment(paths, e)
     return out | {"library_file": fid, "folder": folder, "already": False}
 

@@ -70,6 +70,24 @@ def test_stage_uploads_the_checked_build_and_records_it(proj):
     assert bambuddy.parse_lab_name(r["file"].removesuffix(".gcode.3mf"))["build"] == b["id"]
 
 
+def test_stage_records_what_the_file_asks_slot_1_to_hold(proj):  # A12: the Start sheet compares it with the AMS tray
+    eid = built(proj)
+    stage(proj, eid, client=FakeBambuddy())
+    assert _build(proj, eid)["staged"]["filament"] == {"type": "PLA", "colour": "#F95D73"}
+
+
+def test_a_file_that_names_no_filament_records_none(proj, monkeypatch):
+    from lab.loop import stage as stage_mod
+    monkeypatch.setattr("lab.adapters.bambu.read_settings", lambda p: None)
+    assert stage_mod._file_filament("x.gcode.3mf") is None
+    monkeypatch.setattr("lab.adapters.bambu.read_settings", lambda p: {"filament_colour": ["", None], "filament_type": []})
+    assert stage_mod._file_filament("x.gcode.3mf") is None
+    monkeypatch.setattr("lab.adapters.bambu.read_settings", lambda p: {"filament_type": ["PETG"]})
+    assert stage_mod._file_filament("x.gcode.3mf") == {"type": "PETG", "colour": None}
+    monkeypatch.setattr("lab.adapters.bambu.read_settings", lambda p: (_ for _ in ()).throw(OSError("unreadable")))
+    assert stage_mod._file_filament("x.gcode.3mf") is None
+
+
 def test_stage_never_queues_or_starts(proj):
     eid = built(proj)
     fake = FakeBambuddy()
