@@ -3,6 +3,7 @@ byte, and nothing is ever queued or started. Bambuddy is a fake here; the adapte
 against a local server."""
 import json
 import threading
+from pathlib import Path
 from types import SimpleNamespace
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
