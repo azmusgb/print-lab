@@ -88,6 +88,36 @@ def test_a_file_that_names_no_filament_records_none(proj, monkeypatch):
     assert stage_mod._file_filament("x.gcode.3mf") is None
 
 
+def test_stage_records_the_model_and_the_plate_size(proj):  # A12: the Start sheet says what is about to print
+    eid = built(proj)
+    stage(proj, eid, client=FakeBambuddy())
+    staged = _build(proj, eid)["staged"]
+    assert staged["model"] and "_" not in staged["model"]
+    assert "size" in staged  # None for the fixture's file, which has no plate box
+
+
+def test_the_model_is_named_plainly_from_its_source():
+    from lab.loop.stage import _file_model
+    assert _file_model({"inputs": {"model": {"sources/RIFT_10IN_batch5_shadow_storm.3mf": "abc"}}}) == \
+        "RIFT 10IN batch5 shadow storm"
+    assert _file_model({"inputs": {"model": {}}}) is None
+    assert _file_model({}) is None
+
+
+def test_the_plate_size_comes_from_the_slicers_box_and_top_layer(tmp_path, monkeypatch):
+    import zipfile
+    from lab.loop.stage import _file_size
+    f = tmp_path / "x.gcode.3mf"
+    with zipfile.ZipFile(f, "w") as z:
+        z.writestr("Metadata/plate_1.json", json.dumps({"bbox_all": [92.77, 15.64, 163.24, 240.30]}))
+        z.writestr("Metadata/plate_1.gcode", "; total layer number: 140\n; max_z_height: 28.00\n")
+    monkeypatch.setattr("lab.adapters.bambu.read_settings", lambda p: {"brim_type": "outer_only"})
+    assert _file_size(f) == {"x": 70.5, "y": 224.7, "z": 28.0, "brim": True}
+    monkeypatch.setattr("lab.adapters.bambu.read_settings", lambda p: {"brim_type": "no_brim"})
+    assert _file_size(f)["brim"] is False
+    assert _file_size(tmp_path / "missing.3mf") is None
+
+
 def test_stage_never_queues_or_starts(proj):
     eid = built(proj)
     fake = FakeBambuddy()
