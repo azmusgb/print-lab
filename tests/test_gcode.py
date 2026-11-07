@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 
 import pytest
@@ -86,3 +87,39 @@ def test_real_slice_v57_3in(tmp_path, hex_dir):
     layers = read_layers(bambu.extract_gcode(sliced, 1))
     assert len(layers) > 300 and all(l.est_time_s > 0 for l in layers)
     assert any(l.outer_wall_speeds_mm_s for l in layers)
+
+
+def _outer_wall(moves: str, setup: str = "") -> list:
+    return read_layers(f"; CHANGE_LAYER\n; Z_HEIGHT: 0.2\n{setup}; FEATURE: Outer wall\n{moves}")
+
+
+def test_absolute_extrusion_a_retract_is_not_a_wall_speed():
+    # M82: E counts up, so E9 after E10 pulls filament back; the move at F1200 is a retraction, not an outer wall
+    layer = _outer_wall("G1 X0 Y0 F600\nG1 X10 Y0 E10\nG1 X20 Y0 E9 F1200\n", setup="M82\n")[0]
+    assert layer.outer_wall_speeds_mm_s == [10.0]
+
+
+def test_relative_extrusion_still_reads_each_move_by_its_own_e():
+    layer = _outer_wall("G1 X0 Y0 F600\nG1 X10 Y0 E1\nG1 X20 Y0 E-0.8 F1200\n", setup="M83\n")[0]
+    assert layer.outer_wall_speeds_mm_s == [10.0]
+
+
+def test_g92_resets_the_absolute_extruder_position():
+    layer = _outer_wall("G1 X0 Y0 F600\nG1 X10 Y0 E10\nG92 E0\nG1 X20 Y0 E1 F1200\n", setup="M82\n")[0]
+    assert layer.outer_wall_speeds_mm_s == [10.0, 20.0]
+
+
+def test_a_quarter_arc_is_timed_along_the_arc_not_the_chord():
+    gcode = "G1 X10 Y0 F600\nG3 X0 Y10 I-10 J0 E1\n"
+    layer = _outer_wall(gcode)[0]
+    assert layer.est_time_s == pytest.approx(1.0 + 10 * math.pi / 2 / 10, abs=1e-3)  # 1 s lead-in, then 15.708 mm at 10 mm/s (the chord gave 2.414 s)
+    layer = _outer_wall("G1 X10 Y0 F600\nG2 X0 Y10 I-10 J0 E1\n")[0]
+    assert layer.est_time_s == pytest.approx(1.0 + 10 * math.pi * 1.5 / 10, abs=1e-3)  # clockwise takes the long way round
+
+
+def test_an_unknown_fan_is_not_a_zero_in_the_diff():
+    from lab.analysis.gcode import LayerInfo, diff_layers
+    unknown = [LayerInfo(index=0, z=0.2, est_time_s=10.0, fan_pct=None)]
+    half = [LayerInfo(index=0, z=0.2, est_time_s=10.0, fan_pct=50.0)]
+    res = diff_layers(unknown, half)
+    assert res["layers"][0]["fan_delta"] is None and res["fan_diff_count"] == 0
