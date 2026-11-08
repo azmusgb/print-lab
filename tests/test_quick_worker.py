@@ -339,3 +339,19 @@ def test_worker_id_matches_the_hubs_pattern(monkeypatch):
     monkeypatch.setattr(worker.socket, "gethostname", lambda: "Bill's MacBook Pro (2).local")
     w = worker.worker_record(presets=[], studio_version="02.09.01.70")
     assert re.fullmatch(r"[A-Za-z0-9._-]{1,40}", w["id"])
+
+
+@pytest.mark.parametrize("field,value", [("id", "../../etc"), ("attempt", "a/../../x"), ("id", ""), ("attempt", "x" * 80)])
+def test_unsafe_ids_are_never_used_as_paths(fake, base, tmp_path, field, value):
+    fake.job[field] = value
+    victim = tmp_path / "keep"
+    victim.mkdir()
+    r = go(fake, base, tmp_path, slicer=lambda *a: pytest.fail("must not slice"))
+    assert r.status == "hub_error" and victim.exists()
+    assert not any(p.endswith(("/model", "/artifact", "/complete")) for _, p in fake.calls)
+
+
+@pytest.mark.parametrize("ext", ["../x", "exe", "stl/../../y", ""])
+def test_unknown_model_types_are_refused(fake, base, tmp_path, ext):
+    fake.job["model"]["ext"] = ext
+    assert go(fake, base, tmp_path, slicer=lambda *a: pytest.fail("must not slice")).status == "hub_error"

@@ -27,6 +27,8 @@ BASE = "/api/lab/quick/worker"  # Caddy passes the Mac only /api/lab/*
 CHUNK = 8 << 20  # the hub takes at most 8 MiB per artifact request (Caddy caps bodies at 9 MB)
 PRESET_DIR = Path(__file__).resolve().parents[2] / "presets" / "quick"
 DEFAULT_TIMEOUT = 10.0
+ID_PATTERN = re.compile(r"[A-Za-z0-9_-]{1,64}")  # job and attempt ids name folders and URLs: nothing else gets near them
+MODEL_EXTS = ("stl", "3mf")
 MISSED_BEATS = 6  # consecutive heartbeat failures after which the lease (90 s) is gone: stop, post nothing
 
 
@@ -285,8 +287,14 @@ def run_once(hub: Hub, *, worker: dict | None = None, base: Path | None = None, 
     job = claim.get("job")
     if not job:
         return PassResult("idle", claim.get("why") or "")
-    scratch = Path(scratch or Path(tempfile.gettempdir()) / "lab-quick-worker")
-    work = scratch / job["id"] / job["attempt"]
+    ext = str(((job.get("model") or {}).get("ext")) or "").lower().lstrip(".")
+    if not (ID_PATTERN.fullmatch(str(job.get("id", ""))) and ID_PATTERN.fullmatch(str(job.get("attempt", "")))
+            and ext in MODEL_EXTS and isinstance(job.get("generation"), int)):
+        return PassResult("hub_error", "the hub sent a job with an unusable id, attempt, generation or model type; not run")
+    scratch = Path(scratch or Path(tempfile.gettempdir()) / "lab-quick-worker").resolve()
+    work = (scratch / job["id"] / job["attempt"]).resolve()
+    if scratch not in work.parents:
+        return PassResult("hub_error", "the job's folder falls outside the worker's scratch folder; not run")
     work.mkdir(parents=True, exist_ok=True)
     hb = Heartbeat(hub, job, worker, heartbeat_every)
     hb.beat()  # the first beat is synchronous: a refusal here means we never start
@@ -316,7 +324,7 @@ def _work(hub, job, worker, hb, work, base, slicer, log) -> PassResult:
 
     if (r := stopped()):
         return r
-    model = work / f"model.{job['model']['ext'].lstrip('.')}"
+    model = work / f"model.{job['model']['ext'].lower().lstrip('.')}"  # ext was checked against MODEL_EXTS
     got = hub.download_model(job, model)
     if got != job["model"]["sha256"]:
         return _fail(hub, job, "failed", "slice_failed", "the model changed in transit (sha256 differs)", hb)
