@@ -1,6 +1,6 @@
 """PhoneBridge (Fusion add-in): lets the Mac-hosted camera-fit page read and edit the active design's user parameters.
 
-It listens on 127.0.0.1 only (port 8767); the page's server on the Mac is the one thing that talks to it, and it adds the
+It listens on 127.0.0.1 only (port 38117); the page's server on the Mac is the one thing that talks to it, and it adds the
 token, the allow-list and the ranges. Every Fusion call runs on Fusion's main thread through a custom event, as the API
 requires. It reads parameters, takes a viewport picture and changes ONE user parameter's expression per request, as one
 undoable command; it never saves, closes or exports anything."""
@@ -17,7 +17,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import adsk.core
 import adsk.fusion
 
-PORT = 8767
+PORT = 38117
 TOKEN_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "bridge-token")
 HOSTS = {f"127.0.0.1:{PORT}", f"localhost:{PORT}"}
 PLAIN = re.compile(r"^\d+(?:\.\d+)? mm$")

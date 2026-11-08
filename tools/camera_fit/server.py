@@ -3,7 +3,7 @@
     python tools/camera_fit/server.py            # prints the URL (with its token) to open on the iPhone
 
 The page shows Fusion's own pictures of the model and sliders for its placeholder parameters. This server holds the token,
-the allow-list and the ranges, and forwards each change to the PhoneBridge add-in inside Fusion (127.0.0.1:8767). It never
+the allow-list and the ranges, and forwards each change to the PhoneBridge add-in inside Fusion (127.0.0.1:38117). It never
 saves the Fusion document. Standard library only; every request needs the token."""
 import argparse
 import json
@@ -23,7 +23,7 @@ from urllib.parse import parse_qs, urlparse
 
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data"
-BRIDGE = "http://127.0.0.1:8767"
+BRIDGE = "http://127.0.0.1:38117"
 MAX_BODY = 4096
 BRIDGE_TOKEN = ""  # shared with the add-in through data/bridge-token
 HARD_MAX_MM = 300.0

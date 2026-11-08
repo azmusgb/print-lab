@@ -4,7 +4,7 @@ Finish the `camera_carrier` Fusion model from an iPhone on the home network: Fus
 Front, Top, Right, Back) and sliders for the parameters whose comments still say placeholder, provisional or verify.
 
 ```
-iPhone  --http, token-->  server.py (Mac, :8765)  --127.0.0.1:8767-->  PhoneBridge add-in (inside Fusion)
+iPhone  --http, token-->  server.py (Mac, :8765)  --127.0.0.1:38117-->  PhoneBridge add-in (inside Fusion)
 ```
 
 - Only plain `N mm` parameters that are still provisional can change, within half to double their first-seen value.
