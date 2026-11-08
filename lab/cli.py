@@ -123,6 +123,23 @@ def cmd_slice(args) -> int:
     return 0
 
 
+def cmd_quick_slice(args) -> int:
+    import json as _json
+
+    from lab.quick import settings as quick_settings
+    from lab.quick.engine import QuickSliceError, slice_quick
+    from lab.jobs import LabToolError
+    try:
+        res = slice_quick(Path(args.model), Path(args.base), Path(args.out_dir),
+                          settings=_json.loads(args.settings) if args.settings else {},
+                          expect_model_sha256=args.expect_sha256, name=args.name)
+    except (quick_settings.QuickSettingError, QuickSliceError, LabToolError, ValueError) as e:
+        print(f"Not sliced: {e}", file=sys.stderr)
+        return 1
+    print(_json.dumps(res.to_json(), indent=2))
+    return 0
+
+
 def cmd_tent(args) -> int:
     from lab.geometry.tent import render_tent_stl, write_tent_scad
     out_path = Path(args.out)
@@ -260,6 +277,14 @@ def main(argv=None) -> int:
     s = sub.add_parser("slice", help="slice a 3MF plate with Bambu Studio")
     s.add_argument("file"); s.add_argument("--plate", type=int, default=1); s.add_argument("--out-dir")
     s.set_defaults(fn=cmd_slice)
+    s = sub.add_parser("quick", help="Quick Print: slice an ordinary model with the X2D start sequence (no network)")
+    qs = s.add_subparsers(dest="quick_cmd", required=True)
+    q = qs.add_parser("slice", help="slice one STL or 3MF from a Studio-saved base project")
+    q.add_argument("model"); q.add_argument("--base", required=True, help="the Studio-saved base project (.3mf)")
+    q.add_argument("--out-dir", required=True); q.add_argument("--name", default="quick")
+    q.add_argument("--settings", help='JSON of offered settings, e.g. \'{"wall_loops": 3}\'')
+    q.add_argument("--expect-sha256", help="refuse unless the model has this sha256")
+    q.set_defaults(fn=cmd_quick_slice)
     s = sub.add_parser("gcode", help="read a sliced plate's G-code, or diff two sliced plates")
     s.add_argument("file"); s.add_argument("--plate", type=int, default=1); s.add_argument("--near", type=float)
     s.add_argument("--diff", help="compare with another sliced 3MF or G-code file")
