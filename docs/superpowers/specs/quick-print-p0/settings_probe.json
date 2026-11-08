@@ -1,0 +1,721 @@
+[
+ {
+  "name": "baseline",
+  "patch": {},
+  "exit_ok": true,
+  "gcode_bytes": 265251,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 52,
+   "Inner wall": 53,
+   "Bottom surface": 1,
+   "Internal solid infill": 9,
+   "Sparse infill": 42,
+   "Overhang wall": 6,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "layer_0.12",
+  "patch": {
+   "layer_height": "0.12"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 373972,
+  "layers": 83,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 85,
+   "Inner wall": 86,
+   "Bottom surface": 1,
+   "Internal solid infill": 13,
+   "Sparse infill": 71,
+   "Overhang wall": 6,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "layer_0.28",
+  "patch": {
+   "layer_height": "0.28"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 242677,
+  "layers": 36,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 38,
+   "Inner wall": 39,
+   "Bottom surface": 1,
+   "Internal solid infill": 8,
+   "Sparse infill": 28,
+   "Overhang wall": 6,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "walls_2",
+  "patch": {
+   "wall_loops": "2"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 264207,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 52,
+   "Inner wall": 51,
+   "Bottom surface": 1,
+   "Internal solid infill": 9,
+   "Sparse infill": 42,
+   "Overhang wall": 4,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "walls_4",
+  "patch": {
+   "wall_loops": "4"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 283917,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 52,
+   "Inner wall": 55,
+   "Bottom surface": 1,
+   "Internal solid infill": 9,
+   "Sparse infill": 42,
+   "Overhang wall": 8,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "top_3",
+  "patch": {
+   "top_shell_layers": "3"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 265251,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 52,
+   "Inner wall": 53,
+   "Bottom surface": 1,
+   "Internal solid infill": 9,
+   "Sparse infill": 42,
+   "Overhang wall": 6,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "top_7",
+  "patch": {
+   "top_shell_layers": "7"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 275529,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 52,
+   "Inner wall": 53,
+   "Bottom surface": 1,
+   "Internal solid infill": 11,
+   "Sparse infill": 40,
+   "Overhang wall": 6,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "bottom_2",
+  "patch": {
+   "bottom_shell_layers": "2"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 256156,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 52,
+   "Inner wall": 53,
+   "Bottom surface": 1,
+   "Internal solid infill": 6,
+   "Sparse infill": 43,
+   "Overhang wall": 6,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "bottom_6",
+  "patch": {
+   "bottom_shell_layers": "6"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 292446,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 52,
+   "Inner wall": 53,
+   "Bottom surface": 1,
+   "Internal solid infill": 18,
+   "Sparse infill": 39,
+   "Overhang wall": 6,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "infill_10",
+  "patch": {
+   "sparse_infill_density": "10%"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 257187,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 52,
+   "Inner wall": 53,
+   "Bottom surface": 1,
+   "Internal solid infill": 8,
+   "Sparse infill": 42,
+   "Overhang wall": 6,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "infill_40",
+  "patch": {
+   "sparse_infill_density": "40%"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 313156,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 52,
+   "Inner wall": 53,
+   "Bottom surface": 1,
+   "Internal solid infill": 9,
+   "Sparse infill": 44,
+   "Overhang wall": 6,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "pattern_gyroid",
+  "patch": {
+   "sparse_infill_pattern": "gyroid"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 381915,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 52,
+   "Inner wall": 53,
+   "Bottom surface": 1,
+   "Internal solid infill": 9,
+   "Sparse infill": 42,
+   "Overhang wall": 6,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "pattern_grid",
+  "patch": {
+   "sparse_infill_pattern": "grid"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 265251,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 52,
+   "Inner wall": 53,
+   "Bottom surface": 1,
+   "Internal solid infill": 9,
+   "Sparse infill": 42,
+   "Overhang wall": 6,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "support_on",
+  "patch": {
+   "enable_support": "1"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 550763,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Support": 26,
+   "Brim": 1,
+   "Outer wall": 52,
+   "Inner wall": 53,
+   "Bottom surface": 1,
+   "Internal solid infill": 9,
+   "Sparse infill": 42,
+   "Support interface": 3,
+   "Overhang wall": 6,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 406,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "support_off",
+  "patch": {
+   "enable_support": "0"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 265251,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 52,
+   "Inner wall": 53,
+   "Bottom surface": 1,
+   "Internal solid infill": 9,
+   "Sparse infill": 42,
+   "Overhang wall": 6,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "brim_none",
+  "patch": {
+   "brim_type": "no_brim"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 233880,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Inner wall": 53,
+   "Outer wall": 52,
+   "Bottom surface": 1,
+   "Internal solid infill": 9,
+   "Sparse infill": 42,
+   "Overhang wall": 6,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 406,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "brim_outer",
+  "patch": {
+   "brim_type": "outer_only",
+   "brim_width": "5"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 245876,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 52,
+   "Inner wall": 53,
+   "Bottom surface": 1,
+   "Internal solid infill": 9,
+   "Sparse infill": 42,
+   "Overhang wall": 6,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "top_3_thick0",
+  "patch": {
+   "top_shell_layers": "3",
+   "top_shell_thickness": "0"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 254962,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 52,
+   "Inner wall": 53,
+   "Bottom surface": 1,
+   "Internal solid infill": 7,
+   "Sparse infill": 44,
+   "Overhang wall": 6,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "edge_layer_0.04",
+  "patch": {
+   "layer_height": "0.04"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 802310,
+  "layers": 246,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 248,
+   "Inner wall": 249,
+   "Bottom surface": 1,
+   "Internal solid infill": 29,
+   "Sparse infill": 218,
+   "Overhang wall": 6,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "edge_layer_0.01",
+  "patch": {
+   "layer_height": "0.01"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 2690195,
+  "layers": 981,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 983,
+   "Inner wall": 984,
+   "Bottom surface": 1,
+   "Internal solid infill": 104,
+   "Sparse infill": 878,
+   "Overhang wall": 6,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 404,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "edge_layer_0.6",
+  "patch": {
+   "layer_height": "0.6"
+  },
+  "error": "Bambu Studio couldn't slice edge_layer_0.6.3mf: Layer height cannot exceed nozzle diameter"
+ },
+ {
+  "name": "edge_walls_0",
+  "patch": {
+   "wall_loops": "0"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 235809,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Bottom surface": 1,
+   "Internal solid infill": 5,
+   "Sparse infill": 5,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "edge_walls_20",
+  "patch": {
+   "wall_loops": "20"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 430985,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 52,
+   "Inner wall": 87,
+   "Bottom surface": 1,
+   "Internal solid infill": 36,
+   "Overhang wall": 40,
+   "Bridge": 3,
+   "Sparse infill": 13,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "edge_infill_0",
+  "patch": {
+   "sparse_infill_density": "0%"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 228202,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 52,
+   "Inner wall": 53,
+   "Bottom surface": 1,
+   "Internal solid infill": 7,
+   "Overhang wall": 6,
+   "Bridge": 2,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "edge_infill_100",
+  "patch": {
+   "sparse_infill_density": "100%"
+  },
+  "error": "Bambu Studio couldn't slice edge_infill_100.3mf: Param values in 3mf/config error: \nsparse_infill_pattern: grid doesn't work at 100% density"
+ },
+ {
+  "name": "edge_infill_150",
+  "patch": {
+   "sparse_infill_density": "150%"
+  },
+  "error": "Bambu Studio couldn't slice edge_infill_150.3mf: Param values in 3mf/config error: \nsparse_infill_density: 150% not in range [0.000000,100.000000]"
+ },
+ {
+  "name": "edge_pattern_bogus",
+  "patch": {
+   "sparse_infill_pattern": "nonsense"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 265137,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 52,
+   "Inner wall": 53,
+   "Bottom surface": 1,
+   "Internal solid infill": 9,
+   "Sparse infill": 44,
+   "Overhang wall": 6,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 405,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ },
+ {
+  "name": "edge_brim_width_100",
+  "patch": {
+   "brim_type": "outer_only",
+   "brim_width": "100"
+  },
+  "exit_ok": true,
+  "gcode_bytes": 998641,
+  "layers": 50,
+  "features": {
+   "Custom": 2,
+   "Brim": 1,
+   "Outer wall": 52,
+   "Inner wall": 53,
+   "Bottom surface": 1,
+   "Internal solid infill": 9,
+   "Sparse infill": 42,
+   "Overhang wall": 6,
+   "Bridge": 3,
+   "Floating vertical shell": 1,
+   "Top surface": 1
+  },
+  "start_check": {
+   "start_block_lines": 404,
+   "missing_commands": [],
+   "filament_ids_empty": false,
+   "ok": true
+  }
+ }
+]
