@@ -32,6 +32,7 @@ The server listens on every interface so the phone can reach it, and anything wi
 while it runs. Stop it (Ctrl+C) when you're done. Standard library only; tests: `tests/test_camera_fit.py` (a fake bridge,
 no Fusion).
 
-## Not yet checked
+## Checked
 
-The PhoneBridge add-in has not been run inside Fusion yet; the server and page are tested against a fake of it.
+Run inside Fusion on 8 Nov: the add-in starts, the page reads the model and a slider edits a parameter. Not yet checked:
+the view picker and Back to start inside Fusion, and a change that breaks the timeline.
