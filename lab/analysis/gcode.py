@@ -283,3 +283,39 @@ def feature_bands(gcode: str, feature: str) -> list[tuple[float, float, int]]:
             bands.append((round(zs[start] - lh, 3), round(zs[i - 1], 3), i - start))
             start = None
     return bands
+
+
+def layer_paths(gcode: str) -> list[dict]:
+    """The toolpath of every layer: `{index, z, extrusion: [{feature, points}], travel: [points]}`, each `points` a list of
+    (x, y). Read from the G-code itself. An arc (G2/G3) is drawn as its chord, so it is shortened, never invented."""
+    layers: list[dict] = []
+    x = y = 0.0
+    feature = ""
+    run: list | None = None  # the open extrusion polyline
+    for raw in gcode.splitlines():
+        line = raw.strip()
+        if line.startswith(";"):
+            if line.startswith("; CHANGE_LAYER"):
+                layers.append({"index": len(layers), "z": 0.0, "extrusion": [], "travel": []})
+                run = None
+            elif line.startswith("; Z_HEIGHT:") and layers:
+                layers[-1]["z"] = float(line.split(":", 1)[1])
+            elif line.startswith("; FEATURE:"):
+                feature, run = line.split(":", 1)[1].strip(), None
+            continue
+        code = line.split(";", 1)[0].strip()
+        if not code or code.split()[0] not in ("G0", "G1", "G2", "G3"):
+            continue
+        words = dict(_WORD.findall(code))
+        nx, ny = float(words.get("X", x)), float(words.get("Y", y))
+        if layers and (nx, ny) != (x, y):
+            if "E" in words and float(words["E"]) > 0:
+                if run is None or run[-1] != (x, y):
+                    run = [(x, y)]
+                    layers[-1]["extrusion"].append({"feature": feature, "points": run})
+                run.append((nx, ny))
+            else:
+                run = None
+                layers[-1]["travel"].append([(x, y), (nx, ny)])
+        x, y = nx, ny
+    return layers
