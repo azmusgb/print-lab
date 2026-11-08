@@ -25,6 +25,7 @@ HERE = Path(__file__).resolve().parent
 DATA = HERE / "data"
 BRIDGE = "http://127.0.0.1:8766"
 MAX_BODY = 4096
+BRIDGE_TOKEN = ""  # shared with the add-in through data/bridge-token
 HARD_MAX_MM = 300.0
 _lock = threading.Lock()  # one change at a time; Fusion recomputes after each
 _start: dict[str, str] = {}  # parameter -> its expression when this server first saw it, for "Back to start"
@@ -35,7 +36,7 @@ READONLY = {"coupon_x", "stand_x", "stand_y"}  # figures taken from a README, no
 
 def bridge(path: str, body: dict | None = None, timeout: int = 25) -> bytes:
     req = urllib.request.Request(BRIDGE + path, data=json.dumps(body).encode() if body is not None else None,
-                                 headers={"Content-Type": "application/json"})
+                                 headers={"Content-Type": "application/json", "X-Bridge-Token": BRIDGE_TOKEN})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read()
 
@@ -180,7 +181,7 @@ def addresses() -> list[str]:
 
 
 def main() -> None:
-    global BRIDGE
+    global BRIDGE, BRIDGE_TOKEN
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=8765)
     ap.add_argument("--host", default="0.0.0.0", help="0.0.0.0 reaches the iPhone on the home network; 127.0.0.1 for the Mac only")
@@ -193,6 +194,11 @@ def main() -> None:
         tokfile.write_text(secrets.token_urlsafe(16))
         os.chmod(tokfile, 0o600)
     Handler.token = tokfile.read_text().strip()
+    bt = DATA / "bridge-token"
+    if not bt.is_file():
+        bt.write_text(secrets.token_urlsafe(24))
+        os.chmod(bt, 0o600)
+    BRIDGE_TOKEN = bt.read_text().strip()
     srv = ThreadingHTTPServer((a.host, a.port), Handler)
     for ip in addresses() if a.host == "0.0.0.0" else [a.host]:
         print(f"open on the iPhone:  http://{ip}:{a.port}/?t={Handler.token}")

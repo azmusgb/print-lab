@@ -173,3 +173,75 @@ def test_an_oversized_or_malformed_body_is_refused(app):
     _, base = app
     assert code(lambda: post(base, "/api/set", {"name": "knob_d", "value": 1, "pad": "x" * 5000}))[0] == 413
     assert code(lambda: post(base, "/api/set", ["knob_d"]))[0] == 422
+
+
+# --- the add-in's own gate (adsk stubbed: the HTTP handler never touches Fusion before it has checked the request) ---
+
+@pytest.fixture
+def addin(tmp_path, monkeypatch):
+    import sys
+    import types
+    stub = types.ModuleType("adsk")
+    stub.core = types.SimpleNamespace(ViewOrientations=types.SimpleNamespace(**{k: 0 for k in (
+        "IsoTopRightViewOrientation", "FrontViewOrientation", "TopViewOrientation", "RightViewOrientation", "BackViewOrientation")}),
+        CustomEventHandler=object)
+    stub.fusion = types.SimpleNamespace()
+    monkeypatch.setitem(sys.modules, "adsk", stub)
+    monkeypatch.setitem(sys.modules, "adsk.core", stub.core)
+    monkeypatch.setitem(sys.modules, "adsk.fusion", stub.fusion)
+    path = SERVER.parent / "PhoneBridge" / "PhoneBridge.py"
+    spec = importlib.util.spec_from_file_location("phonebridge_under_test", path)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    (tmp_path / "bridge-token").write_text("secret-bridge")
+    m.TOKEN_FILE = str(tmp_path / "bridge-token")
+    asked = []
+    m._ask = lambda **kw: asked.append(kw) or {"ok": True}
+    srv = ThreadingHTTPServer(("127.0.0.1", 0), m._Http)
+    port = srv.server_address[1]
+    m.HOSTS = {f"127.0.0.1:{port}"}
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    yield port, asked
+    srv.shutdown()
+
+
+def raw(port, method, path, body=None, headers=None):
+    h = {"Content-Type": "application/json", "X-Bridge-Token": "secret-bridge", **(headers or {})}
+    h = {k: v for k, v in h.items() if v is not None}
+    req = urllib.request.Request(f"http://127.0.0.1:{port}{path}", data=body, headers=h, method=method)
+    try:
+        return urllib.request.urlopen(req).status
+    except urllib.error.HTTPError as e:
+        return e.code
+
+
+GOOD = json.dumps({"name": "knob_d", "expression": "21 mm"}).encode()
+
+
+def test_the_add_in_takes_the_right_request_from_the_server(addin):
+    port, asked = addin
+    assert raw(port, "POST", "/set", GOOD) == 200
+    assert asked == [{"op": "set", "name": "knob_d", "expression": "21 mm"}]
+
+
+@pytest.mark.parametrize("headers", [{"X-Bridge-Token": None}, {"X-Bridge-Token": "wrong"}, {"Origin": "http://evil.example"},
+                                     {"Host": "evil.example"}])
+def test_the_add_in_refuses_a_browser_page_a_missing_token_and_a_rebound_host(addin, headers):
+    port, asked = addin
+    assert raw(port, "POST", "/set", GOOD, headers) == 403
+    assert raw(port, "GET", "/params", None, headers) == 403
+    assert asked == []
+
+
+def test_the_add_in_wants_json_and_a_plain_mm_expression(addin):
+    port, asked = addin
+    assert raw(port, "POST", "/set", GOOD, {"Content-Type": "text/plain"}) == 415
+    for bad in ("21", "21 mm + board_x", "board_x", "-3 mm", "21mm; x"):
+        assert raw(port, "POST", "/set", json.dumps({"name": "knob_d", "expression": bad}).encode()) == 422
+    assert asked == []
+
+
+def test_a_cross_site_form_post_with_a_text_body_cannot_reach_fusion(addin):
+    port, asked = addin
+    assert raw(port, "POST", "/set", GOOD, {"Content-Type": "text/plain", "X-Bridge-Token": None, "Origin": "null"}) == 403
+    assert asked == []

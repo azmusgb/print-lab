@@ -7,6 +7,8 @@ undoable command; it never saves, closes or exports anything."""
 import json
 import os
 import queue
+import re
+import secrets
 import tempfile
 import threading
 import traceback
@@ -16,6 +18,9 @@ import adsk.core
 import adsk.fusion
 
 PORT = 8766
+TOKEN_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "bridge-token")
+HOSTS = {f"127.0.0.1:{PORT}", f"localhost:{PORT}"}
+PLAIN = re.compile(r"^\d+(?:\.\d+)? mm$")
 EVENT_ID = "PhoneBridgeCall"
 VIEWS = {
     "iso": adsk.core.ViewOrientations.IsoTopRightViewOrientation,
@@ -144,7 +149,21 @@ class _Http(BaseHTTPRequestHandler):
     def _json(self, code, obj):
         self._send(code, json.dumps(obj).encode())
 
+    def _allowed(self) -> bool:
+        """Only the page's server: right Host (no DNS rebinding), no Origin (a browser page always sends one on a
+        cross-site POST), and the shared secret the server keeps in data/bridge-token."""
+        if self.headers.get("Host") not in HOSTS or self.headers.get("Origin") is not None:
+            return False
+        try:
+            with open(TOKEN_FILE) as f:
+                want = f.read().strip()
+        except OSError:
+            return False
+        return bool(want) and secrets.compare_digest(self.headers.get("X-Bridge-Token", ""), want)
+
     def do_GET(self):
+        if not self._allowed():
+            return self._json(403, {"error": "not allowed"})
         from urllib.parse import parse_qs, urlparse
         u = urlparse(self.path)
         q = parse_qs(u.query)
@@ -165,16 +184,20 @@ class _Http(BaseHTTPRequestHandler):
         self._json(404, {"error": "not found"})
 
     def do_POST(self):
+        if not self._allowed():
+            return self._json(403, {"error": "not allowed"})
         if self.path != "/set":
             return self._json(404, {"error": "not found"})
+        if self.headers.get("Content-Type", "").split(";")[0].strip() != "application/json":
+            return self._json(415, {"error": "send application/json"})
         try:
             n = int(self.headers.get("Content-Length", "0"))
             if not 0 < n < 4096:
                 raise ValueError("bad length")
             body = json.loads(self.rfile.read(n))
             name, expr = body["name"], body["expression"]
-            if not isinstance(name, str) or not isinstance(expr, str) or len(expr) > 80:
-                raise ValueError("name and expression must be short strings")
+            if not isinstance(name, str) or not isinstance(expr, str) or not PLAIN.match(expr):
+                raise ValueError("the expression must be a plain number of mm, like 24.5 mm")
             return self._json(200, _ask(op="set", name=name, expression=expr))
         except (KeyError, ValueError, TypeError) as e:
             return self._json(422, {"error": str(e)})

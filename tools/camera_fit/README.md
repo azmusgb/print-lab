@@ -13,6 +13,10 @@ iPhone  --http, token-->  server.py (Mac, :8765)  --127.0.0.1:8766-->  PhoneBrid
   the value it had when the server first saw it. Failed timeline steps show in a red banner on the page.
 - It never saves the Fusion document. Changes are logged to `data/changes.log`. Picking a view turns Fusion's camera.
 
+The add-in is not open to the rest of the Mac: it refuses a request without the shared secret in `data/bridge-token`
+(made by the server on first start), one with an `Origin` header (any browser page) or a wrong `Host` (DNS rebinding), a
+body that isn't JSON, and an expression that isn't a plain `N mm`.
+
 ## Run
 
 1. Install the add-in once (from the main checkout) and run it in Fusion (**Shift+S › Add-Ins › PhoneBridge › Run**):
