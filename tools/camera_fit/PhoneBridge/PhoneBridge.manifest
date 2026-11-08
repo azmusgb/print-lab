@@ -1,0 +1,13 @@
+{
+	"autodeskProduct": "Fusion",
+	"type": "addin",
+	"id": "0b7e5d1c-4a52-4d0e-9a3b-6f21c8d94e57",
+	"author": "print-lab",
+	"description": {
+		"": "Local bridge (127.0.0.1 only) so the camera-fit page on the Mac can read and edit user parameters and take a viewport picture."
+	},
+	"version": "1.0.0",
+	"runOnStartup": false,
+	"supportedOS": "windows|mac",
+	"editEnabled": true
+}
