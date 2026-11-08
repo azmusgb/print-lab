@@ -285,6 +285,8 @@ def main(argv=None) -> int:
     q.add_argument("--settings", help='JSON of offered settings, e.g. \'{"wall_loops": 3}\'')
     q.add_argument("--expect-sha256", help="refuse unless the model has this sha256")
     q.set_defaults(fn=cmd_quick_slice)
+    from lab.quick import worker as quick_worker
+    quick_worker.register(qs)
     s = sub.add_parser("gcode", help="read a sliced plate's G-code, or diff two sliced plates")
     s.add_argument("file"); s.add_argument("--plate", type=int, default=1); s.add_argument("--near", type=float)
     s.add_argument("--diff", help="compare with another sliced 3MF or G-code file")
