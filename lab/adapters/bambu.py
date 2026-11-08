@@ -123,7 +123,7 @@ def slice_3mf(path_3mf: Path, out_dir: Path, plate: int, jobs_dir: Path) -> Path
     return slice_with_job(path_3mf, out_dir, plate, jobs_dir)[0]
 
 
-def slice_with_job(path_3mf: Path, out_dir: Path, plate: int, jobs_dir: Path):
+def slice_with_job(path_3mf: Path, out_dir: Path, plate: int, jobs_dir: Path, timeout: int = 1800):
     """slice_3mf, also returning the Job that sliced it."""
     from lab.jobs import LabToolError, failed_job, run_tool
 
@@ -143,7 +143,7 @@ def slice_with_job(path_3mf: Path, out_dir: Path, plate: int, jobs_dir: Path):
     out = out_dir / name
     args = [str(binary), "--slice", str(plate), "--outputdir", str(out_dir), "--export-3mf", name, str(path_3mf)]
     job = run_tool(args, inputs=[path_3mf], outputs=[out], jobs_dir=jobs_dir, tool="bambu-studio",
-                   tool_version=version, cwd=out_dir)
+                   tool_version=version, cwd=out_dir, timeout=timeout)
     if not job.ok:
         raise LabToolError(f"Bambu Studio couldn't slice {path_3mf.name}: "
                            f"{(job.stderr or job.stdout).strip()[-400:]}", job)

@@ -283,3 +283,52 @@ def feature_bands(gcode: str, feature: str) -> list[tuple[float, float, int]]:
             bands.append((round(zs[start] - lh, 3), round(zs[i - 1], 3), i - start))
             start = None
     return bands
+
+
+def layer_paths(gcode: str) -> list[dict]:
+    """Per layer, what the toolpath really does, for drawing: extruding segments (x0, y0, x1, y1) grouped by FEATURE,
+    the travel length, and the extruded length. Arcs are drawn as their chord. Read from the G-code, never the model."""
+    layers: list[dict] = []
+    x = y = 0.0
+    feature = ""
+    relative_e, last_e = True, 0.0
+    for raw in gcode.splitlines():
+        line = raw.strip()
+        if line.startswith(";"):
+            if line.startswith("; CHANGE_LAYER"):
+                layers.append({"index": len(layers), "z": 0.0, "extrusion": {}, "travel_mm": 0.0, "extruded_mm": 0.0})
+            elif line.startswith("; Z_HEIGHT:") and layers:
+                layers[-1]["z"] = float(line.split(":", 1)[1])
+            elif line.startswith("; FEATURE:"):
+                feature = line.split(":", 1)[1].strip()
+            continue
+        code = line.split(";", 1)[0].strip()
+        if not code:
+            continue
+        cmd = code.split()[0]
+        words = dict(_WORD.findall(code))
+        if cmd == "M82":
+            relative_e = False
+        elif cmd == "M83":
+            relative_e = True
+        elif cmd == "G92" and "E" in words:
+            last_e = float(words["E"])
+        if cmd not in ("G0", "G1", "G2", "G3"):
+            continue
+        nx, ny = float(words.get("X", x)), float(words.get("Y", y))
+        pushed = 0.0
+        if "E" in words:
+            e = float(words["E"])
+            pushed = e if relative_e else e - last_e
+            if not relative_e:
+                last_e = e
+        dist = math.hypot(nx - x, ny - y)
+        if layers and dist > 0:
+            cur = layers[-1]
+            if pushed > 0:
+                cur["extrusion"].setdefault(feature or "Unknown", []).append((x, y, nx, ny))
+                cur["extruded_mm"] += dist
+            else:
+                cur["travel_mm"] += dist
+        x, y = nx, ny
+    return layers
