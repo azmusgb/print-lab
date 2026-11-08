@@ -36,3 +36,14 @@ no Fusion).
 
 Run inside Fusion on 8 Nov: the add-in starts, the page reads the model and a slider edits a parameter. Not yet checked:
 the view picker and Back to start inside Fusion, and a change that breaks the timeline.
+
+## Walkthrough
+
+The page opens on a step-through of the model's components: Whole model, then each top-level component in Fusion's browser
+(carrier, head sled, rear gate, stand, tilt knob, lens ring, fit coupon, the reference board). A step shows that part on its own
+(the others are hidden for the picture and put back before the add-in answers; untick "on its own" to see it in place), its
+size and volume as Fusion measures them, the sizes tied to it by name with their sliders, and the fixed ones. Next/Previous,
+the step chips and the left/right arrow keys move between steps. "All placeholder sizes" keeps the full list.
+
+Which sizes belong to which part is a name-prefix table in `server.py` (`COMPONENT_PARAMS`): a part with no match says so. After
+updating, stop and run the PhoneBridge add-in again so Fusion loads the new version.

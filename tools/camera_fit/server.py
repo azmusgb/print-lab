@@ -15,6 +15,7 @@ import subprocess
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -31,6 +32,17 @@ _lock = threading.Lock()  # one change at a time; Fusion recomputes after each
 _start: dict[str, str] = {}  # parameter -> its expression when this server first saw it, for "Back to start"
 PLAIN = re.compile(r"^\s*(\d+(?:\.\d+)?)\s*mm\s*$")
 EDITABLE_WORDS = ("placeholder", "provisional", "verify", "check on the real")
+# component (the name before ':' in Fusion's occurrence name) -> the parameter-name prefixes that shape it
+COMPONENT_PARAMS = {
+    "carrier": ("board_", "hole_", "carrier_", "post_", "standoff_", "pilot_"),
+    "head_sled": ("sled_",),
+    "rear_gate": ("gate_",),
+    "stand": ("stand_",),
+    "tilt_knob": ("knob_",),
+    "lens_ring": ("ring_",),
+    "fit_coupon": ("coupon_",),
+}
+ONLY = re.compile(r"^[A-Za-z0-9_:. -]{1,60}$")
 READONLY = {"coupon_x", "stand_x", "stand_y"}  # figures taken from a README, not design choices
 
 
@@ -66,6 +78,23 @@ def state() -> dict:
     return {"params": out, "derived": [{"name": p["name"], "expression": p["expression"], "value_mm": p["value_mm"]}
                                        for p in params if not editable(p)],
             "status": json.loads(bridge("/status"))}
+
+
+def components() -> list[dict]:
+    """The walkthrough: each top-level component with its measured size and the parameters that shape it."""
+    comps = json.loads(bridge("/components"))
+    params = json.loads(bridge("/params"))
+    for p in params:
+        _start.setdefault(p["name"], p["expression"])
+    out = []
+    for c in comps:
+        prefixes = COMPONENT_PARAMS.get(c["name"].split(":")[0], ())
+        mine = [p for p in params if p["name"].startswith(prefixes)] if prefixes else []
+        out.append({**c, "label": c["name"].split(":")[0].replace("_", " "),
+                    "editable": [p["name"] for p in mine if editable(p)],
+                    "fixed": [{"name": p["name"], "expression": p["expression"], "value_mm": p["value_mm"], "comment": p["comment"]}
+                              for p in mine if not editable(p)]})
+    return out
 
 
 def change(name: str, value) -> dict:
@@ -129,6 +158,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if u.path == "/api/state":
                 return self._json(200, state())
+            if u.path == "/api/components":
+                return self._json(200, components())
             if u.path == "/api/shot":
                 q = parse_qs(u.query)
                 view = (q.get("view") or ["iso"])[0]
@@ -136,7 +167,11 @@ class Handler(BaseHTTPRequestHandler):
                     return self._json(422, {"error": "unknown view"})
                 w = max(200, min(int((q.get("w") or ["800"])[0]), 1600))
                 h = max(200, min(int((q.get("h") or ["600"])[0]), 1600))
-                return self._send(200, bridge(f"/shot?view={view}&w={w}&h={h}", timeout=30), "image/png")
+                only = (q.get("only") or [None])[0]
+                if only is not None and not ONLY.match(only):
+                    return self._json(422, {"error": "bad component name"})
+                extra = f"&only={urllib.parse.quote(only)}" if only else ""
+                return self._send(200, bridge(f"/shot?view={view}&w={w}&h={h}{extra}", timeout=30), "image/png")
         except ValueError:
             return self._json(422, {"error": "bad size"})
         except (urllib.error.URLError, OSError) as e:
