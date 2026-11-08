@@ -332,3 +332,10 @@ def test_start_sequence_and_output_errors_map():
     from lab.quick.engine import QuickSliceError
     assert slice_child.classify(QuickSliceError("Refused: this slice doesn't have the X2D start sequence."))["outcome"] == "needs_attention"
     assert slice_child.classify(QuickSliceError("Bambu Studio's output isn't a valid 3MF archive"))["cause"] == "output_invalid"
+
+
+def test_worker_id_matches_the_hubs_pattern(monkeypatch):
+    import re
+    monkeypatch.setattr(worker.socket, "gethostname", lambda: "Bill's MacBook Pro (2).local")
+    w = worker.worker_record(presets=[], studio_version="02.09.01.70")
+    assert re.fullmatch(r"[A-Za-z0-9._-]{1,40}", w["id"])

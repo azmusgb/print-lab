@@ -8,6 +8,7 @@ never posted for an attempt the hub has refused. Nothing is retried."""
 import hashlib
 import json
 import os
+import re
 import signal
 import socket
 import subprocess
@@ -167,7 +168,8 @@ def worker_record(presets: list[str] | None = None, studio_version: str | None =
             studio_version = ""
     if presets is None:
         presets = sorted(p.stem for p in PRESET_DIR.glob("*.3mf"))
-    return {"id": f"mac-{socket.gethostname().split('.')[0]}"[:40], "os": sys.platform,
+    host = re.sub(r"[^A-Za-z0-9._-]", "-", socket.gethostname().split(".")[0]) or "host"  # the hub's id pattern
+    return {"id": f"mac-{host}"[:40], "os": sys.platform,
             "studio_version": studio_version, "presets": presets}
 
 
