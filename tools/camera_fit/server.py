@@ -35,7 +35,7 @@ EDITABLE_WORDS = ("placeholder", "provisional", "verify", "check on the real")
 # component (the name before ':' in Fusion's occurrence name) -> the parameter-name prefixes that shape it
 COMPONENT_PARAMS = {
     "carrier": ("board_", "hole_", "carrier_", "post_", "standoff_", "pilot_"),
-    "head_sled": ("sled_",),
+    "head_sled": ("sled_", "pivot_", "m4_", "cover_", "side_clear", "bottom_clear", "top_clear", "rail_", "lip_"),
     "rear_gate": ("gate_",),
     "stand": ("stand_",),
     "tilt_knob": ("knob_",),
