@@ -42,6 +42,8 @@ COMPONENT_PARAMS = {
     "lens_ring": ("ring_",),
     "pivot_bolt": ("bolt_",),
     "tilt_gauge": ("gauge_",),
+    "m4_nut": ("nut_thick",),
+    "friction_washer": ("washer_",),
     "fit_coupon": ("coupon_", "cover_", "side_clear", "bottom_clear", "top_clear", "rail_", "lip_"),
 }
 ONLY = re.compile(r"^[A-Za-z0-9_:. -]{1,60}$")

@@ -49,7 +49,9 @@ class FakeFusion(BaseHTTPRequestHandler):
                 {"name": "knob:1", "visible": True, "volume_mm3": 10.0, "size_mm": [1, 1, 1]},
                 {"name": "tilt_knob:1", "visible": False, "volume_mm3": 900.5, "size_mm": [20, 20, 6]},
                 {"name": "pivot_bolt:1", "visible": True, "volume_mm3": 294.1, "size_mm": [18.9, 7, 7]},
-                {"name": "tilt_gauge:1", "visible": True, "volume_mm3": 2249.7, "size_mm": [60, 30, 1.6]}]).encode())
+                {"name": "tilt_gauge:1", "visible": True, "volume_mm3": 2249.7, "size_mm": [60, 30, 1.6]},
+                {"name": "m4_nut:1", "visible": True, "volume_mm3": 95.6, "size_mm": [3.2, 7, 8.08]},
+                {"name": "friction_washer:1", "visible": True, "volume_mm3": 26.8, "size_mm": [0.55, 9, 9]}]).encode())
         if self.path.startswith("/shot"):
             FakeFusion.shots.append(self.path)
             return self._send(200, PNG, "image/png")
@@ -75,6 +77,8 @@ def app(tmp_path):
         "knob_d": ("20 mm", "tilt knob diameter (placeholder)"),
         "bolt_d": ("4 mm", "printed pivot bolt shank diameter"),  # a design choice, not provisional: read-only
         "gauge_r": ("30 mm", "printed tilt gauge radius"),  # a design choice, not provisional: read-only
+        "nut_thick": ("3.2 mm", "M4 hex nut thickness"),  # a standard, not provisional: read-only
+        "washer_t": ("0.55 mm", "M4 nylon friction washer thickness"),  # a design choice, not provisional: read-only
     }
     FakeFusion.failed = []
     FakeFusion.sets = []
@@ -121,7 +125,7 @@ def test_only_provisional_plain_values_are_editable(app):
     _, base = app
     s = json.load(get(base, "/api/state"))
     assert [p["name"] for p in s["params"]] == ["board_x", "carrier_margin", "knob_d"]
-    assert {d["name"] for d in s["derived"]} == {"board_t", "carrier_x", "stand_x", "bolt_d", "gauge_r"}
+    assert {d["name"] for d in s["derived"]} == {"board_t", "carrier_x", "stand_x", "bolt_d", "gauge_r", "nut_thick", "washer_t"}
     assert s["params"][0]["lo"] == 12.5 and s["params"][0]["hi"] == 50.0
     assert s["status"]["document"] == "camera_carrier v5"
 
@@ -183,6 +187,7 @@ def test_the_walkthrough_ties_each_part_to_the_sizes_that_shape_it(app):
     assert cs["tilt_knob:1"]["editable"] == ["knob_d"] and cs["tilt_knob:1"]["visible"] is False
     assert cs["pivot_bolt:1"]["editable"] == [] and [f["name"] for f in cs["pivot_bolt:1"]["fixed"]] == ["bolt_d"]
     assert cs["tilt_gauge:1"]["editable"] == [] and [f["name"] for f in cs["tilt_gauge:1"]["fixed"]] == ["gauge_r"]
+    assert [f["name"] for f in cs["m4_nut:1"]["fixed"]] == ["nut_thick"] and [f["name"] for f in cs["friction_washer:1"]["fixed"]] == ["washer_t"]
     assert cs["knob:1"]["editable"] == [] and cs["knob:1"]["fixed"] == []  # a part with no sizes tied to it says so, no guessing
 
 
