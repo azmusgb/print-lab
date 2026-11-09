@@ -34,8 +34,10 @@ no Fusion).
 
 ## Checked
 
-Run inside Fusion on 8 Nov: the add-in starts, the page reads the model and a slider edits a parameter. Not yet checked:
-the view picker and Back to start inside Fusion, and a change that breaks the timeline.
+Run inside Fusion on 8 and 9 Nov: the add-in starts, the page reads the model, a slider edits a parameter, Back to start
+returns it, and a change that breaks the timeline (`ring_hole_d` at its maximum) comes back with the failed step named and
+recovers on reset. The view picker did nothing on 9 Nov (every view was the same picture, because Fusion ignores
+`Viewport.viewOrientation` here); the add-in now sets the camera directly, and needs to be stopped and run again to pick that up.
 
 ## Walkthrough
 

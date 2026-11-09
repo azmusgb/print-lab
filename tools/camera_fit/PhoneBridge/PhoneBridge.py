@@ -23,12 +23,14 @@ HOSTS = {f"127.0.0.1:{PORT}", f"localhost:{PORT}"}
 ONLY = re.compile(r"^[A-Za-z0-9_:. -]{1,60}$")
 PLAIN = re.compile(r"^\d+(?:\.\d+)? mm$")
 EVENT_ID = "PhoneBridgeCall"
+# view -> (direction from the model to the eye, up vector), for a Z-up model. Setting Viewport.viewOrientation does nothing
+# in Fusion's API here (the camera stays put and every picture comes out the same), so the camera is set directly.
 VIEWS = {
-    "iso": adsk.core.ViewOrientations.IsoTopRightViewOrientation,
-    "front": adsk.core.ViewOrientations.FrontViewOrientation,
-    "top": adsk.core.ViewOrientations.TopViewOrientation,
-    "right": adsk.core.ViewOrientations.RightViewOrientation,
-    "back": adsk.core.ViewOrientations.BackViewOrientation,
+    "iso": ((1, -1, 1), (0, 0, 1)),
+    "front": ((0, -1, 0), (0, 0, 1)),
+    "top": ((0, 0, 1), (0, 1, 0)),
+    "right": ((1, 0, 0), (0, 0, 1)),
+    "back": ((0, 1, 0), (0, 0, 1)),
 }
 
 _app = None
@@ -115,7 +117,13 @@ def _shot(view, w, h, only=None):
         if only is not None:
             for o in occs:
                 o.isLightBulbOn = o.name == only
-        vp.viewOrientation = VIEWS[view]
+        direction, up = VIEWS[view]
+        cam = vp.camera
+        cam.isSmoothTransition = False
+        t = cam.target
+        cam.eye = adsk.core.Point3D.create(t.x + direction[0] * 50, t.y + direction[1] * 50, t.z + direction[2] * 50)
+        cam.upVector = adsk.core.Vector3D.create(*up)
+        vp.camera = cam
         vp.fit()
         path = os.path.join(tempfile.gettempdir(), f"phonebridge-{os.getpid()}.png")
         if not vp.saveAsImageFile(path, w, h):
