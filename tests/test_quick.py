@@ -77,6 +77,14 @@ def test_good_start_with_a_different_machine_start_is_rejected():
     assert any("start G-code" in r for r in res.reasons)  # the header here is not the known-good one
 
 
+def test_a_recorded_newer_machine_start_is_accepted_and_an_unknown_one_is_not():
+    gcode = wrapped((FX / "good_start_block.gcode").read_text()).replace("machine_start_gcode = x", "machine_start_gcode = newer")
+    ref = {**REF, "also_known_good": [{"machine_start_sha256": start_check.machine_start_sha256(gcode), "source": "test"}]}
+    assert not any("start G-code" in r for r in start_check.check_gcode(gcode, ref).reasons)
+    assert any("start G-code" in r for r in start_check.check_gcode(gcode, REF).reasons)
+    assert len(start_check.accepted_machine_starts(REF)) == 2  # the hex-tile 2026/06/05 start and the 2026/10/20 one
+
+
 def test_no_block_is_rejected():
     assert start_check.check_gcode("G28\n", REF).reasons == ["The G-code has no start block"]
 
