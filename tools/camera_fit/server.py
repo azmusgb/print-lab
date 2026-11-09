@@ -37,7 +37,7 @@ COMPONENT_PARAMS = {
     "carrier": ("board_", "hole_", "carrier_", "post_", "standoff_", "pilot_"),
     "head_sled": ("sled_", "pivot_", "m4_", "cover_", "side_clear", "bottom_clear", "top_clear", "rail_", "lip_"),
     "rear_gate": ("gate_",),
-    "stand": ("stand_",),
+    "stand": ("stand_", "m4_clear"),
     "tilt_knob": ("knob_", "nut_", "m4_clear"),
     "lens_ring": ("ring_",),
     "fit_coupon": ("coupon_", "cover_", "side_clear", "bottom_clear", "top_clear", "rail_", "lip_"),
