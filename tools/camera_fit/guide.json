@@ -32,7 +32,7 @@
       "id": "coupon",
       "title": "Print the fit coupon first",
       "why": "It stands for the 12 mm rail specimen, so a small, fast print tells you how this printer's tolerances land before the real parts are printed. Try it on the rail it stands for: tight, loose or right.",
-      "facts": ["coupon_x", "coupon_y", "coupon_t"],
+      "facts": ["coupon_len", "coupon_w", "coupon_base_t", "side_clear", "bottom_clear", "top_clear"],
       "components": ["fit_coupon"]
     },
     {

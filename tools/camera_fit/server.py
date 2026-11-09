@@ -35,15 +35,15 @@ EDITABLE_WORDS = ("placeholder", "provisional", "verify", "check on the real")
 # component (the name before ':' in Fusion's occurrence name) -> the parameter-name prefixes that shape it
 COMPONENT_PARAMS = {
     "carrier": ("board_", "hole_", "carrier_", "post_", "standoff_", "pilot_"),
-    "head_sled": ("sled_",),
+    "head_sled": ("sled_", "pivot_", "m4_", "cover_", "side_clear", "bottom_clear", "top_clear", "rail_", "lip_"),
     "rear_gate": ("gate_",),
-    "stand": ("stand_",),
-    "tilt_knob": ("knob_",),
+    "stand": ("stand_", "m4_clear"),
+    "tilt_knob": ("knob_", "nut_", "m4_clear"),
     "lens_ring": ("ring_",),
-    "fit_coupon": ("coupon_",),
+    "fit_coupon": ("coupon_", "cover_", "side_clear", "bottom_clear", "top_clear", "rail_", "lip_"),
 }
 ONLY = re.compile(r"^[A-Za-z0-9_:. -]{1,60}$")
-READONLY = {"coupon_x", "stand_x", "stand_y"}  # figures taken from a README, not design choices
+READONLY = {"coupon_len", "stand_x", "stand_y"}  # figures taken from a README, not design choices
 
 
 def bridge(path: str, body: dict | None = None, timeout: int = 25) -> bytes:
