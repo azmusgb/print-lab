@@ -7,11 +7,11 @@
 <title>Camera carrier fit</title>
 <style>
 :root {
-  --bg: #f6f5f2; --panel: #fff; --ink: #1d1d1b; --muted: #5d5b55; --line: #d9d6cf; --accent: #1f5fbf;
+  --bg: #f6f5f2; --panel: #fff; --ink: #1d1d1b; --muted: #5d5b55; --line: #d9d6cf; --accent: #1f5fbf; --on-accent: #fff;
   --ok: #1d6b3a; --warn: #8a5a00; --bad: #a3261a; --warn-bg: #fff4dc; --bad-bg: #fde8e5;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #151514; --panel: #1f1f1d; --ink: #ecebe6; --muted: #a3a099; --line: #3a3935; --accent: #7fb0ff;
+  :root { --bg: #151514; --panel: #1f1f1d; --ink: #ecebe6; --muted: #a3a099; --line: #3a3935; --accent: #7fb0ff; --on-accent: #0b1a33;
     --ok: #6fcf93; --warn: #f0c36a; --bad: #ff8d80; --warn-bg: #3a2f14; --bad-bg: #3d1f1b; }
 }
 * { box-sizing: border-box; }
@@ -31,7 +31,7 @@ p { margin: 0; }
 .views { display: flex; gap: 0; border-top: 1px solid var(--line); }
 .views button { flex: 1; min-block-size: 44px; border: 0; border-inline-end: 1px solid var(--line); background: transparent; color: var(--ink); font: inherit; }
 .views button:last-child { border-inline-end: 0; }
-.views button[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.views button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
 button, input { font: inherit; }
 button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .banner { margin-top: .75rem; padding: .625rem .75rem; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); }
@@ -59,7 +59,7 @@ td { padding: .25rem 0; border-top: 1px solid var(--line); overflow-wrap: anywhe
 td:last-child { text-align: end; padding-inline-start: .5rem; }
 .tabs { display: flex; gap: .5rem; margin-top: .75rem; }
 .tabs button { flex: 1; min-block-size: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); font: inherit; }
-.tabs button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tabs button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .bar { block-size: 8px; border-radius: 4px; background: var(--line); overflow: hidden; margin: .5rem 0 1rem; }
 .bar > span { display: block; block-size: 100%; background: var(--ok); }
 .g h3 { font-size: 1rem; margin: 0; }
@@ -72,7 +72,16 @@ td:last-child { text-align: end; padding-inline-start: .5rem; }
 .g .done h3 { text-decoration: line-through; color: var(--muted); }
 .steps { display: flex; gap: .375rem; overflow-x: auto; padding: .5rem 0; scrollbar-width: thin; }
 .steps button { flex: none; min-block-size: 44px; padding: 0 .75rem; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--ink); white-space: nowrap; }
-.steps button[aria-current="step"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.steps button[aria-current="step"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+body[data-tab="assembly"] #banner, body[data-tab="assembly"] #doc { display: none; }  /* the steps don't need Fusion */
+.a-step h3 { font-size: 1.125rem; margin: .75rem 0 .25rem; }
+.a-step ul { margin: .5rem 0; padding-inline-start: 1.25rem; }
+.a-step li { margin-bottom: .375rem; }
+.a-step .check-note { margin-top: .5rem; padding: .5rem .75rem; border-inline-start: 3px solid var(--accent); background: var(--panel); border-radius: 0 8px 8px 0; }
+.a-imgs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: .5rem; margin-top: .5rem; }
+.a-imgs figure { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.a-imgs img { display: block; inline-size: 100%; block-size: auto; aspect-ratio: 4 / 3; object-fit: contain; background: #b3b3b3; }
+.a-imgs figcaption { padding: .375rem .75rem; font-size: .875rem; color: var(--muted); }
 .nav { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: .5rem; }
 .nav button { min-block-size: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); }
 .nav button[disabled] { opacity: .45; }
@@ -95,6 +104,7 @@ td:last-child { text-align: end; padding-inline-start: .5rem; }
   <div class="tabs" role="tablist" aria-label="Page sections">
     <button type="button" role="tab" id="tab-w" aria-selected="true" aria-controls="walk">Walkthrough</button>
     <button type="button" role="tab" id="tab-g" aria-selected="false" aria-controls="guide" tabindex="-1">Build guide</button>
+    <button type="button" role="tab" id="tab-a" aria-selected="false" aria-controls="assembly" tabindex="-1">Assembly</button>
   </div>
 
   <div id="walk" role="tabpanel" aria-labelledby="tab-w">
@@ -137,6 +147,13 @@ td:last-child { text-align: end; padding-inline-start: .5rem; }
     <div class="bar" role="progressbar" aria-label="Steps done" aria-valuemin="0" aria-valuemax="1"><span id="gbar" style="inline-size:0"></span></div>
     <p id="gcount" class="muted" aria-live="polite"></p>
     <div id="gsteps"></div>
+  </div>
+  <div id="assembly" role="tabpanel" aria-labelledby="tab-a" hidden>
+    <h2>Assembly, step by step</h2>
+    <p class="muted" id="anote"></p>
+    <div class="steps" id="asteps" role="group" aria-label="Assembly steps"></div>
+    <article class="a-step" id="astep" aria-live="polite"></article>
+    <div class="nav"><button type="button" id="aprev">‹ Previous</button><button type="button" id="anext">Next ›</button></div>
   </div>
 </main>
 
@@ -333,17 +350,25 @@ document.querySelectorAll(".views button").forEach((b) => b.addEventListener("cl
   document.querySelectorAll(".views button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
   shot();
 }));
+const TABS = [["walk", "tab-w"], ["guide", "tab-g"], ["assembly", "tab-a"]];
 function tab(which) {
-  const g = which === "guide";
-  $("walk").hidden = g; $("guide").hidden = !g;
-  for (const [id, on] of [["tab-w", !g], ["tab-g", g]]) { $(id).setAttribute("aria-selected", String(on)); $(id).tabIndex = on ? 0 : -1; }
-  if (g) loadGuide();
+  document.body.dataset.tab = which;
+  for (const [panel, id] of TABS) {
+    const on = panel === which;
+    $(panel).hidden = !on; $(id).setAttribute("aria-selected", String(on)); $(id).tabIndex = on ? 0 : -1;
+  }
+  if (which === "guide") loadGuide();
+  if (which === "assembly") loadAssembly();
 }
-$("tab-w").addEventListener("click", () => tab("walk"));
-$("tab-g").addEventListener("click", () => tab("guide"));
-for (const id of ["tab-w", "tab-g"]) $(id).addEventListener("keydown", (e) => {
-  if (e.key === "ArrowRight" || e.key === "ArrowLeft") { const to = id === "tab-w" ? "tab-g" : "tab-w"; $(to).click(); $(to).focus(); e.stopPropagation(); }
-});
+for (const [panel, id] of TABS) {
+  $(id).addEventListener("click", () => tab(panel));
+  $(id).addEventListener("keydown", (e) => {
+    const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+    if (!d) return;
+    const to = TABS[(TABS.findIndex((t) => t[1] === id) + d + TABS.length) % TABS.length][1];
+    $(to).click(); $(to).focus(); e.stopPropagation();
+  });
+}
 
 let gdata = null;
 async function save(kind, name, value) {
@@ -422,13 +447,50 @@ function loadGuide() {
   }).catch((e) => { $("gnote").textContent = e.message; });
 }
 
+let adata = null, astep = 0;
+function showAssembly(n) {
+  if (!adata) return;
+  astep = Math.max(0, Math.min(n, adata.steps.length - 1));
+  const s = adata.steps[astep], host = $("astep"), h = document.createElement("h3");
+  h.textContent = `${astep + 1}. ${s.title}`;
+  const ul = document.createElement("ul");
+  for (const t of s.text) { const li = document.createElement("li"); li.textContent = t; ul.append(li); }
+  const chk = document.createElement("p"); chk.className = "check-note"; chk.textContent = "Check: " + s.check;
+  const figs = document.createElement("div"); figs.className = "a-imgs";
+  for (const im of s.images) {
+    const f = document.createElement("figure"), i = document.createElement("img"), c = document.createElement("figcaption");
+    i.src = "/assembly/img/" + encodeURIComponent(im.file) + "?t=" + encodeURIComponent(TOKEN); i.alt = im.alt; i.loading = "lazy";
+    c.textContent = im.caption; f.append(i, c); figs.append(f);
+  }
+  host.replaceChildren(h, figs, ul, chk);
+  [...$("asteps").children].forEach((b, k) => { if (k === astep) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current"); });
+  $("asteps").children[astep].scrollIntoView({ inline: "nearest", block: "nearest" });
+  $("aprev").disabled = astep === 0; $("anext").disabled = astep === adata.steps.length - 1;
+}
+function loadAssembly() {
+  if (adata) return;
+  call("/api/assembly").then((r) => r.json()).then((a) => {
+    adata = a;
+    $("anote").textContent = a.note;
+    $("asteps").replaceChildren(...a.steps.map((s, i) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = `${i + 1}. ${s.title}`; b.addEventListener("click", () => showAssembly(i)); return b;
+    }));
+    showAssembly(0);
+  }).catch((e) => { $("anote").textContent = e.message; });
+}
+$("aprev").addEventListener("click", () => showAssembly(astep - 1));
+$("anext").addEventListener("click", () => showAssembly(astep + 1));
+
 $("prev").addEventListener("click", () => go(step - 1));
 $("next").addEventListener("click", () => go(step + 1));
 $("alone").addEventListener("change", shot);
 addEventListener("keydown", (e) => {
-  if ($("walk").hidden || e.target.matches("input, textarea, select") || e.altKey || e.ctrlKey || e.metaKey) return;
-  if (e.key === "ArrowRight") go(step + 1);
-  if (e.key === "ArrowLeft") go(step - 1);
+  if (e.target.matches("input, textarea, select, [role=tab]") || e.altKey || e.ctrlKey || e.metaKey) return;
+  const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+  if (!d) return;
+  if (!$("walk").hidden) go(step + d);
+  else if (!$("assembly").hidden) showAssembly(astep + d);
 });
 load();
 </script>

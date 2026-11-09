@@ -1,0 +1,121 @@
+{
+ "note": "Written from the ORBIT README's assembly order and this model's measured positions. The pictures are Fusion's own, taken from camera_carrier v10. Physical fit against the real camera is not verified yet.",
+ "steps": [
+  {
+   "id": "parts",
+   "title": "What goes together",
+   "text": [
+    "Printed: head sled, stand, tilt knob, rear gate, lens ring, pivot bolt.",
+    "Bought: one M4 hex nut (7 mm across the flats) and one nylon friction washer, about 0.5 mm thick, M4 inside diameter.",
+    "The camera in its original UC-346 front and back case.",
+    "The Fusion model also lays out the fit coupon, the reference board and the tilt gauge off to one side. They are tools, not part of the stack."
+   ],
+   "check": "Do the fit coupon and the carrier test first. Assemble with the camera out until the stack moves smoothly.",
+   "images": [
+    {"file": "overview_front.png", "alt": "The finished assembly seen from the front: stand, head sled, tilt knob, lens ring", "caption": "Finished, from the front"},
+    {"file": "overview_iso.png", "alt": "The finished assembly seen from the back and the left", "caption": "Finished, from the back"}
+   ]
+  },
+  {
+   "id": "bolt",
+   "title": "Bolt into the sled",
+   "text": [
+    "Push the pivot bolt into the sled's inboard pivot counterbore, thread end pointing outward.",
+    "The head seats about 58.35 mm along the pivot axis and sits below the sled's side edge."
+   ],
+   "check": "The head is recessed and does not touch the case slot.",
+   "images": [
+    {"file": "bolt_iso.png", "alt": "The head sled with the pivot bolt sticking out of its side", "caption": "Bolt through the sled"},
+    {"file": "bolt_side.png", "alt": "The head sled from the front with the bolt along the pivot axis", "caption": "From the front"}
+   ]
+  },
+  {
+   "id": "washer",
+   "title": "Washer on the boss",
+   "text": [
+    "Slide the nylon washer over the bolt until it rests on the sled's boss.",
+    "It sits in the 0.55 mm gap between the boss and the stand arm's inner face."
+   ],
+   "check": "The washer lies flat. A different thickness changes the gap, so measure it first.",
+   "images": [
+    {"file": "washer_iso.png", "alt": "The sled with the washer on the bolt", "caption": "Washer on the bolt"},
+    {"file": "washer_side.png", "alt": "The sled from the front with the washer against the boss", "caption": "From the front"}
+   ]
+  },
+  {
+   "id": "arm",
+   "title": "Stand arm on the bolt",
+   "text": [
+    "Hold the sled against the stand's arm and feed the bolt through the arm's pivot hole.",
+    "The arm's inner face meets the washer."
+   ],
+   "check": "The sled hangs free of the stand's base and swings without scraping.",
+   "images": [
+    {"file": "arm_iso.png", "alt": "The sled mounted on the stand arm", "caption": "Sled on the stand"},
+    {"file": "arm_side.png", "alt": "The stand from the front with the sled on its arm", "caption": "From the front"}
+   ]
+  },
+  {
+   "id": "knob",
+   "title": "Nut into the knob, knob on the bolt",
+   "text": [
+    "Press the M4 nut into the tilt knob's hex socket (about 7.15 mm across the flats, 3.45 mm deep). A dab of glue or a piece of tape holds it if it is loose.",
+    "Put the knob on the bolt from outside the arm. The bolt tip ends inside the nut socket, about 43.85 mm along the axis."
+   ],
+   "check": "Tighten by hand only. The knob sets friction, not a click-stop, and PETG cracks if you overtighten.",
+   "images": [
+    {"file": "knob_iso.png", "alt": "The stand with the orange tilt knob on the arm", "caption": "Knob on"},
+    {"file": "knob_side.png", "alt": "The stand from the front with the knob at the far end of the bolt", "caption": "From the front"}
+   ]
+  },
+  {
+   "id": "camera",
+   "title": "Camera case into the sled",
+   "text": [
+    "With the camera out, slide the assembled UC-346 case in from the rear (the ribbon-exit side), under the left and right lips, until it reaches the front stops.",
+    "Do not force a case that is out of tolerance. Stop and measure it."
+   ],
+   "check": "The case slides in by hand and sits against the stops.",
+   "images": [
+    {"file": "camera_front.png", "alt": "The sled with the case seated in it, from the front", "caption": "Case seated, front"},
+    {"file": "camera_iso.png", "alt": "The sled with the case seated, from the back", "caption": "Case seated, back"}
+   ]
+  },
+  {
+   "id": "gate",
+   "title": "Rear gate",
+   "text": [
+    "Fit the rear gate. It is the keeper that holds the case in the sled."
+   ],
+   "check": "The gate clears the ribbon and can be taken off again for service.",
+   "images": [
+    {"file": "gate_front.png", "alt": "The sled with the grey rear gate fitted", "caption": "Gate fitted"},
+    {"file": "gate_iso.png", "alt": "The same, from the back", "caption": "From the back"}
+   ]
+  },
+  {
+   "id": "ring",
+   "title": "Lens ring",
+   "text": [
+    "Put the lens ring on the front, decorative dots facing outward."
+   ],
+   "check": "The lens sees clear through the ring.",
+   "images": [
+    {"file": "ring_front.png", "alt": "The finished head with the orange lens ring", "caption": "Ring on"},
+    {"file": "ring_iso.png", "alt": "The finished head from the back", "caption": "From the back"}
+   ]
+  },
+  {
+   "id": "tilt",
+   "title": "Try the tilt",
+   "text": [
+    "Turn the knob loose, tilt the head through its range, then tighten it just enough to hold the angle against the cable's pull.",
+    "The tilt gauge is a flat printed protractor with a tick every few degrees. Use it to read the angle. How it is held against the head is not in the model yet."
+   ],
+   "check": "Note anything that binds or touches the lens or ribbon.",
+   "images": [
+    {"file": "gauge_iso.png", "alt": "The flat half-round tilt gauge with its tick marks", "caption": "Tilt gauge"}
+   ]
+  }
+ ]
+}
