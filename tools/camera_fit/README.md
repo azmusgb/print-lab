@@ -47,3 +47,13 @@ the step chips and the left/right arrow keys move between steps. "All placeholde
 
 Which sizes belong to which part is a name-prefix table in `server.py` (`COMPONENT_PARAMS`): a part with no match says so. After
 updating, stop and run the PhoneBridge add-in again so Fusion loads the new version.
+
+## Build guide
+
+The **Build guide** tab is a checklist for making the camera housing, read from `guide.json` on every load: confirm the board,
+post and housing sizes (each size has a "measured and entered" tick), check the model builds clean (read live from Fusion), print
+the fit coupon, print the carrier alone, print the rest, assemble. Each step shows the model's current values, buttons that jump to
+that part in the walkthrough, a Done tick and a note. Progress and notes are saved in `data/progress.json` (not tracked).
+
+The steps are a draft written from the model's own parameter comments: the build and assembly order isn't recorded anywhere else in
+the repo. Edit `guide.json` to match how you actually work. With Fusion closed the guide still opens; current values show as "not read".

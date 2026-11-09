@@ -188,6 +188,43 @@ def test_one_part_alone_is_asked_of_fusion_by_name_and_a_bad_name_is_refused(app
     assert code(lambda: get(base, "/api/shot?view=iso&only=" + "x" * 70))[0] == 422
 
 
+def test_the_guide_fills_in_current_values_and_checks_the_model(app):
+    _, base = app
+    g = json.load(get(base, "/api/guide"))
+    assert g["live"] is True and [s["id"] for s in g["steps"]][:2] == ["board", "posts"]
+    board = g["steps"][0]
+    assert {c["name"]: c["expression"] for c in board["confirm"]}["board_x"] == "25 mm"
+    assert {c["name"]: c["expression"] for c in board["confirm"]}["hole_dx"] is None  # not in this fake model: "not read", not invented
+    clean = next(s for s in g["steps"] if s["id"] == "clean")
+    assert clean["auto"] == {"ok": True, "text": "No failed steps in the model."}
+    FakeFusion.failed = ["screw_posts: lost a reference"]
+    assert next(s for s in json.load(get(base, "/api/guide"))["steps"] if s["id"] == "clean")["auto"]["ok"] is False
+
+
+def test_the_guide_still_reads_with_fusion_closed(app):
+    m, base = app
+    m.BRIDGE = "http://127.0.0.1:9"
+    g = json.load(get(base, "/api/guide"))
+    assert g["live"] is False and len(g["steps"]) >= 6
+    assert next(s for s in g["steps"] if s["id"] == "clean")["auto"]["ok"] is None
+
+
+def test_progress_is_saved_and_only_known_things_can_be_saved(app):
+    m, base = app
+    post(base, "/api/progress", {"kind": "done", "name": "coupon", "value": True})
+    post(base, "/api/progress", {"kind": "confirmed", "name": "board_x", "value": True})
+    r = json.load(post(base, "/api/progress", {"kind": "notes", "name": "coupon", "value": "snug on the rail"}))
+    assert r == {"done": {"coupon": True}, "confirmed": {"board_x": True}, "notes": {"coupon": "snug on the rail"}}
+    assert json.load(get(base, "/api/guide"))["progress"] == r
+    assert (m.DATA / "progress.json").is_file()
+    r = json.load(post(base, "/api/progress", {"kind": "done", "name": "coupon", "value": False}))
+    assert r["done"] == {}
+    for body in ({"kind": "done", "name": "nope", "value": True}, {"kind": "confirmed", "name": "knob_d", "value": True},
+                 {"kind": "done", "name": "coupon", "value": "yes"}, {"kind": "notes", "name": "coupon", "value": "x" * 2001},
+                 {"kind": "other", "name": "coupon", "value": True}):
+        assert code(lambda b=body: post(base, "/api/progress", b))[0] == 422
+
+
 def test_a_fusion_that_is_not_running_is_said_plainly(app):
     m, base = app
     m.BRIDGE = "http://127.0.0.1:9"

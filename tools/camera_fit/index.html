@@ -57,6 +57,19 @@ summary { min-block-size: 44px; display: flex; align-items: center; }
 table { inline-size: 100%; border-collapse: collapse; font-size: .875rem; }
 td { padding: .25rem 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
 td:last-child { text-align: end; padding-inline-start: .5rem; }
+.tabs { display: flex; gap: .5rem; margin-top: .75rem; }
+.tabs button { flex: 1; min-block-size: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); font: inherit; }
+.tabs button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.bar { block-size: 8px; border-radius: 4px; background: var(--line); overflow: hidden; margin: .5rem 0 1rem; }
+.bar > span { display: block; block-size: 100%; background: var(--ok); }
+.g h3 { font-size: 1rem; margin: 0; }
+.g .check { margin: 0; }
+.g ul { list-style: none; margin: .5rem 0 0; padding: 0; }
+.g textarea { inline-size: 100%; min-block-size: 4.5rem; margin-top: .5rem; padding: .5rem; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--ink); font: inherit; resize: vertical; }
+.g .go { min-block-size: 44px; padding: 0 .75rem; margin: .5rem .5rem 0 0; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--ink); font: inherit; }
+.g .auto { margin-top: .5rem; font-size: .875rem; }
+.g .auto[data-ok="true"] { color: var(--ok); } .g .auto[data-ok="false"] { color: var(--bad); }
+.g .done h3 { text-decoration: line-through; color: var(--muted); }
 .steps { display: flex; gap: .375rem; overflow-x: auto; padding: .5rem 0; scrollbar-width: thin; }
 .steps button { flex: none; min-block-size: 44px; padding: 0 .75rem; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--ink); white-space: nowrap; }
 .steps button[aria-current="step"] { background: var(--accent); border-color: var(--accent); color: #fff; }
@@ -79,6 +92,12 @@ td:last-child { text-align: end; padding-inline-start: .5rem; }
 
   <div class="banner" id="banner" role="status" hidden></div>
 
+  <div class="tabs" role="tablist" aria-label="Page sections">
+    <button type="button" role="tab" id="tab-w" aria-selected="true" aria-controls="walk">Walkthrough</button>
+    <button type="button" role="tab" id="tab-g" aria-selected="false" aria-controls="guide" tabindex="-1">Build guide</button>
+  </div>
+
+  <div id="walk" role="tabpanel" aria-labelledby="tab-w">
   <h2 id="wt-title">Walkthrough</h2>
   <div class="steps" id="steps" role="group" aria-label="Components"></div>
   <section class="stage" aria-label="Model view">
@@ -110,6 +129,15 @@ td:last-child { text-align: end; padding-inline-start: .5rem; }
     <summary>Sizes worked out from these (read-only)</summary>
     <table id="derived"></table>
   </details>
+  </div>
+
+  <div id="guide" role="tabpanel" aria-labelledby="tab-g" hidden>
+    <h2>Build guide</h2>
+    <p class="muted" id="gnote"></p>
+    <div class="bar" role="progressbar" aria-label="Steps done" aria-valuemin="0" aria-valuemax="1"><span id="gbar" style="inline-size:0"></span></div>
+    <p id="gcount" class="muted" aria-live="polite"></p>
+    <div id="gsteps"></div>
+  </div>
 </main>
 
 <script>
@@ -305,11 +333,100 @@ document.querySelectorAll(".views button").forEach((b) => b.addEventListener("cl
   document.querySelectorAll(".views button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
   shot();
 }));
+function tab(which) {
+  const g = which === "guide";
+  $("walk").hidden = g; $("guide").hidden = !g;
+  for (const [id, on] of [["tab-w", !g], ["tab-g", g]]) { $(id).setAttribute("aria-selected", String(on)); $(id).tabIndex = on ? 0 : -1; }
+  if (g) loadGuide();
+}
+$("tab-w").addEventListener("click", () => tab("walk"));
+$("tab-g").addEventListener("click", () => tab("guide"));
+for (const id of ["tab-w", "tab-g"]) $(id).addEventListener("keydown", (e) => {
+  if (e.key === "ArrowRight" || e.key === "ArrowLeft") { const to = id === "tab-w" ? "tab-g" : "tab-w"; $(to).click(); $(to).focus(); e.stopPropagation(); }
+});
+
+let gdata = null;
+async function save(kind, name, value) {
+  const r = await (await call("/api/progress", { kind, name, value })).json();
+  gdata.progress = r;
+  return r;
+}
+function counts() {
+  const n = gdata.steps.length, d = gdata.steps.filter((x) => gdata.progress.done[x.id]).length;
+  $("gcount").textContent = `${d} of ${n} steps done`;
+  $("gbar").style.inlineSize = (n ? (100 * d) / n : 0) + "%";
+  document.querySelector("#guide [role=progressbar]").setAttribute("aria-valuenow", String(n ? d / n : 0));
+}
+function checkbox(label, on, onChange) {
+  const l = document.createElement("label"), i = document.createElement("input");
+  l.className = "check"; i.type = "checkbox"; i.checked = on;
+  l.append(i, document.createTextNode(label));
+  i.addEventListener("change", async () => {
+    i.disabled = true;
+    try { await onChange(i.checked); } catch (e) { i.checked = !i.checked; $("gcount").textContent = e.message; } finally { i.disabled = false; }
+  });
+  return l;
+}
+function gstep(s, n) {
+  const a = document.createElement("article");
+  a.className = "card g"; a.id = "g-" + s.id;
+  const top = document.createElement("div"), h = document.createElement("h3");
+  h.textContent = `${n}. ${s.title}`;
+  a.classList.toggle("done", !!gdata.progress.done[s.id]);
+  top.className = "top";
+  top.append(h, checkbox("Done", !!gdata.progress.done[s.id], async (v) => { await save("done", s.id, v); a.classList.toggle("done", v); counts(); }));
+  const why = document.createElement("p"); why.className = "muted"; why.textContent = s.why;
+  a.append(top, why);
+  if (s.auto) { const x = document.createElement("p"); x.className = "auto"; x.dataset.ok = String(s.auto.ok); x.textContent = s.auto.text; a.append(x); }
+  if (s.confirm.length) {
+    const ul = document.createElement("ul");
+    for (const c of s.confirm) {
+      const li = document.createElement("li");
+      li.append(checkbox(`${c.name}${c.expression ? " = " + c.expression : ""}: measured and entered`, !!gdata.progress.confirmed[c.name],
+        (v) => save("confirmed", c.name, v)));
+      if (c.comment) li.title = c.comment;
+      ul.append(li);
+    }
+    a.append(ul);
+  }
+  if (s.facts.length) {
+    const t = document.createElement("table");
+    for (const f of s.facts) {
+      const tr = document.createElement("tr"), x = document.createElement("td"), y = document.createElement("td");
+      x.textContent = f.name; y.textContent = f.expression ?? "not read"; tr.append(x, y); t.append(tr);
+    }
+    a.append(t);
+  }
+  for (const c of s.components) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "go"; b.textContent = "Show " + c.replace(/_/g, " ");
+    b.addEventListener("click", () => {
+      const i = comps.findIndex((x) => x.name.split(":")[0] === c);
+      tab("walk");
+      if (i >= 0) go(i + 1); else $("wt-title").textContent = `Walkthrough · no component named ${c} in this model`;
+    });
+    a.append(b);
+  }
+  const ta = document.createElement("textarea");
+  ta.setAttribute("aria-label", `Notes for step ${n}`); ta.placeholder = "Notes"; ta.maxLength = 2000; ta.value = gdata.progress.notes[s.id] || "";
+  ta.addEventListener("change", () => save("notes", s.id, ta.value).catch((e) => { $("gcount").textContent = e.message; }));
+  a.append(ta);
+  return a;
+}
+function loadGuide() {
+  call("/api/guide").then((r) => r.json()).then((g) => {
+    gdata = g;
+    $("gnote").textContent = g.note + (g.live ? "" : " Fusion isn't answering, so current values are blank.");
+    $("gsteps").replaceChildren(...g.steps.map((s, i) => gstep(s, i + 1)));
+    counts();
+  }).catch((e) => { $("gnote").textContent = e.message; });
+}
+
 $("prev").addEventListener("click", () => go(step - 1));
 $("next").addEventListener("click", () => go(step + 1));
 $("alone").addEventListener("change", shot);
 addEventListener("keydown", (e) => {
-  if (e.target.matches("input, textarea, select") || e.altKey || e.ctrlKey || e.metaKey) return;
+  if ($("walk").hidden || e.target.matches("input, textarea, select") || e.altKey || e.ctrlKey || e.metaKey) return;
   if (e.key === "ArrowRight") go(step + 1);
   if (e.key === "ArrowLeft") go(step - 1);
 });

@@ -97,6 +97,64 @@ def components() -> list[dict]:
     return out
 
 
+def guide() -> dict:
+    """The build guide (guide.json) with the model's current values filled in and the saved progress."""
+    g = json.loads((HERE / "guide.json").read_text())
+    try:
+        params = {p["name"]: p for p in json.loads(bridge("/params"))}
+        status = json.loads(bridge("/status"))
+        live = True
+    except (urllib.error.URLError, OSError, ValueError):
+        params, status, live = {}, {}, False  # the guide is still readable with Fusion closed
+    def row(n):
+        p = params.get(n)
+        return {"name": n, "expression": p["expression"] if p else None, "comment": p["comment"] if p else None}
+    steps = []
+    for s in g["steps"]:
+        out = {k: s[k] for k in ("id", "title", "why") if k in s}
+        out["facts"] = [row(n) for n in s.get("facts", [])]
+        out["confirm"] = [row(n) for n in s.get("confirm", [])]
+        out["components"] = s.get("components", [])
+        if s.get("check") == "no_failed_steps":
+            out["auto"] = ({"ok": not status.get("failed"), "text": "No failed steps in the model." if not status.get("failed")
+                            else "Failed: " + "; ".join(status["failed"])} if live else {"ok": None, "text": "Fusion isn't answering, so this can't be checked."})
+        steps.append(out)
+    return {"note": g.get("note", ""), "steps": steps, "progress": load_progress(), "live": live}
+
+
+def load_progress() -> dict:
+    try:
+        saved = json.loads((DATA / "progress.json").read_text())
+    except (OSError, ValueError):
+        saved = {}
+    return {"done": saved.get("done", {}), "confirmed": saved.get("confirmed", {}), "notes": saved.get("notes", {})}
+
+
+def set_progress(kind: str, key: str, value) -> dict:
+    g = json.loads((HERE / "guide.json").read_text())["steps"]
+    ids = {s["id"] for s in g}
+    names = {n for s in g for n in s.get("confirm", [])}
+    if kind == "done" and key in ids and isinstance(value, bool):
+        pass
+    elif kind == "confirmed" and key in names and isinstance(value, bool):
+        pass
+    elif kind == "notes" and key in ids and isinstance(value, str) and len(value) <= 2000:
+        pass
+    else:
+        raise ValueError("that isn't something the guide tracks")
+    with _lock:
+        prog = load_progress()
+        if value in (False, ""):
+            prog[kind].pop(key, None)
+        else:
+            prog[kind][key] = value
+        DATA.mkdir(exist_ok=True)
+        tmp = DATA / "progress.json.tmp"
+        tmp.write_text(json.dumps(prog, indent=1, sort_keys=True))
+        tmp.replace(DATA / "progress.json")
+    return prog
+
+
 def change(name: str, value) -> dict:
     if isinstance(value, bool) or not isinstance(value, (int, float)) or value != value:
         raise ValueError("value must be a number")
@@ -158,6 +216,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if u.path == "/api/state":
                 return self._json(200, state())
+            if u.path == "/api/guide":
+                return self._json(200, guide())
             if u.path == "/api/components":
                 return self._json(200, components())
             if u.path == "/api/shot":
@@ -189,6 +249,8 @@ class Handler(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(n))
             if not isinstance(body, dict) or not isinstance(body.get("name"), str):
                 raise ValueError("send {name, value}")
+            if path == "/api/progress":
+                return self._json(200, set_progress(str(body.get("kind")), body["name"], body.get("value")))
             if path == "/api/set":
                 return self._json(200, change(body["name"], body.get("value")))
             if path == "/api/reset":

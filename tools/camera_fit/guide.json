@@ -1,0 +1,59 @@
+{
+  "note": "A draft written from the model's own parameter comments. The build and assembly order is not recorded anywhere else, so change this file to match how you actually work; the page reads it on every load.",
+  "steps": [
+    {
+      "id": "board",
+      "title": "Confirm the board sizes",
+      "why": "These sizes are marked provisional, or 'verify on the UC-685 drawing', in the model. Measure the real board with calipers, enter each value with its slider, then tick it here.",
+      "confirm": ["board_x", "board_y", "board_t", "hole_dx", "hole_dy", "hole_d", "hole_edge_y"],
+      "components": ["carrier"]
+    },
+    {
+      "id": "posts",
+      "title": "Confirm the posts and screw",
+      "why": "The post must clear the connector (its underside is 2.7 mm tall on the drawing's numbers, so the post must be at least that tall) and leave a wall around the screw's pilot hole. Check these on the real board.",
+      "confirm": ["standoff_h", "post_d", "pilot_d"],
+      "components": ["carrier"]
+    },
+    {
+      "id": "housing",
+      "title": "Confirm the housing and lens sizes",
+      "why": "The head sled is a placeholder (the shell front is 29.7 mm, the sled is 36 mm). Measure the housing front the sled slides into and the lens barrel the ring must clear.",
+      "confirm": ["sled_x", "sled_y", "ring_d"],
+      "components": ["head_sled", "lens_ring"]
+    },
+    {
+      "id": "clean",
+      "title": "Check the model builds clean",
+      "why": "Every change you made reruns the timeline. The page shows any failed step in a red banner; none should be left before you print.",
+      "check": "no_failed_steps"
+    },
+    {
+      "id": "coupon",
+      "title": "Print the fit coupon first",
+      "why": "It stands for the 12 mm rail specimen, so a small, fast print tells you how this printer's tolerances land before the real parts are printed. Try it on the rail it stands for: tight, loose or right.",
+      "facts": ["coupon_x", "coupon_y", "coupon_t"],
+      "components": ["fit_coupon"]
+    },
+    {
+      "id": "carrier",
+      "title": "Print the carrier alone",
+      "why": "Seat the real board on the posts: the holes line up, the connector clears and the board sits flat. Fix sizes now, before the other parts are printed.",
+      "facts": ["carrier_margin", "carrier_t", "post_d", "standoff_h"],
+      "components": ["carrier"]
+    },
+    {
+      "id": "rest",
+      "title": "Print the rest",
+      "why": "Head sled, rear gate, stand, tilt knob and lens ring.",
+      "components": ["head_sled", "rear_gate", "stand", "tilt_knob", "lens_ring"]
+    },
+    {
+      "id": "assemble",
+      "title": "Assemble and try the tilt",
+      "why": "Board onto the posts with M2 thread-forming screws into the pilot holes, then the sled, the gate and the stand. Move the tilt knob through its range and note anything that binds.",
+      "facts": ["pilot_d", "pilot_depth"],
+      "components": ["head_sled", "rear_gate", "stand", "tilt_knob"]
+    }
+  ]
+}
