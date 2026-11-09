@@ -6,7 +6,7 @@
    "title": "What goes together",
    "text": [
     "Printed: head sled, stand, tilt knob, rear gate, lens ring, pivot bolt.",
-    "Bought: one M4 hex nut (7 mm across the flats) and one nylon friction washer, about 0.5 mm thick, M4 inside diameter.",
+    "Bought: one nylon friction washer, about 0.5 mm thick, M4 inside diameter, and either one M4 hex nut (7 mm across the flats) or the printed threaded nut from the model (m4_nut), which has an M4x0.7 thread opened 0.15 mm for printing.",
     "The camera in its original UC-346 front and back case.",
     "The Fusion model also lays out the fit coupon, the reference board and the tilt gauge off to one side. They are tools, not part of the stack."
    ],
@@ -59,7 +59,7 @@
    "id": "knob",
    "title": "Nut into the knob, knob on the bolt",
    "text": [
-    "Press the M4 nut into the tilt knob's hex socket (about 7.15 mm across the flats, 3.45 mm deep). A dab of glue or a piece of tape holds it if it is loose.",
+    "Press the nut (bought or printed) into the tilt knob's hex socket (about 7.15 mm across the flats, 3.45 mm deep). A dab of glue or a piece of tape holds it if it is loose.",
     "Put the knob on the bolt from outside the arm. The bolt tip ends inside the nut socket, about 43.85 mm along the axis."
    ],
    "check": "Tighten by hand only. The knob sets friction, not a click-stop, and PETG cracks if you overtighten.",
