@@ -52,6 +52,11 @@ def load_reference(path: Path = REFERENCE) -> dict:
     return ref
 
 
+def accepted_machine_starts(reference: dict) -> set[str]:
+    """The reference's own `machine_start_gcode` hash plus any other revision recorded as known-good."""
+    return {reference["machine_start_sha256"], *(e["machine_start_sha256"] for e in reference.get("also_known_good", []))}
+
+
 @dataclass
 class StartCheck:
     ok: bool
@@ -77,7 +82,7 @@ def check_gcode(gcode: str, reference: dict) -> StartCheck:
                        f"start sequence has, starting with {', '.join(missing[:6])}")
     if lines < reference.get("block_lines", 0) * 0.9:
         reasons.append(f"Start block has {lines} lines against {reference['block_lines']} in the known-good file")
-    if machine_start_sha256(gcode) != reference["machine_start_sha256"]:
+    if machine_start_sha256(gcode) not in accepted_machine_starts(reference):
         reasons.append("The printer's start G-code isn't the known-good one")
     ids = _header(gcode, "filament_ids")
     if not ids or not ids.strip('";'):
