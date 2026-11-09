@@ -2,7 +2,6 @@
 Builders 4 and 5). Results are per Bambu Studio version and per factor: a pass authorizes only what it tested."""
 import json
 import re
-import statistics
 from collections import defaultdict
 from pathlib import Path
 

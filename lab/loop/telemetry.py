@@ -1,10 +1,8 @@
 """Telemetry auto-fill (`lab exp telemetry <eid>`) using Local AI's printer status endpoint."""
 import datetime
-import json
-from pathlib import Path
 
 from lab import sync
-from lab.loop.commands import find_run, load_experiment, record_usage
+from lab.loop.commands import load_experiment, record_usage
 from lab.records.project import ProjectPaths
 
 

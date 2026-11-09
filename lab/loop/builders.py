@@ -355,8 +355,6 @@ def _object_in(path: Path, name: str) -> str:
 
 def build_experiment(paths: ProjectPaths, exp_id: str, *, replace: bool, slicer=slice_with_job) -> dict:
     """Build and slice the experiment's plate. Unchanged inputs: the existing build, nothing written."""
-    from lab.adapters.threemf import write_print_3mf
-    from lab.geometry.coupons import plate_layout
     with record_lock(paths.locks, exp_id, f"lab exp build {exp_id}"):
         e_path = paths.experiments / f"{exp_id}.json"
         e = load(e_path, "experiment")
