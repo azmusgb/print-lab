@@ -2,7 +2,6 @@
 import argparse
 import datetime
 import json
-import sys
 from pathlib import Path
 
 from lab.page_index import build_index

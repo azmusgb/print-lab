@@ -1,5 +1,5 @@
 """The Stage 1A checks. Each check is check(mesh, ctx) -> list[Finding]; a check that throws is reported, not fatal."""
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 import trimesh
 

@@ -11,7 +11,6 @@ from pathlib import Path
 
 from lab import runs
 from lab.records.project import ProjectPaths
-from lab.records.store import atomic_write_json
 
 SCHEMA = "print-lab-production-package/1"
 

@@ -3,8 +3,6 @@
 Order: check the settings, check the model is the one named, build the project from the Studio-saved base (never an STL
 with loose presets), slice with the pinned Studio, then check the output (a real zip, a plate, the Q5 start sequence)
 before anything is returned. A slice that fails any check is deleted, so a caller can't pick up a partial file."""
-import hashlib
-import json
 import re
 import zipfile
 from dataclasses import asdict, dataclass, field
@@ -14,7 +12,7 @@ import numpy as np
 import trimesh
 
 from lab.adapters import bambu, threemf
-from lab.jobs import LabToolError, sha256
+from lab.jobs import sha256
 from lab.quick import settings as quick_settings
 from lab.quick import start_check
 
