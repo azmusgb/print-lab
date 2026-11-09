@@ -57,6 +57,31 @@ summary { min-block-size: 44px; display: flex; align-items: center; }
 table { inline-size: 100%; border-collapse: collapse; font-size: .875rem; }
 td { padding: .25rem 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
 td:last-child { text-align: end; padding-inline-start: .5rem; }
+.tabs { display: flex; gap: .5rem; margin-top: .75rem; }
+.tabs button { flex: 1; min-block-size: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); font: inherit; }
+.tabs button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.bar { block-size: 8px; border-radius: 4px; background: var(--line); overflow: hidden; margin: .5rem 0 1rem; }
+.bar > span { display: block; block-size: 100%; background: var(--ok); }
+.g h3 { font-size: 1rem; margin: 0; }
+.g .check { margin: 0; }
+.g ul { list-style: none; margin: .5rem 0 0; padding: 0; }
+.g textarea { inline-size: 100%; min-block-size: 4.5rem; margin-top: .5rem; padding: .5rem; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--ink); font: inherit; resize: vertical; }
+.g .go { min-block-size: 44px; padding: 0 .75rem; margin: .5rem .5rem 0 0; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--ink); font: inherit; }
+.g .auto { margin-top: .5rem; font-size: .875rem; }
+.g .auto[data-ok="true"] { color: var(--ok); } .g .auto[data-ok="false"] { color: var(--bad); }
+.g .done h3 { text-decoration: line-through; color: var(--muted); }
+.steps { display: flex; gap: .375rem; overflow-x: auto; padding: .5rem 0; scrollbar-width: thin; }
+.steps button { flex: none; min-block-size: 44px; padding: 0 .75rem; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--ink); white-space: nowrap; }
+.steps button[aria-current="step"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.nav { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: .5rem; }
+.nav button { min-block-size: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); }
+.nav button[disabled] { opacity: .45; }
+.facts { margin: .75rem 0; }
+.facts dl { display: grid; grid-template-columns: auto 1fr; gap: .125rem .75rem; margin: 0; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; text-align: end; overflow-wrap: anywhere; }
+.check { display: flex; align-items: center; gap: .5rem; min-block-size: 44px; }
+.check input { inline-size: 1.25rem; block-size: 1.25rem; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head>
@@ -67,6 +92,14 @@ td:last-child { text-align: end; padding-inline-start: .5rem; }
 
   <div class="banner" id="banner" role="status" hidden></div>
 
+  <div class="tabs" role="tablist" aria-label="Page sections">
+    <button type="button" role="tab" id="tab-w" aria-selected="true" aria-controls="walk">Walkthrough</button>
+    <button type="button" role="tab" id="tab-g" aria-selected="false" aria-controls="guide" tabindex="-1">Build guide</button>
+  </div>
+
+  <div id="walk" role="tabpanel" aria-labelledby="tab-w">
+  <h2 id="wt-title">Walkthrough</h2>
+  <div class="steps" id="steps" role="group" aria-label="Components"></div>
   <section class="stage" aria-label="Model view">
     <div class="shot">
       <img id="img" alt="The camera carrier model as Fusion shows it" hidden>
@@ -82,20 +115,36 @@ td:last-child { text-align: end; padding-inline-start: .5rem; }
   </section>
   <p class="muted" style="margin-top:.5rem">The view is Fusion's own picture. Choosing one changes the camera angle in Fusion on the Mac. Nothing here saves the Fusion document.</p>
 
-  <h2>Placeholder sizes</h2>
-  <div id="params" aria-live="polite"></div>
+  <div class="nav"><button type="button" id="prev">‹ Previous</button><button type="button" id="next">Next ›</button></div>
+  <label class="check" id="alone-wrap"><input type="checkbox" id="alone" checked> Show this part on its own</label>
+  <div class="facts" id="facts" aria-live="polite"></div>
+  <div id="stepparams"></div>
+
+  <details id="all">
+    <summary>All placeholder sizes</summary>
+    <div id="params"></div>
+  </details>
 
   <details>
     <summary>Sizes worked out from these (read-only)</summary>
     <table id="derived"></table>
   </details>
+  </div>
+
+  <div id="guide" role="tabpanel" aria-labelledby="tab-g" hidden>
+    <h2>Build guide</h2>
+    <p class="muted" id="gnote"></p>
+    <div class="bar" role="progressbar" aria-label="Steps done" aria-valuemin="0" aria-valuemax="1"><span id="gbar" style="inline-size:0"></span></div>
+    <p id="gcount" class="muted" aria-live="polite"></p>
+    <div id="gsteps"></div>
+  </div>
 </main>
 
 <script>
 "use strict";
 const TOKEN = new URLSearchParams(location.search).get("t") || "";
 const $ = (id) => document.getElementById(id);
-let view = "iso", shotSeq = 0, shotTimer = 0, busy = 0;
+let view = "iso", shotSeq = 0, shotTimer = 0, busy = 0, step = 0, comps = [], byName = {};
 
 async function call(path, body) {
   const url = path + (path.includes("?") ? "&" : "?") + "t=" + encodeURIComponent(TOKEN);
@@ -123,7 +172,7 @@ function shot() {
   $("shotmsg").hidden = false;
   $("shotmsg").textContent = "Loading the view…";
   const w = Math.min(1200, Math.round(innerWidth * (devicePixelRatio || 1)));
-  call(`/api/shot?view=${view}&w=${w}&h=${Math.round(w * 0.75)}`).then((r) => r.blob()).then((blob) => {
+  call(`/api/shot?view=${view}&w=${w}&h=${Math.round(w * 0.75)}${only()}`).then((r) => r.blob()).then((blob) => {
     if (seq !== shotSeq) return;
     const old = $("img").src;
     $("img").src = URL.createObjectURL(blob);
@@ -135,6 +184,10 @@ function shot() {
     $("shotmsg").hidden = false;
     $("shotmsg").textContent = e.message;
   });
+}
+function only() {
+  const c = comps[step - 1];
+  return c && $("alone").checked ? "&only=" + encodeURIComponent(c.name) : "";
 }
 function shotSoon() { clearTimeout(shotTimer); shotTimer = setTimeout(shot, 400); }
 
@@ -163,6 +216,7 @@ function card(p) {
     back.disabled = c.dataset.changed !== "true";
   };
   show(p.value ?? p.start);
+  document.addEventListener("pb-value", (e) => { if (e.detail.name === p.name && c.isConnected) show(e.detail.value); });
   const apply = async (v, reset) => {
     err.textContent = "";
     if (!Number.isFinite(v) || v < p.lo || v > p.hi) {
@@ -174,7 +228,9 @@ function card(p) {
     try {
       const r = await (await call(reset ? "/api/reset" : "/api/set", { name: p.name, value: v })).json();
       show(reset ? p.start : v);
+      document.dispatchEvent(new CustomEvent("pb-value", { detail: { name: p.name, value: reset ? p.start : v } }));
       banner({ failed: r.failed });
+      refreshFacts();
       shotSoon();
     } catch (e) {
       err.textContent = e.message;
@@ -193,11 +249,67 @@ function card(p) {
   return c;
 }
 
+function fmt(v) { return Number.isFinite(v) ? (Math.round(v * 100) / 100).toLocaleString() : "?"; }
+
+function renderSteps() {
+  const labels = ["Whole model", ...comps.map((c) => c.label)];
+  $("steps").replaceChildren(...labels.map((l, i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.textContent = `${i + 1}. ${l}`;
+    if (i === step) b.setAttribute("aria-current", "step");
+    b.addEventListener("click", () => go(i));
+    return b;
+  }));
+  $("prev").disabled = step === 0;
+  $("next").disabled = step === labels.length - 1;
+  $("steps").children[step]?.scrollIntoView({ inline: "center", block: "nearest" });
+}
+
+function renderFacts(rebuild = true) {
+  const c = comps[step - 1], f = $("facts");
+  $("wt-title").textContent = c ? `Walkthrough · ${step + 1} of ${comps.length + 1}: ${c.label}` : "Walkthrough · whole model";
+  $("alone-wrap").hidden = !c;
+  if (!c) {
+    f.textContent = comps.length ? `${comps.length} parts: ${comps.map((x) => x.label).join(", ")}. Step through them with Next.` : "No parts found in this design.";
+    $("stepparams").replaceChildren();
+    return;
+  }
+  const rows = [["Part", c.name], ["Size (x × y × z)", c.size_mm.map(fmt).join(" × ") + " mm"], ["Volume", fmt(c.volume_mm3) + " mm³"],
+    ["Shown in Fusion", c.visible ? "yes" : "hidden"]];
+  const dl = document.createElement("dl");
+  for (const [k, v] of rows) { const dt = document.createElement("dt"), dd = document.createElement("dd"); dt.textContent = k; dd.textContent = v; dl.append(dt, dd); }
+  f.replaceChildren(dl);
+  if (!rebuild) return;
+  const host = $("stepparams");
+  host.replaceChildren(...c.editable.filter((n) => byName[n]).map((n) => card(byName[n])));
+  if (c.fixed.length) {
+    const h = document.createElement("h2"); h.textContent = "Fixed sizes for this part";
+    const t = document.createElement("table");
+    for (const x of c.fixed) {
+      const tr = document.createElement("tr"), a = document.createElement("td"), b = document.createElement("td");
+      a.textContent = x.name; b.textContent = x.expression; a.title = x.comment || "";
+      tr.append(a, b); t.append(tr);
+    }
+    host.append(h, t);
+  }
+  if (!c.editable.length && !c.fixed.length) host.textContent = "No sizes in this model are tied to this part by name.";
+}
+
+function refreshFacts() {
+  call("/api/components").then((r) => r.json()).then((cs) => { comps = cs; renderFacts(false); }).catch(() => { /* keep what is shown */ });
+}
+
+function go(i) {
+  step = Math.max(0, Math.min(i, comps.length));
+  renderSteps(); renderFacts(); shot();
+}
+
 function load() {
   call("/api/state").then((r) => r.json()).then((s) => {
     $("doc").textContent = `${s.status.document}${s.status.unsaved ? " (unsaved in Fusion)" : ""} · ${Math.round(s.status.volume_mm3).toLocaleString()} mm³`;
     banner(s.status);
     const host = $("params");
+    byName = Object.fromEntries(s.params.map((p) => [p.name, p]));
     host.replaceChildren(...s.params.map(card));
     if (!s.params.length) host.textContent = "No placeholder parameters left to change.";
     const t = $("derived");
@@ -208,7 +320,7 @@ function load() {
       tr.append(a, b);
       return tr;
     }));
-    shot();
+    return call("/api/components").then((r) => r.json()).then((cs) => { comps = cs; step = 0; renderSteps(); renderFacts(); shot(); });
   }).catch((e) => {
     $("doc").textContent = "Couldn't read the model.";
     banner(null, e.message);
@@ -221,6 +333,103 @@ document.querySelectorAll(".views button").forEach((b) => b.addEventListener("cl
   document.querySelectorAll(".views button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
   shot();
 }));
+function tab(which) {
+  const g = which === "guide";
+  $("walk").hidden = g; $("guide").hidden = !g;
+  for (const [id, on] of [["tab-w", !g], ["tab-g", g]]) { $(id).setAttribute("aria-selected", String(on)); $(id).tabIndex = on ? 0 : -1; }
+  if (g) loadGuide();
+}
+$("tab-w").addEventListener("click", () => tab("walk"));
+$("tab-g").addEventListener("click", () => tab("guide"));
+for (const id of ["tab-w", "tab-g"]) $(id).addEventListener("keydown", (e) => {
+  if (e.key === "ArrowRight" || e.key === "ArrowLeft") { const to = id === "tab-w" ? "tab-g" : "tab-w"; $(to).click(); $(to).focus(); e.stopPropagation(); }
+});
+
+let gdata = null;
+async function save(kind, name, value) {
+  const r = await (await call("/api/progress", { kind, name, value })).json();
+  gdata.progress = r;
+  return r;
+}
+function counts() {
+  const n = gdata.steps.length, d = gdata.steps.filter((x) => gdata.progress.done[x.id]).length;
+  $("gcount").textContent = `${d} of ${n} steps done`;
+  $("gbar").style.inlineSize = (n ? (100 * d) / n : 0) + "%";
+  document.querySelector("#guide [role=progressbar]").setAttribute("aria-valuenow", String(n ? d / n : 0));
+}
+function checkbox(label, on, onChange) {
+  const l = document.createElement("label"), i = document.createElement("input");
+  l.className = "check"; i.type = "checkbox"; i.checked = on;
+  l.append(i, document.createTextNode(label));
+  i.addEventListener("change", async () => {
+    i.disabled = true;
+    try { await onChange(i.checked); } catch (e) { i.checked = !i.checked; $("gcount").textContent = e.message; } finally { i.disabled = false; }
+  });
+  return l;
+}
+function gstep(s, n) {
+  const a = document.createElement("article");
+  a.className = "card g"; a.id = "g-" + s.id;
+  const top = document.createElement("div"), h = document.createElement("h3");
+  h.textContent = `${n}. ${s.title}`;
+  a.classList.toggle("done", !!gdata.progress.done[s.id]);
+  top.className = "top";
+  top.append(h, checkbox("Done", !!gdata.progress.done[s.id], async (v) => { await save("done", s.id, v); a.classList.toggle("done", v); counts(); }));
+  const why = document.createElement("p"); why.className = "muted"; why.textContent = s.why;
+  a.append(top, why);
+  if (s.auto) { const x = document.createElement("p"); x.className = "auto"; x.dataset.ok = String(s.auto.ok); x.textContent = s.auto.text; a.append(x); }
+  if (s.confirm.length) {
+    const ul = document.createElement("ul");
+    for (const c of s.confirm) {
+      const li = document.createElement("li");
+      li.append(checkbox(`${c.name}${c.expression ? " = " + c.expression : ""}: measured and entered`, !!gdata.progress.confirmed[c.name],
+        (v) => save("confirmed", c.name, v)));
+      if (c.comment) li.title = c.comment;
+      ul.append(li);
+    }
+    a.append(ul);
+  }
+  if (s.facts.length) {
+    const t = document.createElement("table");
+    for (const f of s.facts) {
+      const tr = document.createElement("tr"), x = document.createElement("td"), y = document.createElement("td");
+      x.textContent = f.name; y.textContent = f.expression ?? "not read"; tr.append(x, y); t.append(tr);
+    }
+    a.append(t);
+  }
+  for (const c of s.components) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "go"; b.textContent = "Show " + c.replace(/_/g, " ");
+    b.addEventListener("click", () => {
+      const i = comps.findIndex((x) => x.name.split(":")[0] === c);
+      tab("walk");
+      if (i >= 0) go(i + 1); else $("wt-title").textContent = `Walkthrough · no component named ${c} in this model`;
+    });
+    a.append(b);
+  }
+  const ta = document.createElement("textarea");
+  ta.setAttribute("aria-label", `Notes for step ${n}`); ta.placeholder = "Notes"; ta.maxLength = 2000; ta.value = gdata.progress.notes[s.id] || "";
+  ta.addEventListener("change", () => save("notes", s.id, ta.value).catch((e) => { $("gcount").textContent = e.message; }));
+  a.append(ta);
+  return a;
+}
+function loadGuide() {
+  call("/api/guide").then((r) => r.json()).then((g) => {
+    gdata = g;
+    $("gnote").textContent = g.note + (g.live ? "" : " Fusion isn't answering, so current values are blank.");
+    $("gsteps").replaceChildren(...g.steps.map((s, i) => gstep(s, i + 1)));
+    counts();
+  }).catch((e) => { $("gnote").textContent = e.message; });
+}
+
+$("prev").addEventListener("click", () => go(step - 1));
+$("next").addEventListener("click", () => go(step + 1));
+$("alone").addEventListener("change", shot);
+addEventListener("keydown", (e) => {
+  if ($("walk").hidden || e.target.matches("input, textarea, select") || e.altKey || e.ctrlKey || e.metaKey) return;
+  if (e.key === "ArrowRight") go(step + 1);
+  if (e.key === "ArrowLeft") go(step - 1);
+});
 load();
 </script>
 </body>

@@ -24,6 +24,7 @@ class FakeFusion(BaseHTTPRequestHandler):
     params = {}
     failed = []
     sets = []
+    shots = []
 
     def log_message(self, format, *args):
         pass
@@ -42,7 +43,13 @@ class FakeFusion(BaseHTTPRequestHandler):
         if self.path == "/status":
             return self._send(200, json.dumps({"document": "camera_carrier v5", "unsaved": False, "failed": self.failed,
                                                "volume_mm3": 1234.5, "busy": False}).encode())
+        if self.path == "/components":
+            return self._send(200, json.dumps([
+                {"name": "carrier:1", "visible": True, "volume_mm3": 1500.0, "size_mm": [31, 29.86, 6]},
+                {"name": "knob:1", "visible": True, "volume_mm3": 10.0, "size_mm": [1, 1, 1]},
+                {"name": "tilt_knob:1", "visible": False, "volume_mm3": 900.5, "size_mm": [20, 20, 6]}]).encode())
         if self.path.startswith("/shot"):
+            FakeFusion.shots.append(self.path)
             return self._send(200, PNG, "image/png")
         self._send(404, b"{}")
 
@@ -67,6 +74,7 @@ def app(tmp_path):
     }
     FakeFusion.failed = []
     FakeFusion.sets = []
+    FakeFusion.shots = []
     fusion = ThreadingHTTPServer(("127.0.0.1", 0), FakeFusion)
     threading.Thread(target=fusion.serve_forever, daemon=True).start()
     m.BRIDGE = f"http://127.0.0.1:{fusion.server_address[1]}"
@@ -162,6 +170,61 @@ def test_the_picture_and_the_page_are_served_and_a_bad_view_is_refused(app):
     assert b"Camera carrier fit" in get(base, "/").read()
 
 
+def test_the_walkthrough_ties_each_part_to_the_sizes_that_shape_it(app):
+    _, base = app
+    cs = {c["name"]: c for c in json.load(get(base, "/api/components"))}
+    assert cs["carrier:1"]["editable"] == ["board_x", "carrier_margin"]  # board_t is measured: fixed, with carrier_x (derived)
+    assert {f["name"] for f in cs["carrier:1"]["fixed"]} == {"board_t", "carrier_x"}
+    assert cs["carrier:1"]["size_mm"] == [31, 29.86, 6] and cs["carrier:1"]["label"] == "carrier"
+    assert cs["tilt_knob:1"]["editable"] == ["knob_d"] and cs["tilt_knob:1"]["visible"] is False
+    assert cs["knob:1"]["editable"] == [] and cs["knob:1"]["fixed"] == []  # a part with no sizes tied to it says so, no guessing
+
+
+def test_one_part_alone_is_asked_of_fusion_by_name_and_a_bad_name_is_refused(app):
+    _, base = app
+    assert get(base, "/api/shot?view=iso&only=tilt_knob%3A1").read() == PNG
+    assert "only=tilt_knob%3A1" in FakeFusion.shots[-1]
+    assert code(lambda: get(base, "/api/shot?view=iso&only=" + "a%3B%20rm" * 3))[0] == 422
+    assert code(lambda: get(base, "/api/shot?view=iso&only=" + "x" * 70))[0] == 422
+
+
+def test_the_guide_fills_in_current_values_and_checks_the_model(app):
+    _, base = app
+    g = json.load(get(base, "/api/guide"))
+    assert g["live"] is True and [s["id"] for s in g["steps"]][:2] == ["board", "posts"]
+    board = g["steps"][0]
+    assert {c["name"]: c["expression"] for c in board["confirm"]}["board_x"] == "25 mm"
+    assert {c["name"]: c["expression"] for c in board["confirm"]}["hole_dx"] is None  # not in this fake model: "not read", not invented
+    clean = next(s for s in g["steps"] if s["id"] == "clean")
+    assert clean["auto"] == {"ok": True, "text": "No failed steps in the model."}
+    FakeFusion.failed = ["screw_posts: lost a reference"]
+    assert next(s for s in json.load(get(base, "/api/guide"))["steps"] if s["id"] == "clean")["auto"]["ok"] is False
+
+
+def test_the_guide_still_reads_with_fusion_closed(app):
+    m, base = app
+    m.BRIDGE = "http://127.0.0.1:9"
+    g = json.load(get(base, "/api/guide"))
+    assert g["live"] is False and len(g["steps"]) >= 6
+    assert next(s for s in g["steps"] if s["id"] == "clean")["auto"]["ok"] is None
+
+
+def test_progress_is_saved_and_only_known_things_can_be_saved(app):
+    m, base = app
+    post(base, "/api/progress", {"kind": "done", "name": "coupon", "value": True})
+    post(base, "/api/progress", {"kind": "confirmed", "name": "board_x", "value": True})
+    r = json.load(post(base, "/api/progress", {"kind": "notes", "name": "coupon", "value": "snug on the rail"}))
+    assert r == {"done": {"coupon": True}, "confirmed": {"board_x": True}, "notes": {"coupon": "snug on the rail"}}
+    assert json.load(get(base, "/api/guide"))["progress"] == r
+    assert (m.DATA / "progress.json").is_file()
+    r = json.load(post(base, "/api/progress", {"kind": "done", "name": "coupon", "value": False}))
+    assert r["done"] == {}
+    for body in ({"kind": "done", "name": "nope", "value": True}, {"kind": "confirmed", "name": "knob_d", "value": True},
+                 {"kind": "done", "name": "coupon", "value": "yes"}, {"kind": "notes", "name": "coupon", "value": "x" * 2001},
+                 {"kind": "other", "name": "coupon", "value": True}):
+        assert code(lambda b=body: post(base, "/api/progress", b))[0] == 422
+
+
 def test_a_fusion_that_is_not_running_is_said_plainly(app):
     m, base = app
     m.BRIDGE = "http://127.0.0.1:9"
@@ -196,7 +259,7 @@ def addin(tmp_path, monkeypatch):
     (tmp_path / "bridge-token").write_text("secret-bridge")
     m.TOKEN_FILE = str(tmp_path / "bridge-token")
     asked = []
-    m._ask = lambda **kw: asked.append(kw) or {"ok": True}
+    m._ask = lambda **kw: asked.append(kw) or (PNG if kw["op"] == "shot" else {"ok": True})
     srv = ThreadingHTTPServer(("127.0.0.1", 0), m._Http)
     port = srv.server_address[1]
     m.HOSTS = {f"127.0.0.1:{port}"}
@@ -245,3 +308,11 @@ def test_a_cross_site_form_post_with_a_text_body_cannot_reach_fusion(addin):
     port, asked = addin
     assert raw(port, "POST", "/set", GOOD, {"Content-Type": "text/plain", "X-Bridge-Token": None, "Origin": "null"}) == 403
     assert asked == []
+
+
+def test_the_add_in_checks_a_component_name_and_needs_the_token_for_the_walkthrough(addin):
+    port, asked = addin
+    assert raw(port, "GET", "/components", None, {"X-Bridge-Token": None}) == 403
+    assert raw(port, "GET", "/shot?view=iso&only=a%3Bb") == 422
+    assert raw(port, "GET", "/shot?view=iso&only=carrier%3A1") == 200
+    assert asked[-1]["only"] == "carrier:1"

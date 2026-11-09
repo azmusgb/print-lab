@@ -20,6 +20,7 @@ import adsk.fusion
 PORT = 38117
 TOKEN_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "bridge-token")
 HOSTS = {f"127.0.0.1:{PORT}", f"localhost:{PORT}"}
+ONLY = re.compile(r"^[A-Za-z0-9_:. -]{1,60}$")
 PLAIN = re.compile(r"^\d+(?:\.\d+)? mm$")
 EVENT_ID = "PhoneBridgeCall"
 VIEWS = {
@@ -87,13 +88,41 @@ def _set(name, expression):
     return {"name": name, "before": before, "after": p.expression, "failed": _health(d)}
 
 
-def _shot(view, w, h):
+def _components():
+    """The top-level components in the design, with their size as Fusion measures it."""
+    out = []
+    for o in _design().rootComponent.occurrences:
+        vol = 0.0
+        for b in o.bRepBodies:
+            if b.isSolid:
+                vol += b.volume
+        bb = o.boundingBox
+        out.append({"name": o.name, "visible": o.isLightBulbOn, "volume_mm3": round(vol * 1000, 1),
+                    "size_mm": [round((bb.maxPoint.x - bb.minPoint.x) * 10, 2), round((bb.maxPoint.y - bb.minPoint.y) * 10, 2),
+                                round((bb.maxPoint.z - bb.minPoint.z) * 10, 2)]})
+    return out
+
+
+def _shot(view, w, h, only=None):
+    """A picture of the viewport. With `only` (a component's name), every other top-level component is hidden for the
+    picture and put back, whatever happens, before this returns."""
     vp = _app.activeViewport
-    vp.viewOrientation = VIEWS[view]
-    vp.fit()
-    path = os.path.join(tempfile.gettempdir(), f"phonebridge-{os.getpid()}.png")
-    if not vp.saveAsImageFile(path, w, h):
-        raise RuntimeError("Fusion couldn't save the view.")
+    occs = list(_design().rootComponent.occurrences)
+    if only is not None and only not in [o.name for o in occs]:
+        raise ValueError("no such component")
+    was = [(o, o.isLightBulbOn) for o in occs]
+    try:
+        if only is not None:
+            for o in occs:
+                o.isLightBulbOn = o.name == only
+        vp.viewOrientation = VIEWS[view]
+        vp.fit()
+        path = os.path.join(tempfile.gettempdir(), f"phonebridge-{os.getpid()}.png")
+        if not vp.saveAsImageFile(path, w, h):
+            raise RuntimeError("Fusion couldn't save the view.")
+    finally:
+        for o, on in was:
+            o.isLightBulbOn = on
     with open(path, "rb") as f:
         data = f.read()
     os.unlink(path)
@@ -116,7 +145,9 @@ class _Main(adsk.core.CustomEventHandler):
             elif call["op"] == "set":
                 call["result"] = _set(call["name"], call["expression"])
             elif call["op"] == "shot":
-                call["result"] = _shot(call["view"], call["w"], call["h"])
+                call["result"] = _shot(call["view"], call["w"], call["h"], call.get("only"))
+            elif call["op"] == "components":
+                call["result"] = _components()
         except Exception as e:  # reported to the caller, never swallowed
             call["error"] = f"{type(e).__name__}: {e}"
         finally:
@@ -172,13 +203,18 @@ class _Http(BaseHTTPRequestHandler):
                 return self._json(200, _ask(op="params"))
             if u.path == "/status":
                 return self._json(200, _ask(op="status"))
+            if u.path == "/components":
+                return self._json(200, _ask(op="components"))
             if u.path == "/shot":
                 view = (q.get("view") or ["iso"])[0]
                 if view not in VIEWS:
                     return self._json(422, {"error": "unknown view"})
                 w = max(200, min(int((q.get("w") or ["800"])[0]), 1600))
                 h = max(200, min(int((q.get("h") or ["600"])[0]), 1600))
-                return self._send(200, _ask(op="shot", view=view, w=w, h=h), "image/png")
+                only = (q.get("only") or [None])[0]
+                if only is not None and not ONLY.match(only):
+                    return self._json(422, {"error": "bad component name"})
+                return self._send(200, _ask(op="shot", view=view, w=w, h=h, only=only), "image/png")
         except (RuntimeError, TimeoutError, ValueError) as e:
             return self._json(502, {"error": str(e)})
         self._json(404, {"error": "not found"})
