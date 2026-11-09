@@ -47,7 +47,8 @@ class FakeFusion(BaseHTTPRequestHandler):
             return self._send(200, json.dumps([
                 {"name": "carrier:1", "visible": True, "volume_mm3": 1500.0, "size_mm": [31, 29.86, 6]},
                 {"name": "knob:1", "visible": True, "volume_mm3": 10.0, "size_mm": [1, 1, 1]},
-                {"name": "tilt_knob:1", "visible": False, "volume_mm3": 900.5, "size_mm": [20, 20, 6]}]).encode())
+                {"name": "tilt_knob:1", "visible": False, "volume_mm3": 900.5, "size_mm": [20, 20, 6]},
+                {"name": "pivot_bolt:1", "visible": True, "volume_mm3": 294.1, "size_mm": [18.9, 7, 7]}]).encode())
         if self.path.startswith("/shot"):
             FakeFusion.shots.append(self.path)
             return self._send(200, PNG, "image/png")
@@ -71,6 +72,7 @@ def app(tmp_path):
         "carrier_x": ("board_x + 2 * carrier_margin", "carrier plate x"),  # derived: read-only
         "stand_x": ("84 mm", "stand base x (README figure)"),
         "knob_d": ("20 mm", "tilt knob diameter (placeholder)"),
+        "bolt_d": ("4 mm", "printed pivot bolt shank diameter"),  # a design choice, not provisional: read-only
     }
     FakeFusion.failed = []
     FakeFusion.sets = []
@@ -117,7 +119,7 @@ def test_only_provisional_plain_values_are_editable(app):
     _, base = app
     s = json.load(get(base, "/api/state"))
     assert [p["name"] for p in s["params"]] == ["board_x", "carrier_margin", "knob_d"]
-    assert {d["name"] for d in s["derived"]} == {"board_t", "carrier_x", "stand_x"}
+    assert {d["name"] for d in s["derived"]} == {"board_t", "carrier_x", "stand_x", "bolt_d"}
     assert s["params"][0]["lo"] == 12.5 and s["params"][0]["hi"] == 50.0
     assert s["status"]["document"] == "camera_carrier v5"
 
@@ -177,6 +179,7 @@ def test_the_walkthrough_ties_each_part_to_the_sizes_that_shape_it(app):
     assert {f["name"] for f in cs["carrier:1"]["fixed"]} == {"board_t", "carrier_x"}
     assert cs["carrier:1"]["size_mm"] == [31, 29.86, 6] and cs["carrier:1"]["label"] == "carrier"
     assert cs["tilt_knob:1"]["editable"] == ["knob_d"] and cs["tilt_knob:1"]["visible"] is False
+    assert cs["pivot_bolt:1"]["editable"] == [] and [f["name"] for f in cs["pivot_bolt:1"]["fixed"]] == ["bolt_d"]
     assert cs["knob:1"]["editable"] == [] and cs["knob:1"]["fixed"] == []  # a part with no sizes tied to it says so, no guessing
 
 
