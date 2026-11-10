@@ -178,6 +178,18 @@ def test_the_picture_and_the_page_are_served_and_a_bad_view_is_refused(app):
     assert b"Camera carrier fit" in get(base, "/").read()
 
 
+def test_the_assembly_steps_and_their_pictures_are_served_without_fusion(app):
+    _, base = app
+    a = json.load(get(base, "/api/assembly"))
+    assert len(a["steps"]) >= 8 and all(s["text"] and s["check"] and s["images"] for s in a["steps"])
+    for s in a["steps"]:
+        for im in s["images"]:
+            assert im["alt"] and get(base, "/assembly/img/" + im["file"]).read().startswith(b"\x89PNG")
+    for bad in ("../server.py", "..%2Fserver.py", "nope_nope.png", "UPPER_case.png", "x.png"):
+        assert code(lambda: get(base, "/assembly/img/" + bad))[0] == 404
+    assert code(lambda: get(base, "/api/assembly", token="wrong"))[0] == 401
+
+
 def test_the_walkthrough_ties_each_part_to_the_sizes_that_shape_it(app):
     _, base = app
     cs = {c["name"]: c for c in json.load(get(base, "/api/components"))}

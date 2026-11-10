@@ -59,3 +59,13 @@ that part in the walkthrough, a Done tick and a note. Progress and notes are sav
 
 The steps are a draft written from the model's own parameter comments: the build and assembly order isn't recorded anywhere else in
 the repo. Edit `guide.json` to match how you actually work. With Fusion closed the guide still opens; current values show as "not read".
+
+## Assembly
+
+The **Assembly** tab is the step-by-step put-together: what goes together, bolt into the sled, washer, stand arm, nut and knob,
+camera case, rear gate, lens ring, then try the tilt. Each step has pictures, the sizes that matter and a check. It reads
+`assembly/assembly.json` and the pictures in `assembly/img/`, so it works with Fusion closed.
+
+The pictures are Fusion's own, taken from `camera_carrier v10` with the other parts hidden (nothing saved). If the model changes,
+take them again with a Fusion script that hides the other occurrences and sketches, sets the camera and calls
+`Viewport.saveAsImageFile`. The order comes from the ORBIT README; the gauge's mounting isn't in the model, so that step says so.

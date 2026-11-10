@@ -101,6 +101,14 @@ def components() -> list[dict]:
     return out
 
 
+IMG = re.compile(r"^[a-z]+_[a-z]+\.png$")
+
+
+def assembly() -> dict:
+    """The step-by-step assembly (assembly/assembly.json). Its pictures are files, so it reads with Fusion closed."""
+    return json.loads((HERE / "assembly" / "assembly.json").read_text())
+
+
 def guide() -> dict:
     """The build guide (guide.json) with the model's current values filled in and the saved progress."""
     g = json.loads((HERE / "guide.json").read_text())
@@ -222,6 +230,14 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(200, state())
             if u.path == "/api/guide":
                 return self._json(200, guide())
+            if u.path == "/api/assembly":
+                return self._json(200, assembly())
+            if u.path.startswith("/assembly/img/"):
+                name = u.path.rsplit("/", 1)[1]
+                f = HERE / "assembly" / "img" / name
+                if not IMG.match(name) or not f.is_file():
+                    return self._json(404, {"error": "not found"})
+                return self._send(200, f.read_bytes(), "image/png")
             if u.path == "/api/components":
                 return self._json(200, components())
             if u.path == "/api/shot":
