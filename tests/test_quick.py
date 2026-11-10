@@ -72,6 +72,19 @@ def test_good_start_block_has_no_block_reason():
     assert not any("missing" in r or "lines against" in r for r in res.reasons)
 
 
+def test_progress_markers_do_not_decide_the_start_check():
+    # M73 is the slicer's progress and time-left marker: how many there are, and where, changes with the print's length
+    # (the 10 Nov Bella plate was refused for 107 "missing" commands that were all there). Initialization is the rest.
+    block = (FX / "good_start_block.gcode").read_text()
+    word = lambda line: line.split(";", 1)[0].split()[:1]
+    without = "\n".join(l for l in block.splitlines() if word(l) != ["M73"]) + "\n"
+    shifted = block.replace("; EXECUTABLE_BLOCK_START\n", "; EXECUTABLE_BLOCK_START\nM73 P0 R99\n", 1)
+    assert without != block
+    for gcode in (without, shifted):
+        res = start_check.check_gcode(wrapped(gcode), REF)
+        assert not any("missing" in r or "lines against" in r for r in res.reasons), res.reasons
+
+
 def test_good_start_with_a_different_machine_start_is_rejected():
     res = start_check.check_gcode(wrapped((FX / "good_start_block.gcode").read_text()), REF)
     assert any("start G-code" in r for r in res.reasons)  # the header here is not the known-good one

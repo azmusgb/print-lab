@@ -70,13 +70,24 @@ def _is_subsequence(want: list[str], have: list[str]) -> list[str]:
     return [c for c in want if c not in it]
 
 
+def _initialization(seq: list[str]) -> list[str]:
+    """The commands that initialize the printer. M73 is the slicer's progress and time-left marker: its count and place
+    change with the print's length, so it says nothing about initialization (one misplaced M73 made every later
+    command read as missing). Repeats that M73 separated collapse, as `command_sequence` collapses them."""
+    out: list[str] = []
+    for c in seq:
+        if c != "M73" and (not out or out[-1] != c):
+            out.append(c)
+    return out
+
+
 def check_gcode(gcode: str, reference: dict) -> StartCheck:
     reasons: list[str] = []
     block = start_block(gcode)
     if not block:
         return StartCheck(False, ["The G-code has no start block"])
     lines = len(block.splitlines())
-    missing = _is_subsequence(reference["commands"], command_sequence(block))
+    missing = _is_subsequence(_initialization(reference["commands"]), _initialization(command_sequence(block)))
     if missing:
         reasons.append(f"Start block is missing {len(missing)} of {len(reference['commands'])} commands the X2D "
                        f"start sequence has, starting with {', '.join(missing[:6])}")
