@@ -1,4 +1,6 @@
-# RIFT_HEX 6 in, locked 2026-11-11
+# Rift 6 in hex tile, version 1.0
+
+Final build state, locked 2026-11-11. Do not edit in place: a change is a new version folder (v1.1, v2.0).
 
 The 6-inch Rift_Hex (build 261109), exported from Bambu Studio on 2026-11-11.
 
