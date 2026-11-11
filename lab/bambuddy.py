@@ -57,7 +57,7 @@ def key() -> str | None:
 
 def base_url() -> str:
     """Bambuddy's address; "off" (or empty) means it is disabled."""
-    return os.environ.get("LAB_BAMBUDDY_URL", "http://10.0.0.30:8000")
+    return os.environ.get("LAB_BAMBUDDY_URL", "http://10.0.0.80:8000")
 
 
 def _get(path: str, timeout: float):

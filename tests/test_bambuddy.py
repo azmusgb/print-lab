@@ -36,7 +36,7 @@ def test_parse_time():
 
 def test_base_url_and_key(monkeypatch, tmp_path):
     monkeypatch.delenv("LAB_BAMBUDDY_URL", raising=False)
-    assert bambuddy.base_url() == "http://10.0.0.30:8000"
+    assert bambuddy.base_url() == "http://10.0.0.80:8000"
     monkeypatch.setenv("LAB_BAMBUDDY_URL", "off")
     assert bambuddy.base_url() == "off"
     (tmp_path / "key").write_text(" abc \n")

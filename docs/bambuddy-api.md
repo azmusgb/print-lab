@@ -1,6 +1,6 @@
 # Bambuddy API endpoints
 
-Bambuddy **1.2.5.7** at `http://10.0.0.30:8000` (the Pi). Generated 27 Oct 2026 from the live `/openapi.json`: **625 paths, 786 operations** in 61 groups. Interactive docs: `http://10.0.0.30:8000/docs`.
+Bambuddy **1.2.5.7** at `http://10.0.0.80:8000` (the Pi). Generated 27 Oct 2026 from the live `/openapi.json`: **625 paths, 786 operations** in 61 groups. Interactive docs: `http://10.0.0.80:8000/docs`.
 
 ## Using it
 

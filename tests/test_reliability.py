@@ -124,7 +124,7 @@ def test_photo_save_failure_rolls_back_only_new_files(tmp_path, monkeypatch):
 def test_network_blocks_private_public_and_dns_before_connecting():
     from lab import bambuddy
     assert bambuddy.base_url() == "off"
-    for host in ("10.0.0.30", "1.1.1.1", "external.example"):
+    for host in ("10.0.0.80", "1.1.1.1", "external.example"):
         with pytest.raises(PermissionError, match="non-loopback"):
             socket.getaddrinfo(host, 80)
         with socket.socket() as sock:

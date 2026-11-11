@@ -21,7 +21,7 @@ from lab.page_index import build_index
 from lab.records.store import atomic_write_json, now
 
 HOME = Path.home() / ".claude" / "localai-chat"
-BASE = "https://10.0.0.21"
+BASE = "https://10.0.0.81"
 HUB_URL = "https://hub.rahe-home.duckdns.org"  # a Let's Encrypt certificate: the system's trust is enough
 LOCALAI_HEADER, HUB_HEADER = "X-LocalAI-Mac-Key", "X-Hub-Mac-Key"
 
