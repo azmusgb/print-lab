@@ -1,5 +1,5 @@
 """`lab page`: page.json for a project, drawn from `page_index.build_index`, plus the spool colours from Bambuddy. The
-page itself lives in Local AI (Projects › Print lab), which `lab sync` keeps current; this file is what sync reads the
+page itself is Pi Hub's Print lab (Workshop › Print lab, /lab), which `lab sync` keeps current; this file is what sync reads the
 colours from, so commands that refresh it reuse the saved colours and never wait on the network
 (spec: docs/superpowers/specs/2026-10-27-print-lab-one-home-design.md).
 
@@ -131,6 +131,6 @@ def cmd_page(args) -> int:
 
 
 def register(sub) -> None:
-    s = sub.add_parser("page", help="refresh page.json and the spool colours; the page itself is in Local AI")
-    s.add_argument("--open", action="store_true", help="open the print lab page in Local AI")
+    s = sub.add_parser("page", help="refresh page.json and the spool colours; the page itself is Pi Hub's Print lab")
+    s.add_argument("--open", action="store_true", help="open Print lab in Pi Hub")
     s.set_defaults(fn=cmd_page)
