@@ -37,7 +37,7 @@ def test_hub_target_when_set_up(keys, tmp_path, monkeypatch):
 
 
 def test_hub_needs_https(keys, monkeypatch):
-    monkeypatch.setenv("LAB_HUB_URL", "http://10.0.0.30")
+    monkeypatch.setenv("LAB_HUB_URL", "http://10.0.0.80")
     hub = sync.targets()[0]
     assert hub == ("Pi Hub", "The Pi Hub address must start with https://")
 
