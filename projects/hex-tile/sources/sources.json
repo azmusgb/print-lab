@@ -202,5 +202,14 @@
     "change": "geometry from Fusion 'faceted_hex seed 3 (c9f530ce03f2) - not saved v1' v1; settings from sources/RIFT_6IN_marked_pair.3mf",
     "added": "2026-11-06T13:39:51+00:00",
     "params": "sources/faceted_hex_seed_3_c9f530ce03f2_-_not_saved_v0_save1.params.json"
+  },
+  {
+    "path": "sources/RIFT_10IN_19mm_seed3_batch5.3mf",
+    "sha256": "1b9453610caaeb9f6177ae5b61fae1c0c8e0f86564efdc697b565469a1fe195d",
+    "source": "derived",
+    "derived_from": "sources/RIFT_10IN_batch5_shadow_storm.3mf",
+    "change": "mesh swapped for faceted_hex v1 seed 3 at 254 mm corner diameter, standing on its flat edge, face at -x like the proven 10 in: 19 mm deep (edge 9 + rise 10), skin/land/roof 2.4 mm, side walls 4.0 mm and land 29.5 mm (6 in values x 10/6); settings, filament and 30 mm brim as saved in the batch5 Shadow Storm project; sliced once in Bambu Studio CLI (5.82 h, 184.6 g, inside the bed), never printed; the lab design gate dropped it for bed-fit and no-infill-behind-face",
+    "added": "2026-11-13T02:19:38+00:00",
+    "params": "sources/RIFT_10IN_19mm_seed3_batch5.params.json"
   }
 ]

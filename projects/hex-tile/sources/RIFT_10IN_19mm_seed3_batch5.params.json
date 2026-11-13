@@ -1,0 +1,16 @@
+{
+  "family": "faceted_hex",
+  "version": 1,
+  "seed": 3,
+  "params": {
+    "corner_diameter": 254.0,
+    "edge_depth": 9.0,
+    "facet_rise": 10.0,
+    "skin_axial": 2.4,
+    "perimeter_wall": 4.0,
+    "land_width": 29.5,
+    "land_thickness": 2.4,
+    "roof_wall": 2.4,
+    "mark": 1.0
+  }
+}
