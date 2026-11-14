@@ -230,6 +230,15 @@ def test_a_path_outside_the_kits_version_list_is_refused(app, tmp_path):
     assert raw_get(base, "/ui/tokens.css")[0] == 404
 
 
+def test_the_page_takes_the_kit_and_starts_with_the_way_back_to_pi_hub(app):
+    _, base = app
+    page = get(base, "/").read().decode()
+    assert '<link rel="stylesheet" href="/ui/tokens.css">' in page and '<link rel="stylesheet" href="/ui/components.css">' in page
+    assert '<script src="/ui/backbar.js" defer></script>' in page
+    body = page.split("<body>", 1)[1].lstrip()
+    assert body.startswith('<nav class="ui-backbar" aria-label="Pi Hub"><a href="https://hub.rahe-home.duckdns.org/" aria-label="Back to Pi Hub">')
+
+
 def test_the_walkthrough_ties_each_part_to_the_sizes_that_shape_it(app):
     _, base = app
     cs = {c["name"]: c for c in json.load(get(base, "/api/components"))}
