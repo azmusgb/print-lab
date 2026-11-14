@@ -12,6 +12,8 @@ iPhone  --http, token-->  server.py (Mac, :8765)  --127.0.0.1:38117-->  PhoneBri
 - Each change is one Fusion command, so **Edit › Undo** in Fusion takes it back. **Back to start** returns a parameter to
   the value it had when the server first saw it. Failed timeline steps show in a red banner on the page.
 - It never saves the Fusion document. Changes are logged to `data/changes.log`. Picking a view turns Fusion's camera.
+- The page takes its look from the appliance-ui kit (`tools/ui`, copied in by the kit's sync, never edited here), served at
+  `/ui/` without the token: only the stylesheets, scripts and font that `tools/ui/VERSION` lists, never a symlink. It starts with the kit's "← Pi Hub" bar.
 
 The add-in is not open to the rest of the Mac: it refuses a request without the shared secret in `data/bridge-token`
 (made by the server on first start), one with an `Origin` header (any browser page) or a wrong `Host` (DNS rebinding), a

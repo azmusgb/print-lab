@@ -5,103 +5,96 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
 <title>Camera carrier fit</title>
+<link rel="stylesheet" href="/ui/tokens.css">
+<link rel="stylesheet" href="/ui/components.css">
+<script src="/ui/backbar.js" defer></script>
 <style>
-:root {
-  --bg: #f6f5f2; --panel: #fff; --ink: #1d1d1b; --muted: #5d5b55; --line: #d9d6cf; --accent: #1f5fbf; --on-accent: #fff;
-  --ok: #1d6b3a; --warn: #8a5a00; --bad: #a3261a; --warn-bg: #fff4dc; --bad-bg: #fde8e5;
-}
-@media (prefers-color-scheme: dark) {
-  :root { --bg: #151514; --panel: #1f1f1d; --ink: #ecebe6; --muted: #a3a099; --line: #3a3935; --accent: #7fb0ff; --on-accent: #0b1a33;
-    --ok: #6fcf93; --warn: #f0c36a; --bad: #ff8d80; --warn-bg: #3a2f14; --bad-bg: #3d1f1b; }
-}
+/* Every value comes from the appliance-ui kit (tools/ui, served at /ui/): no colour, size, space, radius or timing here. */
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.4 system-ui, -apple-system, sans-serif;
-  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
-main { max-inline-size: 40rem; margin-inline: auto; }
-h1 { font-size: 1.25rem; margin: 0 0 .25rem; }
-h2 { font-size: 1rem; margin: 1.5rem 0 .5rem; }
+body { margin: 0; background: var(--ui-bg); color: var(--ui-text); font: 400 var(--ui-fs-4)/1.4 var(--ui-font); accent-color: var(--ui-accent); }
+main { box-sizing: content-box; max-inline-size: 40rem; margin-inline: auto;
+  padding: var(--ui-s-4) max(var(--ui-s-4), env(safe-area-inset-right)) max(var(--ui-s-5), env(safe-area-inset-bottom)) max(var(--ui-s-4), env(safe-area-inset-left)); }
+h1, h2, h3 { font-stretch: var(--ui-stretch-heading); }
+h1 { font-size: var(--ui-fs-5); margin: 0 0 var(--ui-s-1); }
+h2 { font-size: var(--ui-fs-4); margin: var(--ui-s-5) 0 var(--ui-s-2); }
 p { margin: 0; }
-.muted { color: var(--muted); font-size: .875rem; }
-.stage { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-top: .75rem; }
-.shot { position: relative; aspect-ratio: 4 / 3; display: grid; place-items: center; background: #2b3042; }
+.muted { color: var(--ui-muted); font-size: var(--ui-fs-3); }
+.note { margin-top: var(--ui-s-2); }
+.stage { background: var(--ui-surface); border: 1px solid var(--ui-line); border-radius: var(--ui-r-2); overflow: hidden; margin-top: var(--ui-s-3); }
+.shot { aspect-ratio: 4 / 3; display: grid; place-items: center; background: var(--ui-surface-2); }
+.shot > * { grid-area: 1 / 1; }
 .shot img { inline-size: 100%; block-size: 100%; object-fit: contain; display: block; }
-.shot .msg { position: absolute; inset: 0; display: grid; place-items: center; padding: 1rem; text-align: center; color: #fff; background: rgb(0 0 0 / .45); }
-.shot .msg[hidden] { display: none; }
-.views { display: flex; gap: 0; border-top: 1px solid var(--line); }
-.views button { flex: 1; min-block-size: 44px; border: 0; border-inline-end: 1px solid var(--line); background: transparent; color: var(--ink); font: inherit; }
+.shot img[hidden], .shot .msg[hidden] { display: none; }
+/* The message sits on the picture as a small opaque label, so its text is a measured pair (text on surface2). */
+.shot .msg { max-inline-size: calc(100% - 2 * var(--ui-s-4)); padding: var(--ui-s-2) var(--ui-s-3); border-radius: var(--ui-r-2);
+  background: var(--ui-surface-2); color: var(--ui-text); text-align: center; box-shadow: var(--ui-shadow-1); }
+.views { display: flex; border-top: 1px solid var(--ui-line); }
+.views button { flex: 1; min-block-size: 44px; border: 0; border-inline-end: 1px solid var(--ui-line); background: transparent; color: var(--ui-text); font: inherit; }
 .views button:last-child { border-inline-end: 0; }
-.views button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
-button, input { font: inherit; }
-button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
-.banner { margin-top: .75rem; padding: .625rem .75rem; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); }
-.banner.warn { background: var(--warn-bg); border-color: var(--warn); }
-.banner.bad { background: var(--bad-bg); border-color: var(--bad); }
-.banner[hidden] { display: none; }
-.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: .75rem; margin-bottom: .625rem; }
-.card[data-changed="true"] { border-color: var(--accent); }
-.card .top { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; flex-wrap: wrap; }
+.views button[aria-pressed="true"] { background: var(--ui-accent); color: var(--ui-on-accent); }
+.views button:focus-visible { outline-offset: -2px; }  /* the stage clips its corners: draw the ring inside */
+button, input, textarea { font: inherit; }
+:is(input, textarea, summary):focus-visible { outline: 2px solid var(--ui-accent); outline-offset: 2px; }
+.banner { margin-top: var(--ui-s-3); }
+.card { background: var(--ui-surface); border: 1px solid var(--ui-line); border-radius: var(--ui-r-2); padding: var(--ui-s-3); margin-bottom: var(--ui-s-3); }
+.card[data-changed="true"] { border-color: var(--ui-accent); }
+.card .top { display: flex; justify-content: space-between; align-items: baseline; gap: var(--ui-s-2); flex-wrap: wrap; }
 .name { font-weight: 600; overflow-wrap: anywhere; }
-.row { display: grid; grid-template-columns: 44px 1fr 44px; gap: .5rem; align-items: center; margin-top: .5rem; }
-.row button { min-block-size: 44px; min-inline-size: 44px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--ink); font-size: 1.25rem; }
-.row input[type=range] { inline-size: 100%; min-block-size: 44px; accent-color: var(--accent); }
-.val { display: flex; align-items: center; gap: .5rem; margin-top: .25rem; }
-.val input { inline-size: 6.5rem; min-block-size: 44px; padding: 0 .5rem; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--ink); }
-.val input[aria-invalid="true"] { border-color: var(--bad); }
-.val .back { margin-inline-start: auto; min-block-size: 44px; padding: 0 .75rem; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--ink); }
-.val .back[disabled] { opacity: .45; }
-.err { color: var(--bad); font-size: .875rem; margin-top: .25rem; min-block-size: 1.2em; }
+.row { display: grid; grid-template-columns: auto 1fr auto; gap: var(--ui-s-2); align-items: center; margin-top: var(--ui-s-2); }
+.row .ui-btn--icon { font-size: var(--ui-fs-5); }
+.row input[type=range] { inline-size: 100%; min-block-size: 44px; }
+.val { display: flex; align-items: center; gap: var(--ui-s-2); margin-top: var(--ui-s-1); }
+.val .ui-field { inline-size: 6.5rem; }
+.val .back { margin-inline-start: auto; }
+.err { color: var(--ui-bad); font-size: var(--ui-fs-3); margin-top: var(--ui-s-1); min-block-size: 1.2em; }
 .card[aria-busy="true"] { opacity: .65; }
-details { margin-top: 1rem; }
+details { margin-top: var(--ui-s-4); }
 summary { min-block-size: 44px; display: flex; align-items: center; }
-table { inline-size: 100%; border-collapse: collapse; font-size: .875rem; }
-td { padding: .25rem 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
-td:last-child { text-align: end; padding-inline-start: .5rem; }
-.tabs { display: flex; gap: .5rem; margin-top: .75rem; }
-.tabs button { flex: 1; min-block-size: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); font: inherit; }
-.tabs button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-.bar { block-size: 8px; border-radius: 4px; background: var(--line); overflow: hidden; margin: .5rem 0 1rem; }
-.bar > span { display: block; block-size: 100%; background: var(--ok); }
-.g h3 { font-size: 1rem; margin: 0; }
+table { inline-size: 100%; border-collapse: collapse; font-size: var(--ui-fs-3); }
+td { padding: var(--ui-s-1) 0; border-top: 1px solid var(--ui-line); overflow-wrap: anywhere; }
+td:last-child { text-align: end; padding-inline-start: var(--ui-s-2); }
+.tabs { margin-top: var(--ui-s-3); }
+.bar { margin: var(--ui-s-2) 0 var(--ui-s-4); }
+.g h3 { font-size: var(--ui-fs-4); margin: 0; }
 .g .check { margin: 0; }
-.g ul { list-style: none; margin: .5rem 0 0; padding: 0; }
-.g textarea { inline-size: 100%; min-block-size: 4.5rem; margin-top: .5rem; padding: .5rem; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--ink); font: inherit; resize: vertical; }
-.g .go { min-block-size: 44px; padding: 0 .75rem; margin: .5rem .5rem 0 0; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--ink); font: inherit; }
-.g .auto { margin-top: .5rem; font-size: .875rem; }
-.g .auto[data-ok="true"] { color: var(--ok); } .g .auto[data-ok="false"] { color: var(--bad); }
-.g .done h3 { text-decoration: line-through; color: var(--muted); }
-.steps { display: flex; gap: .375rem; overflow-x: auto; padding: .5rem 0; scrollbar-width: thin; }
-.steps button { flex: none; min-block-size: 44px; padding: 0 .75rem; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--ink); white-space: nowrap; }
-.steps button[aria-current="step"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.g ul { list-style: none; margin: var(--ui-s-2) 0 0; padding: 0; }
+.g textarea { min-block-size: 4.5rem; margin-top: var(--ui-s-2); padding: var(--ui-s-2); resize: vertical; }
+.g .go { margin: var(--ui-s-2) var(--ui-s-2) 0 0; }
+.g .auto { margin-top: var(--ui-s-2); font-size: var(--ui-fs-3); }
+.g .auto[data-ok="true"] { color: var(--ui-ok); } .g .auto[data-ok="false"] { color: var(--ui-bad); }
+.g.done h3 { text-decoration: line-through; color: var(--ui-muted); }
+.steps { display: flex; gap: var(--ui-s-2); overflow-x: auto; padding: var(--ui-s-2) var(--ui-s-1); scrollbar-width: thin; }
+.steps button { flex: none; min-block-size: 44px; padding: 0 var(--ui-s-3); border: 1px solid var(--ui-line-2); border-radius: var(--ui-r-pill); background: var(--ui-surface); color: var(--ui-text); white-space: nowrap; }
+.steps button[aria-current="step"] { background: var(--ui-accent); border-color: var(--ui-accent); color: var(--ui-on-accent); }
 body[data-tab="assembly"] #banner, body[data-tab="assembly"] #doc { display: none; }  /* the steps don't need Fusion */
-.a-step h3 { font-size: 1.125rem; margin: .75rem 0 .25rem; }
-.a-step ul { margin: .5rem 0; padding-inline-start: 1.25rem; }
-.a-step li { margin-bottom: .375rem; }
-.a-step .check-note { margin-top: .5rem; padding: .5rem .75rem; border-inline-start: 3px solid var(--accent); background: var(--panel); border-radius: 0 8px 8px 0; }
-.a-imgs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: .5rem; margin-top: .5rem; }
-.a-imgs figure { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-.a-imgs img { display: block; inline-size: 100%; block-size: auto; aspect-ratio: 4 / 3; object-fit: contain; background: #b3b3b3; }
-.a-imgs figcaption { padding: .375rem .75rem; font-size: .875rem; color: var(--muted); }
-.nav { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: .5rem; }
-.nav button { min-block-size: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--ink); }
-.nav button[disabled] { opacity: .45; }
-.facts { margin: .75rem 0; }
-.facts dl { display: grid; grid-template-columns: auto 1fr; gap: .125rem .75rem; margin: 0; }
-.facts dt { color: var(--muted); }
+.a-step h3 { font-size: var(--ui-fs-5); margin: var(--ui-s-3) 0 var(--ui-s-1); }
+.a-step ul { margin: var(--ui-s-2) 0; padding-inline-start: var(--ui-s-5); }
+.a-step li { margin-bottom: var(--ui-s-2); }
+.a-step .check-note { margin-top: var(--ui-s-2); padding: var(--ui-s-2) var(--ui-s-3); border-inline-start: 3px solid var(--ui-line-2); background: var(--ui-surface); border-radius: 0 var(--ui-r-2) var(--ui-r-2) 0; }
+.a-imgs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: var(--ui-s-2); margin-top: var(--ui-s-2); }
+.a-imgs figure { margin: 0; background: var(--ui-surface); border: 1px solid var(--ui-line); border-radius: var(--ui-r-2); overflow: hidden; }
+.a-imgs img { display: block; inline-size: 100%; block-size: auto; aspect-ratio: 4 / 3; object-fit: contain; background: var(--ui-surface-2); }
+.a-imgs figcaption { padding: var(--ui-s-2) var(--ui-s-3); font-size: var(--ui-fs-3); color: var(--ui-muted); }
+.nav { display: grid; grid-template-columns: 1fr 1fr; gap: var(--ui-s-2); margin-top: var(--ui-s-2); }
+.facts { margin: var(--ui-s-3) 0; }
+.facts dl { display: grid; grid-template-columns: auto 1fr; gap: var(--ui-s-1) var(--ui-s-3); margin: 0; }
+.facts dt { color: var(--ui-muted); }
 .facts dd { margin: 0; text-align: end; overflow-wrap: anywhere; }
-.check { display: flex; align-items: center; gap: .5rem; min-block-size: 44px; }
+.check { display: flex; align-items: center; gap: var(--ui-s-2); min-block-size: 44px; }
 .check input { inline-size: 1.25rem; block-size: 1.25rem; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 </head>
 <body>
+<nav class="ui-backbar" aria-label="Pi Hub"><a href="https://hub.rahe-home.duckdns.org/" aria-label="Back to Pi Hub"><span aria-hidden="true">←</span>Pi Hub</a></nav>
 <main>
   <h1>Camera carrier fit</h1>
   <p class="muted" id="doc">Reading the Fusion model…</p>
 
-  <div class="banner" id="banner" role="status" hidden></div>
+  <div class="banner ui-notice" id="banner" role="status" hidden></div>
 
-  <div class="tabs" role="tablist" aria-label="Page sections">
+  <div class="tabs ui-tabs" role="tablist" aria-label="Page sections">
     <button type="button" role="tab" id="tab-w" aria-selected="true" aria-controls="walk">Walkthrough</button>
     <button type="button" role="tab" id="tab-g" aria-selected="false" aria-controls="guide" tabindex="-1">Build guide</button>
     <button type="button" role="tab" id="tab-a" aria-selected="false" aria-controls="assembly" tabindex="-1">Assembly</button>
@@ -123,9 +116,9 @@ body[data-tab="assembly"] #banner, body[data-tab="assembly"] #doc { display: non
       <button type="button" data-view="back" aria-pressed="false">Back</button>
     </div>
   </section>
-  <p class="muted" style="margin-top:.5rem">The view is Fusion's own picture. Choosing one changes the camera angle in Fusion on the Mac. Nothing here saves the Fusion document.</p>
+  <p class="muted note">The view is Fusion's own picture. Choosing one changes the camera angle in Fusion on the Mac. Nothing here saves the Fusion document.</p>
 
-  <div class="nav"><button type="button" id="prev">‹ Previous</button><button type="button" id="next">Next ›</button></div>
+  <div class="nav"><button type="button" class="ui-btn" id="prev">‹ Previous</button><button type="button" class="ui-btn" id="next">Next ›</button></div>
   <label class="check" id="alone-wrap"><input type="checkbox" id="alone" checked> Show this part on its own</label>
   <div class="facts" id="facts" aria-live="polite"></div>
   <div id="stepparams"></div>
@@ -144,7 +137,7 @@ body[data-tab="assembly"] #banner, body[data-tab="assembly"] #doc { display: non
   <div id="guide" role="tabpanel" aria-labelledby="tab-g" hidden>
     <h2>Build guide</h2>
     <p class="muted" id="gnote"></p>
-    <div class="bar" role="progressbar" aria-label="Steps done" aria-valuemin="0" aria-valuemax="1"><span id="gbar" style="inline-size:0"></span></div>
+    <div class="bar ui-meter" role="progressbar" aria-label="Steps done" aria-valuemin="0" aria-valuemax="1"><i id="gbar" style="inline-size:0"></i></div>
     <p id="gcount" class="muted" aria-live="polite"></p>
     <div id="gsteps"></div>
   </div>
@@ -153,7 +146,7 @@ body[data-tab="assembly"] #banner, body[data-tab="assembly"] #doc { display: non
     <p class="muted" id="anote"></p>
     <div class="steps" id="asteps" role="group" aria-label="Assembly steps"></div>
     <article class="a-step" id="astep" aria-live="polite"></article>
-    <div class="nav"><button type="button" id="aprev">‹ Previous</button><button type="button" id="anext">Next ›</button></div>
+    <div class="nav"><button type="button" class="ui-btn" id="aprev">‹ Previous</button><button type="button" class="ui-btn" id="anext">Next ›</button></div>
   </div>
 </main>
 
@@ -180,7 +173,7 @@ function banner(status, extra) {
   if (status && status.failed && status.failed.length) lines.push("Fusion reports failed steps: " + status.failed.join("; "));
   if (status && status.busy) lines.push("A command is open in Fusion, so changes will wait until it finishes.");
   b.hidden = !lines.length;
-  b.className = "banner " + (status && status.failed && status.failed.length ? "bad" : "warn");
+  b.className = "banner ui-notice ui-notice--" + (status && status.failed && status.failed.length ? "bad" : "warn");
   b.textContent = lines.join(" ");
 }
 
@@ -216,10 +209,10 @@ function card(p) {
   c.dataset.name = p.name;
   c.innerHTML = `<div class="top"><span class="name"></span><span class="muted range"></span></div>
     <p class="muted why"></p>
-    <div class="row"><button type="button" class="dec" aria-label="Smaller">−</button>
-      <input type="range" step="0.1"><button type="button" class="inc" aria-label="Larger">+</button></div>
-    <div class="val"><input type="text" inputmode="decimal" autocomplete="off" aria-label="Value in millimetres"><span class="muted">mm</span>
-      <button type="button" class="back">Back to start</button></div>
+    <div class="row"><button type="button" class="dec ui-btn ui-btn--icon" aria-label="Smaller">−</button>
+      <input type="range" step="0.1"><button type="button" class="inc ui-btn ui-btn--icon" aria-label="Larger">+</button></div>
+    <div class="val"><input type="text" class="ui-field" inputmode="decimal" autocomplete="off" aria-label="Value in millimetres"><span class="muted">mm</span>
+      <button type="button" class="back ui-btn ui-btn--ghost">Back to start</button></div>
     <p class="err" role="alert"></p>`;
   c.querySelector(".name").textContent = p.name;
   c.querySelector(".why").textContent = p.comment;
@@ -424,7 +417,7 @@ function gstep(s, n) {
   }
   for (const c of s.components) {
     const b = document.createElement("button");
-    b.type = "button"; b.className = "go"; b.textContent = "Show " + c.replace(/_/g, " ");
+    b.type = "button"; b.className = "go ui-btn ui-btn--ghost"; b.textContent = "Show " + c.replace(/_/g, " ");
     b.addEventListener("click", () => {
       const i = comps.findIndex((x) => x.name.split(":")[0] === c);
       tab("walk");
@@ -433,6 +426,7 @@ function gstep(s, n) {
     a.append(b);
   }
   const ta = document.createElement("textarea");
+  ta.className = "ui-field";
   ta.setAttribute("aria-label", `Notes for step ${n}`); ta.placeholder = "Notes"; ta.maxLength = 2000; ta.value = gdata.progress.notes[s.id] || "";
   ta.addEventListener("change", () => save("notes", s.id, ta.value).catch((e) => { $("gcount").textContent = e.message; }));
   a.append(ta);
