@@ -230,6 +230,29 @@ def test_a_path_outside_the_kits_version_list_is_refused(app, tmp_path):
     assert raw_get(base, "/ui/tokens.css")[0] == 404
 
 
+def test_only_the_pages_own_kind_of_kit_file_is_served(app):
+    m, base = app
+    listed = json.loads((m.UI / "VERSION").read_text())["files"]
+    for served in ("tokens.css", "backbar.js", "archivo-latin-ui.woff2"):
+        assert raw_get(base, "/ui/" + served)[0] == 200, served
+    for listed_but_not_for_a_page in ("verify.py", "tokens.json", "tokens.h", "verify.mjs", "OFL-Archivo.txt"):
+        assert listed_but_not_for_a_page in listed
+        assert raw_get(base, "/ui/" + listed_but_not_for_a_page)[0] == 404, listed_but_not_for_a_page
+
+
+def test_a_listed_name_that_is_a_symlink_is_refused(app, tmp_path):
+    m, base = app
+    kit = tmp_path / "ui"
+    kit.mkdir()
+    (tmp_path / "secret.css").write_text("body{}")
+    (kit / "tokens.css").symlink_to(tmp_path / "secret.css")
+    (kit / "components.css").write_text("body{}")
+    (kit / "VERSION").write_text(json.dumps({"version": "9.9.9", "files": {"tokens.css": "x", "components.css": "y"}}))
+    m.UI = kit
+    assert raw_get(base, "/ui/components.css")[0] == 200
+    assert raw_get(base, "/ui/tokens.css")[0] == 404
+
+
 def test_the_page_takes_the_kit_and_starts_with_the_way_back_to_pi_hub(app):
     _, base = app
     page = get(base, "/").read().decode()
