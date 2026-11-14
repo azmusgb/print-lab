@@ -190,6 +190,46 @@ def test_the_assembly_steps_and_their_pictures_are_served_without_fusion(app):
     assert code(lambda: get(base, "/api/assembly", token="wrong"))[0] == 401
 
 
+def raw_get(base, path):
+    """A GET with the path sent exactly as written (urllib would tidy "..")."""
+    import http.client
+    host, port = base.removeprefix("http://").split(":")
+    c = http.client.HTTPConnection(host, int(port), timeout=5)
+    c.request("GET", path)
+    r = c.getresponse()
+    out = r.status, r.getheader("Content-Type"), r.read()
+    c.close()
+    return out
+
+
+def test_the_kit_is_served_from_its_version_list_without_the_token(app):
+    m, base = app
+    listed = json.loads((m.UI / "VERSION").read_text())["files"]
+    assert {"tokens.css", "components.css", "backbar.js", "archivo-latin-ui.woff2"} <= set(listed)
+    status, ctype, body = raw_get(base, "/ui/tokens.css")  # a <link> and the font's url() can't carry the token
+    assert (status, ctype, body) == (200, "text/css; charset=utf-8", (m.UI / "tokens.css").read_bytes())
+    assert raw_get(base, "/ui/backbar.js")[:2] == (200, "text/javascript; charset=utf-8")
+    assert raw_get(base, "/ui/archivo-latin-ui.woff2")[:2] == (200, "font/woff2")
+
+
+def test_a_path_outside_the_kits_version_list_is_refused(app, tmp_path):
+    m, base = app
+    for bad in ("/ui/VERSION", "/ui/", "/ui/nope.css", "/ui/../camera_fit/server.py", "/ui/%2e%2e/camera_fit/server.py",
+                "/ui/..%2Fcamera_fit%2Fserver.py", "/ui//etc/passwd", "/ui/tokens.css/x", "/ui/TOKENS.CSS"):
+        assert raw_get(base, bad)[0] == 404, bad
+    kit = tmp_path / "ui"
+    kit.mkdir()
+    (kit / "VERSION").write_text(json.dumps({"version": "9.9.9", "files": {"tokens.css": "x", "gone.css": "y"}}))
+    (kit / "tokens.css").write_text(":root{}")
+    (kit / "extra.css").write_text("body{}")  # in the folder, not in the list
+    m.UI = kit
+    assert raw_get(base, "/ui/tokens.css")[0] == 200
+    assert raw_get(base, "/ui/extra.css")[0] == 404
+    assert raw_get(base, "/ui/gone.css")[0] == 404  # listed, but not there
+    (kit / "VERSION").write_text("not json")
+    assert raw_get(base, "/ui/tokens.css")[0] == 404
+
+
 def test_the_walkthrough_ties_each_part_to_the_sizes_that_shape_it(app):
     _, base = app
     cs = {c["name"]: c for c in json.load(get(base, "/api/components"))}

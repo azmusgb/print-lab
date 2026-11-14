@@ -4,7 +4,8 @@
 
 The page shows Fusion's own pictures of the model and sliders for its placeholder parameters. This server holds the token,
 the allow-list and the ranges, and forwards each change to the PhoneBridge add-in inside Fusion (127.0.0.1:38117). It never
-saves the Fusion document. Standard library only; every request needs the token."""
+saves the Fusion document. Standard library only; every request needs the token, except the kit's own files under /ui/
+(the files tools/ui/VERSION lists, public and read-only)."""
 import argparse
 import json
 import os
@@ -102,6 +103,25 @@ def components() -> list[dict]:
 
 
 IMG = re.compile(r"^[a-z]+_[a-z]+\.png$")
+UI = HERE.parent / "ui"  # the appliance-ui kit, copied in by the kit's sync (never edited here)
+UI_TYPES = {".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8",
+            ".json": "application/json", ".woff2": "font/woff2"}
+
+
+def kit_file(name: str) -> tuple[bytes, str] | None:
+    """One file of the kit, only if the kit's VERSION lists it by that exact name; anything else (VERSION itself, a file
+    the sync didn't write, any path) is None. The kit is public and read-only, so it needs no token: a <link> and the
+    font's url() in tokens.css can't carry one."""
+    try:
+        listed = json.loads((UI / "VERSION").read_text())["files"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    if not isinstance(listed, dict) or name not in listed or "/" in name or "\\" in name or name.startswith("."):
+        return None
+    f = UI / name
+    if not f.is_file():
+        return None
+    return f.read_bytes(), UI_TYPES.get(f.suffix, "text/plain; charset=utf-8")
 
 
 def assembly() -> dict:
@@ -221,6 +241,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         u = urlparse(self.path)
+        if u.path.startswith("/ui/"):
+            kit = kit_file(u.path[len("/ui/"):])
+            return self._send(200, *kit) if kit else self._json(404, {"error": "not found"})
         if not self._authed():
             return self._json(HTTPStatus.UNAUTHORIZED, {"error": "Open the link printed by the server; it carries the token."})
         if u.path == "/":
