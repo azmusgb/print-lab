@@ -89,7 +89,7 @@ def _on(event, handler):
 def _show_palette():
     palette = _ui.palettes.itemById(PALETTE_ID)
     if not palette:
-        html = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'palette.html')
+        html = str(HERE / 'palette.html')  # resolved: the add-in is a link, and the page finds the kit at ../../ui
         palette = _ui.palettes.add(PALETTE_ID, 'Parameters', html, False, True, True, 340, 600, True)
         palette.dockingState = adsk.core.PaletteDockingStates.PaletteDockStateRight
         _on(palette.incomingFromHTML, _Incoming())
