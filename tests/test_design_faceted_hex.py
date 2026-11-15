@@ -107,3 +107,17 @@ def test_design_id_is_stable_and_tells_designs_apart():
     assert design_id(fh.NAME, fh.VERSION, p, 0) == design_id(fh.NAME, fh.VERSION, dict(reversed(list(p.items()))), 0)
     assert design_id(fh.NAME, fh.VERSION, p, 0) != design_id(fh.NAME, fh.VERSION, {**p, "edge_depth": 8.0}, 0)
     assert design_id(fh.NAME, fh.VERSION, p, 0) != design_id(fh.NAME, fh.VERSION + 1, p, 0)
+
+
+def test_roof_tear_is_off_by_default_and_keeps_locked_ids():
+    p = resolve(fh.PARAMS)
+    assert p["roof_tear"] == 0
+    assert design_id(fh.NAME, fh.VERSION, p, 3) == "c9f530ce03f2"  # the locked 6 in tile's design
+    assert design_id(fh.NAME, fh.VERSION, {**p, "roof_tear": 1.0}, 3) != "c9f530ce03f2"
+
+
+def test_roof_tear_fills_the_far_side_of_the_roof_hollow():
+    flat = fh.build(resolve(fh.PARAMS), 3)
+    tear = fh.build(resolve(fh.PARAMS, {"roof_tear": 1}), 3)
+    assert tear.is_valid and len(tear.solids()) == 1
+    assert tear.volume > flat.volume
