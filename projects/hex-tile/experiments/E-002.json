@@ -346,9 +346,28 @@
         "vibration_calibration": false,
         "source": "owner: 'all i did was print the 3mf - thats it'"
       },
-      "usage": null,
+      "usage": {
+        "actual_minutes": 36.5,
+        "actual_g": null,
+        "usage_source": "bambuddy",
+        "completion_fraction": null
+      },
       "failed": null,
-      "photos": []
+      "photos": [],
+      "bambuddy": {
+        "print": 5,
+        "archive": 5,
+        "linked": "hand",
+        "at": "2026-11-16T15:48:21+00:00",
+        "status": "completed",
+        "started": "2026-10-24T20:46:24+00:00",
+        "ended": "2026-10-24T21:22:51+00:00",
+        "minutes": 36.5,
+        "grams": null,
+        "failure_reason": null,
+        "failed_at_estimate": null,
+        "snapshot_at": "2026-11-16T15:48:21+00:00"
+      }
     }
   ],
   "owner_verdict": {

@@ -30,6 +30,7 @@ EXPECTED = {
     ("exp", "verdict"): "cmd_exp_verdict",
     ("exp", "usage"): "cmd_exp_usage",
     ("exp", "link"): "cmd_exp_link",
+    ("exp", "measured"): "cmd_exp_measured",
     ("exp", "unlink"): "cmd_exp_unlink",
     ("exp", "verify"): "cmd_exp_verify",
     ("exp", "telemetry"): "cmd_exp_telemetry",

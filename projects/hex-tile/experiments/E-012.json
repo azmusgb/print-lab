@@ -1353,11 +1353,10 @@
         "nozzle_changed"
       ],
       "usage": {
-        "actual_minutes": 204.0,
+        "actual_minutes": 203.0,
         "actual_g": null,
-        "usage_source": "manual",
-        "completion_fraction": null,
-        "source_note": "minutes from Bambu Handy's print history (shown to 0.1 h, so \u00b13 min), entered by hand; not printer telemetry; grams not measured (slicer estimate)"
+        "usage_source": "bambuddy",
+        "completion_fraction": null
       },
       "failed": null,
       "photos": [
@@ -1399,7 +1398,18 @@
         "failure_reason": null,
         "failed_at_estimate": null,
         "snapshot_at": "2026-10-27T21:49:51+00:00"
-      }
+      },
+      "usage_revisions": [
+        {
+          "actual_minutes": 204.0,
+          "actual_g": null,
+          "usage_source": "manual",
+          "completion_fraction": null,
+          "source_note": "minutes from Bambu Handy's print history (shown to 0.1 h, so \u00b13 min), entered by hand; not printer telemetry; grams not measured (slicer estimate)",
+          "replaced_at": "2026-11-16T15:48:21+00:00",
+          "reason": "bambuddy print #9: measured replaces the figure typed on the Mac"
+        }
+      ]
     }
   ],
   "owner_verdict": {

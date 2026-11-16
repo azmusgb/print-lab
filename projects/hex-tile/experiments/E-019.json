@@ -769,11 +769,11 @@
         "nozzle_changed"
       ],
       "usage": {
-        "actual_minutes": 19.0,
+        "actual_minutes": 18.6,
         "actual_g": 5.7,
-        "usage_source": "manual",
+        "usage_source": "bambuddy",
         "completion_fraction": 0.24,
-        "source_note": "minutes from Bambu Handy's print history (shown to 0.1 h, so \u00b13 min), entered by hand; not printer telemetry; cancelled after 19 min. Grams are an estimate, not measured: slicer 14.83 g x 19/49.8 min"
+        "g_source": "manual"
       },
       "failed": {
         "at_fraction": 0.24,
@@ -793,7 +793,18 @@
         "failure_reason": null,
         "failed_at_estimate": null,
         "snapshot_at": "2026-10-27T21:49:51+00:00"
-      }
+      },
+      "usage_revisions": [
+        {
+          "actual_minutes": 19.0,
+          "actual_g": 5.7,
+          "usage_source": "manual",
+          "completion_fraction": 0.24,
+          "source_note": "minutes from Bambu Handy's print history (shown to 0.1 h, so \u00b13 min), entered by hand; not printer telemetry; cancelled after 19 min. Grams are an estimate, not measured: slicer 14.83 g x 19/49.8 min",
+          "replaced_at": "2026-11-16T15:48:21+00:00",
+          "reason": "bambuddy print #11: measured replaces the figure typed on the Mac"
+        }
+      ]
     }
   ],
   "owner_verdict": null,

@@ -12,7 +12,10 @@ from lab.records.store import next_local_id, now, record_lock
 ENDED = ("completed", "failed", "cancelled")
 STOPPED = ("failed", "cancelled")  # the print didn't finish: the next attempt is checked again
 NOT_YET_PRINTED = ("built", "ready", "needs_approval", "approved")
-REPLACEABLE = (None, "telemetry", "finished_unknown")  # a figure Bambuddy's own measurement is better than
+# A figure Bambuddy's own measurement is better than: Bambuddy is the record of what a print took, so a figure typed
+# on the Mac before the print ended gives way too (kept as a revision). The printer log's figure is a measurement of
+# its own and stays.
+REPLACEABLE = (None, "telemetry", "finished_unknown", "manual")
 
 
 def _iso(s: str | None) -> str | None:
@@ -74,7 +77,7 @@ def _attach(e: dict, build_id: str, entry: dict, how: str) -> tuple[dict, str, s
 
 def _snapshot(e: dict, run: dict, entry: dict, planned: float | None) -> bool:
     """Write the evidence once the print has ended; False when it hasn't, or already was. A usage figure or failure
-    the owner (or the printer log) gave is kept, with Bambuddy's beside it in `bambuddy`. planned: the archive's
+    the printer log gave is kept, with Bambuddy's beside it in `bambuddy`; one typed on the Mac gives way to it. planned: the archive's
     planned seconds, for a failed print's estimate."""
     b = run["bambuddy"]
     status = entry.get("status")
@@ -89,26 +92,62 @@ def _snapshot(e: dict, run: dict, entry: dict, planned: float | None) -> bool:
         run["failed"] = {"at_fraction": est, "note": f"estimate from Bambuddy print #{n}"}
     if status in STOPPED and e["status"] == "printing" and run is e["print_runs"][-1]:
         e["status"] = "built"  # as `lab exp usage --failed-at`; not when a later run is the one printing
-    current = run.get("usage")
-    if (current or {}).get("usage_source") in REPLACEABLE:
-        if current:
-            run.setdefault("usage_revisions", []).append({**current, "replaced_at": b["snapshot_at"],
-                                                          "reason": _mark(n)})
-        keep = current or {}  # a figure Bambuddy doesn't have stays what it was
-        usage = {"actual_minutes": b["minutes"] if b["minutes"] is not None else keep.get("actual_minutes"),
-                 "actual_g": b["grams"] if b["grams"] is not None else keep.get("actual_g"),
-                 "usage_source": "bambuddy",
-                 "completion_fraction": (run.get("failed") or {}).get("at_fraction") if status == "failed"
-                 else None}
-        # A figure kept because Bambuddy has none is still what it was, so it keeps its own source.
-        if b["minutes"] is None and keep.get("actual_minutes") is not None:
-            usage["minutes_source"] = keep.get("minutes_source", keep.get("usage_source"))
-        if b["grams"] is None and keep.get("actual_g") is not None:
-            g_src = keep.get("g_source", keep.get("usage_source"))
-            # Telemetry grams were the slicer's estimate (apply_telemetry now records none): say so.
-            usage["g_source"] = "slicer_estimate" if g_src == "telemetry" else g_src
-        run["usage"] = usage
+    if (run.get("usage") or {}).get("usage_source") in REPLACEABLE:
+        _take_measured(run, _mark(n), b["snapshot_at"])
     return True
+
+
+def _take_measured(run: dict, reason: str, at: str) -> None:
+    """Make the run's usage the snapshot's measured figures, keeping any usage it replaces as a revision. A figure
+    Bambuddy hasn't got stays what it was, with its own source."""
+    b = run["bambuddy"]
+    current = run.get("usage")
+    if current:
+        run.setdefault("usage_revisions", []).append({**current, "replaced_at": at, "reason": reason})
+    keep = current or {}
+    usage = {"actual_minutes": b["minutes"] if b["minutes"] is not None else keep.get("actual_minutes"),
+             "actual_g": b["grams"] if b["grams"] is not None else keep.get("actual_g"),
+             "usage_source": "bambuddy",
+             "completion_fraction": (run.get("failed") or {}).get("at_fraction") if b.get("status") == "failed"
+             else None}
+    if b["minutes"] is None and keep.get("actual_minutes") is not None:
+        usage["minutes_source"] = keep.get("minutes_source", keep.get("usage_source"))
+    if b["grams"] is None and keep.get("actual_g") is not None:
+        g_src = keep.get("g_source", keep.get("usage_source"))
+        # Telemetry grams were the slicer's estimate (apply_telemetry now records none): say so.
+        usage["g_source"] = "slicer_estimate" if g_src == "telemetry" else g_src
+    run["usage"] = usage
+
+
+def prefer_measured(paths: ProjectPaths, apply: bool = False) -> list[dict]:
+    """`lab exp measured`: the runs whose usage was typed on the Mac (`manual`) although their linked Bambuddy print
+    has been snapshotted with a measured figure: runs snapshotted before typed figures gave way (and any figure typed
+    after the snapshot, which the owner may mean as a correction, so look at the list before applying). With apply, each takes the measured figures as `_snapshot` does for
+    telemetry: the typed usage stays as a revision (reason "bambuddy print #N: ..."), so unlink puts it back, and a
+    figure Bambuddy hasn't got (grams, on the early prints) stays the typed one, marked `manual`. Each as
+    {"experiment", "run", "print", "archive", "was": usage, "now": usage or None when not applied}."""
+    out = []
+    for eid in sorted(all_experiments(paths)):
+        e = load_experiment(paths, eid)
+        due = [r["id"] for r in e.get("print_runs") or []
+               if (r.get("usage") or {}).get("usage_source") == "manual"
+               and (r.get("bambuddy") or {}).get("snapshot_at")
+               and (r["bambuddy"].get("minutes") is not None or r["bambuddy"].get("grams") is not None)]
+        if not due:
+            continue
+        with record_lock(paths.locks, eid, "lab exp measured"):
+            e = load_experiment(paths, eid)
+            for r in e["print_runs"]:
+                if r["id"] not in due or (r.get("usage") or {}).get("usage_source") != "manual":
+                    continue
+                b, was = r["bambuddy"], dict(r["usage"])
+                if apply:
+                    _take_measured(r, f"{_mark(b['print'])}: measured replaces the figure typed on the Mac", now())
+                out.append({"experiment": eid, "run": r["id"], "print": b["print"], "archive": b.get("archive"),
+                            "was": was, "now": r["usage"] if apply else None})
+            if apply and any(x["experiment"] == eid for x in out):
+                save_experiment(paths, e)
+    return out
 
 
 def _save(paths: ProjectPaths, e: dict, status_before: str, created: bool = False) -> dict:

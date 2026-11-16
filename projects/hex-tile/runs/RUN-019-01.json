@@ -13,9 +13,12 @@
     "g": 14.83
   },
   "actual": {
-    "minutes": 19.0,
+    "minutes": 18.6,
     "g": 5.7,
-    "usage_source": "manual",
+    "usage_source": "bambuddy",
+    "g_source": "manual",
+    "bambuddy_print": 11,
+    "bambuddy_archive": 11,
     "completion_fraction": 0.24
   },
   "artifacts": {
@@ -39,5 +42,5 @@
   "evidence": [],
   "source_run": "PR-019-01",
   "created_at": "2026-10-29T23:15:27+00:00",
-  "updated_at": "2026-10-29T23:15:27+00:00"
+  "updated_at": "2026-11-16T15:48:21+00:00"
 }
