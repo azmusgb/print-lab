@@ -773,7 +773,8 @@
         "actual_g": 5.7,
         "usage_source": "bambuddy",
         "completion_fraction": 0.24,
-        "g_source": "manual"
+        "g_source": "slicer_estimate",
+        "g_note": "slicer 14.83 g x 19/49.8 min (scaled by the minutes typed on the Mac); not weighed"
       },
       "failed": {
         "at_fraction": 0.24,
