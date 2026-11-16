@@ -569,6 +569,7 @@ def test_pull_asks_for_the_planned_time_once_per_archive(lab023, monkeypatch):
 
 @pytest.mark.parametrize("failure", ["none", "raises"])
 def test_pull_with_bambuddy_down_keeps_last_id(lab023, monkeypatch, failure):
+    monkeypatch.setenv("LAB_BAMBUDDY_URL", "http://bambuddy.test")  # on, but failing
     (lab023.root / "bambuddy-seen.json").write_text(json.dumps({"last_id": 20}))
 
     def down(*a, **k):
@@ -579,9 +580,42 @@ def test_pull_with_bambuddy_down_keeps_last_id(lab023, monkeypatch, failure):
     checked = []
     monkeypatch.setattr(pull, "check_active_print", lambda *a, **k: checked.append(1))
     out, _ = _run_pull(lab023, monkeypatch, down)
-    assert out == [] and checked == [1]
+    assert [(r["id"], r["status"]) for r in out] == [("bambuddy", "error")] and checked == [1]
     assert _seen(lab023) == {"last_id": 20}
     assert load_experiment(lab023, "E-023")["print_runs"][0].get("bambuddy") is None
+
+
+def test_pull_says_why_bambuddy_failed_once_and_when_it_is_back(lab023, monkeypatch, capsys):
+    from lab import bambuddy
+    monkeypatch.setenv("LAB_BAMBUDDY_URL", "http://bambuddy.test")
+    monkeypatch.setattr(bambuddy, "last_error", lambda: "Bambuddy refused GET /api/v1/print-log/: 401 Authentication "
+                                                        "required")
+    out, _ = _run_pull(lab023, monkeypatch, lambda *a, **k: None)
+    assert out == [{"id": "bambuddy", "status": "error", "message": bambuddy.last_error()}]
+    assert "lab pull: Bambuddy: Bambuddy refused GET /api/v1/print-log/: 401" in capsys.readouterr().err
+    out, _ = _run_pull(lab023, monkeypatch, lambda *a, **k: None)
+    assert out[0]["repeat"] is True and "401" not in capsys.readouterr().err  # a standing failure prints once
+    out, _ = _run_pull(lab023, monkeypatch, [_entry(25)])
+    assert all(r["id"] != "bambuddy" for r in out)
+    assert pull._load_state(lab023.root).get("bambuddy_error") is None
+
+
+def test_pull_with_bambuddy_off_reports_nothing(lab023, monkeypatch):
+    monkeypatch.setenv("LAB_BAMBUDDY_URL", "off")
+    out, _ = _run_pull(lab023, monkeypatch, lambda *a, **k: None)
+    assert out == []
+
+
+def test_pull_pages_back_to_the_last_id_and_any_print_still_awaiting_its_end(lab023, monkeypatch):
+    asked = []
+
+    def log(*a, **k):
+        asked.append(k.get("since_id"))
+        return [_entry(25, status="printing", completed_at=None, duration_seconds=None)]
+    _run_pull(lab023, monkeypatch, log)
+    (lab023.root / "bambuddy-seen.json").write_text(json.dumps({"last_id": 40}))
+    _run_pull(lab023, monkeypatch, log)
+    assert asked == [0, 25]  # no state: the whole log; then back to #25, still printing, below the last id
 
 
 def test_pull_does_not_report_or_sync_skipped_prints(lab023, monkeypatch):
