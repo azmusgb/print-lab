@@ -14,7 +14,9 @@
   },
   "actual": {
     "minutes": 64.2,
+    "g": 16.83,
     "usage_source": "bambuddy",
+    "g_source": "slicer_estimate",
     "bambuddy_print": 8,
     "bambuddy_archive": 8
   },
@@ -39,5 +41,5 @@
   "evidence": [],
   "source_run": "PR-011-01",
   "created_at": "2026-10-29T23:15:27+00:00",
-  "updated_at": "2026-11-16T15:48:21+00:00"
+  "updated_at": "2026-11-16T22:18:35+00:00"
 }

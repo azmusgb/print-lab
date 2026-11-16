@@ -2916,9 +2916,11 @@
       ],
       "usage": {
         "actual_minutes": 23.9,
-        "actual_g": null,
+        "actual_g": 19.8,
         "usage_source": "bambuddy",
-        "completion_fraction": 0.23
+        "completion_fraction": 0.23,
+        "g_source": "slicer_estimate",
+        "g_note": "slicer 85.92 g x 0.23 completion (BLD-023-01); Bambuddy print #15 (failed) reported none; not weighed"
       },
       "failed": {
         "at_fraction": 0.23,
