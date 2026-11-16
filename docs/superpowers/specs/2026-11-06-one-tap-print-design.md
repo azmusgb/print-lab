@@ -49,6 +49,17 @@ Re-run on 1.3.0 the same day, after the owner updated Bambuddy: the same scopes 
 (`manual_start`, then start), plate detection still in `on_print_start`, and a byte-identical round trip of
 `hex-tile_E-026_BLD-026-01.gcode.3mf` (deleted after). Staging is pinned to 1.3.0.
 
+Re-run on 1.3.1 (16 Nov 2026; its release notes say "There are no API changes"), with each key on its own role,
+since the keys have been split since 6 Nov:
+- Pi Hub's control key: `POST /queue/` and `POST /queue/{id}/start` answer 404 on a nonexistent id, and the old
+  `POST /library/files/{id}/print` answers 410.
+- Pi Hub's staging key and the print-lab key: library download and delete answer 404, and a byte-identical round trip
+  of `hex-tile_E-011_BLD-011-01.gcode.3mf` passed (deleted after).
+- The print-lab key now answers 403 on every queue route. The owner removed *Queue* from it, so S1's "the Mac never
+  starts" now holds in Bambuddy too, not only in the lab's code.
+
+Plate detection is still in `on_print_start`. Nothing was queued or started. Staging is pinned to 1.3.1.
+
 Nothing was queued or started; the printer was running the owner's print throughout.
 
 - **Scopes.** Each route checks its scope in a dependency before the handler runs, so a request with a nonexistent id
@@ -143,6 +154,6 @@ Each PR: tests green, and anything touching the printer proven on the real one o
 - **A queue item that starts itself.** One added without `manual_start` is dispatched at once (probe). Pi Hub's adapter
   always sets it, and a test with the fake Bambuddy fails if it doesn't.
 - **Bambuddy changes its API.** Every call is behind one adapter on each side, with its version checked
-  (1.3.0 today); a different version disables Start until the probe of PR 2 passes again.
+  (1.3.1 today); a different version disables Start until the probe of PR 2 passes again.
 - **Developer Mode exposure.** Anything on the home network with the access code can command the printer; that is
   true already. One-tap adds no new listener: Pi Hub is behind Tailscale and owner sign-in.
