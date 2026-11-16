@@ -94,3 +94,8 @@ which heights are at risk, why, and how sure you are, from measurements of the m
 - **Settings missing from the header:** take them from the build's `--base` 3MF, and say where each value came from.
 - **The slice disagrees with the model** (the slicer drops or merges a feature): report both, and trust the slice
   for what will print.
+- **A single RIFT tile (faceted_hex seed 3), not a pair:** this agent's pair checks don't apply. Use
+  `.claude/skills/rift-tile-print/SKILL.md` for the bed-to-tile mapping and the bridge, overhang and floating-shell
+  checks, and report events in tile coordinates.
+- **Working from a worktree:** run from the worktree you were started in; `/Users/billrahe/dev/print-lab` may lack
+  generator features (`roof_tear`) that a feature branch has.
