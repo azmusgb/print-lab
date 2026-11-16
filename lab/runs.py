@@ -245,6 +245,13 @@ def _legacy_actual(legacy: dict) -> dict:
         actual["g"] = usage.get("actual_g")
     if usage.get("usage_source") is not None:
         actual["usage_source"] = usage.get("usage_source")
+    for key in ("minutes_source", "g_source"):  # a figure kept from another source says so
+        if usage.get(key) is not None:
+            actual[key] = usage[key]
+    link = legacy.get("bambuddy") if isinstance(legacy.get("bambuddy"), dict) else {}
+    if usage.get("usage_source") == "bambuddy" and link.get("archive") is not None:
+        actual["bambuddy_print"] = link.get("print")  # where the measured figures came from, for tracing
+        actual["bambuddy_archive"] = link["archive"]
     if usage.get("completion_fraction") is not None:
         actual["completion_fraction"] = usage.get("completion_fraction")
     elif isinstance(legacy.get("failed"), dict) and legacy["failed"].get("at_fraction") is not None:

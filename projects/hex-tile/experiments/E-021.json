@@ -939,8 +939,8 @@
       "usage": {
         "actual_minutes": 87.0,
         "actual_g": null,
-        "usage_source": "manual",
-        "completion_fraction": null
+        "usage_source": "bambuddy",
+        "completion_fraction": 0.821
       },
       "failed": {
         "at_fraction": 0.821,
@@ -955,6 +955,14 @@
           "completion_fraction": null,
           "replaced_at": "2026-10-26T19:46:00+00:00",
           "reason": "Filled automatically by lab pull from Local AI's last-seen time, not the print's end (the bug fixed in the telemetry logger branch); 33.83 g was the slicer estimate, not a measurement. Replaced by 87 min from the printer's own record (Bambuddy #13: 10:08-11:35 EDT, state FAILED); grams unknown. The 118.2 value was never committed; it is recorded here so the change is auditable."
+        },
+        {
+          "actual_minutes": 87.0,
+          "actual_g": null,
+          "usage_source": "manual",
+          "completion_fraction": null,
+          "replaced_at": "2026-11-16T15:48:21+00:00",
+          "reason": "bambuddy print #13: measured replaces the figure typed on the Mac"
         }
       ],
       "bambuddy": {

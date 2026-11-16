@@ -108,6 +108,22 @@ def cmd_exp_link(args) -> int:
     return 0
 
 
+def cmd_exp_measured(args) -> int:
+    from lab.loop.linking import prefer_measured
+    rows = prefer_measured(_paths(args), apply=args.apply)
+    if not rows:
+        print("No run has a typed figure where its Bambuddy print has a measured one.")
+        return 0
+    for x in rows:
+        was, now_ = x["was"], x["now"] or {}
+        to = f" -> {now_.get('actual_minutes')} min, {now_.get('actual_g')} g" if args.apply else ""
+        print(f"{x['experiment']} {x['run']}: Bambuddy print #{x['print']} (archive {x['archive']}); typed "
+              f"{was.get('actual_minutes')} min, {was.get('actual_g')} g{to}")
+    if not args.apply:
+        print(f"{len(rows)} run(s) would take Bambuddy's measured figures; run again with --apply.")
+    return 0
+
+
 def cmd_exp_unlink(args) -> int:
     from lab.loop.linking import unlink
     try:
@@ -583,6 +599,10 @@ def register(sub) -> None:
     lk.add_argument("--print", type=int, required=True, help="Bambuddy print-log id")
     lk.add_argument("--project", default="hex-tile")
     lk.set_defaults(fn=cmd_exp_link)
+    ms = es.add_parser("measured", help="swap figures typed on the Mac for the linked Bambuddy print's measured ones")
+    ms.add_argument("--apply", action="store_true", help="write the change (without it, only list the runs)")
+    ms.add_argument("--project", default="hex-tile")
+    ms.set_defaults(fn=cmd_exp_measured)
     ul = es.add_parser("unlink", help="drop a run's Bambuddy link and the facts taken from that print")
     ul.add_argument("run_id")
     ul.add_argument("--project", default="hex-tile")

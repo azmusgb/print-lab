@@ -365,7 +365,12 @@
         "filament_dried": false,
         "vibration_calibration": false
       },
-      "usage": null,
+      "usage": {
+        "actual_minutes": 67.1,
+        "actual_g": null,
+        "usage_source": "bambuddy",
+        "completion_fraction": null
+      },
       "failed": null,
       "photos": [
         {
@@ -422,7 +427,21 @@
           "captured_at": "2026-10-24T23:06:14+00:00",
           "source": "IMG_0778.HEIC"
         }
-      ]
+      ],
+      "bambuddy": {
+        "print": 6,
+        "archive": 6,
+        "linked": "hand",
+        "at": "2026-11-16T15:48:21+00:00",
+        "status": "completed",
+        "started": "2026-10-24T21:48:53+00:00",
+        "ended": "2026-10-24T22:55:58+00:00",
+        "minutes": 67.1,
+        "grams": null,
+        "failure_reason": null,
+        "failed_at_estimate": null,
+        "snapshot_at": "2026-11-16T15:48:21+00:00"
+      }
     }
   ],
   "owner_verdict": {

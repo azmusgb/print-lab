@@ -2915,9 +2915,9 @@
         "nozzle_changed"
       ],
       "usage": {
-        "actual_minutes": 24.0,
+        "actual_minutes": 23.9,
         "actual_g": null,
-        "usage_source": "manual",
+        "usage_source": "bambuddy",
         "completion_fraction": 0.23
       },
       "failed": {
@@ -2939,7 +2939,17 @@
         "failed_at_estimate": null,
         "snapshot_at": "2026-10-27T21:49:51+00:00",
         "prior_status": "built"
-      }
+      },
+      "usage_revisions": [
+        {
+          "actual_minutes": 24.0,
+          "actual_g": null,
+          "usage_source": "manual",
+          "completion_fraction": 0.23,
+          "replaced_at": "2026-11-16T15:48:21+00:00",
+          "reason": "bambuddy print #15: measured replaces the figure typed on the Mac"
+        }
+      ]
     }
   ],
   "owner_verdict": null,

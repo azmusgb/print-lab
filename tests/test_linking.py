@@ -8,7 +8,7 @@ from loop_fixtures import make_project, minimal_experiment, minimal_question, st
 
 from lab.loop import ledger
 from lab.loop.commands import load_experiment
-from lab.loop.linking import link_by_hand, link_entries, unlink
+from lab.loop.linking import link_by_hand, link_entries, prefer_measured, unlink
 from lab.records.schema import validate
 
 LOG = json.loads((Path(__file__).parent / "fixtures" / "bambuddy_print_log.json").read_text())["items"]
@@ -465,3 +465,45 @@ def test_unlink_does_not_restore_a_revision_for_another_print(paths):
     e["print_runs"][0]["usage_revisions"][-1]["reason"] = "bambuddy print #150"  # a different print, same digits
     save_experiment(paths, e)
     assert unlink(paths, "PR-023-01")["usage"] is None
+
+
+def test_prefer_measured_swaps_a_typed_figure_and_unlink_puts_it_back(paths):
+    from lab.loop.commands import record_usage
+    record_usage(paths, "PR-023-01", minutes=50, grams=7.5, usage_source="manual")
+    link_entries(paths, [entry(15, status="completed", failure_reason=None, filament_used_grams=None)], no_plan)
+    assert run(paths)["usage"]["usage_source"] == "manual"  # the snapshot itself keeps the owner's figure
+
+    listed = prefer_measured(paths)  # a dry run lists and changes nothing
+    assert [(x["run"], x["print"], x["now"]) for x in listed] == [("PR-023-01", 15, None)]
+    assert run(paths)["usage"]["usage_source"] == "manual"
+
+    [done] = prefer_measured(paths, apply=True)
+    u = run(paths)["usage"]
+    assert u["actual_minutes"] == 20.0 and u["usage_source"] == "bambuddy"
+    assert u["actual_g"] == 7.5 and u["g_source"] == "manual"  # Bambuddy had no grams: the typed figure stays, labelled
+    rev = run(paths)["usage_revisions"][-1]
+    assert rev["actual_minutes"] == 50 and rev["reason"].startswith("bambuddy print #15:")
+    assert done["archive"] == run(paths)["bambuddy"]["archive"]
+    assert prefer_measured(paths, apply=True) == []  # once only
+
+    r = unlink(paths, "PR-023-01")
+    assert r["usage"]["usage_source"] == "manual" and r["usage"]["actual_minutes"] == 50
+
+
+def test_prefer_measured_leaves_a_typed_figure_with_no_measured_print(paths):
+    from lab.loop.commands import record_usage
+    record_usage(paths, "PR-023-01", minutes=50, grams=None, usage_source="manual")
+    assert prefer_measured(paths, apply=True) == []  # not linked
+    link_entries(paths, [entry(15, status="printing", completed_at=None, duration_seconds=None)], no_plan)
+    assert prefer_measured(paths, apply=True) == []  # linked, not ended
+    assert run(paths)["usage"]["usage_source"] == "manual"
+
+
+def test_the_run_record_names_the_archive_measured_figures_came_from():
+    from lab.runs import _legacy_actual
+    legacy = {"usage": {"actual_minutes": 20.0, "actual_g": 7.5, "usage_source": "bambuddy", "g_source": "manual"},
+              "bambuddy": {"print": 15, "archive": 15}}
+    assert _legacy_actual(legacy) == {"minutes": 20.0, "g": 7.5, "usage_source": "bambuddy", "g_source": "manual",
+                                      "bambuddy_print": 15, "bambuddy_archive": 15}
+    typed = {"usage": {"actual_minutes": 50.0, "usage_source": "manual"}, "bambuddy": {"print": 15, "archive": 15}}
+    assert "bambuddy_archive" not in _legacy_actual(typed)  # a typed figure didn't come from the archive
