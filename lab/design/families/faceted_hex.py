@@ -28,6 +28,8 @@ PARAMS = [
     Param("land_thickness", 2.4, 0.9, 6.0, "Thickness of the tape land"),
     Param("roof_wall", 2.4, 0.9, 6.0, "Roof plate width per layer (45° roof); the space above it is sealed hollow"),
     Param("mark", 1.0, 0.0, 1.0, "1 cuts the RAHE/RIFT mark into the land, 0 leaves it plain", unit=""),
+    Param("roof_tear", 0.0, 0.0, 1.0, "1 cuts the sealed roof's far side back at 45° too (a tear-shaped hollow), so no "
+          "flat ceiling bridges the rim channel; 0 leaves the flat ceiling", unit=""),
 ]
 
 # Rift v6's layout, as drawn in Fusion at a 152.4 mm corner diameter, a 9 mm edge and a 10 mm rise: (x, y) as a
@@ -86,7 +88,20 @@ def _cavity(p: dict[str, float], tile: Solid) -> Solid:
     plate_yz = [(top - z0, z0), (top - z1, z1), (top - z1 + h, z1), (top - z0 + h, z0)]
     plate = extrude(Face(Wire.make_polygon([(-w, y, z) for y, z in plate_yz], close=True)), amount=2 * w,
                     dir=(1, 0, 0))
-    return cavity - plate
+    cavity = cavity - plate
+    if p["roof_tear"] >= 0.5:
+        cavity = cavity - _tear_wedge(p, top)
+    return cavity
+
+
+def _tear_wedge(p: dict[str, float], top: float) -> Solid:
+    """The roof hollow's far side, cut back at 45° from the plate's far edge down to the skin's inner face, so the
+    sealed hollow is a tear shape and its ceiling needs no bridge. Removed from the cavity it leaves solid, so the
+    hollow stays inside the top wall's reach."""
+    zs, w, far = p["edge_depth"] - p["skin_axial"], p["corner_diameter"], 40.0
+    a, b = top - zs / 2, zs / 2
+    pts = [(a, b), (a + far, b + far), (a + far, b - far)]
+    return extrude(Face(Wire.make_polygon([(-w, y, z) for y, z in pts], close=True)), amount=2 * w, dir=(1, 0, 0))
 
 
 def _land(p: dict[str, float]) -> Solid:

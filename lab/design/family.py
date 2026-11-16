@@ -50,8 +50,14 @@ def read_params(path: Path, only: list[Param] | None = None) -> dict[str, float]
     return values
 
 
+# Parameters added after designs were locked. At 0 they leave a design as it was, so they stay out of its id and the
+# stored designs' ids still match.
+_OMIT_AT_ZERO = {"roof_tear"}
+
+
 def design_id(family: str, version: int, params: dict[str, float], seed: int) -> str:
     """A short, stable id for (family, version, params, seed): the same inputs always give the same id."""
     key = json.dumps({"family": family, "version": version, "seed": seed,
-                      "params": {k: round(v, 6) for k, v in sorted(params.items())}}, sort_keys=True)
+                      "params": {k: round(v, 6) for k, v in sorted(params.items())
+                                 if not (k in _OMIT_AT_ZERO and v == 0)}}, sort_keys=True)
     return hashlib.sha256(key.encode()).hexdigest()[:12]
