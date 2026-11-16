@@ -105,12 +105,22 @@ def test_printing_entry_links_now_snapshots_later(paths):
     assert load_experiment(paths, "E-023") == before
 
 
-def test_owner_usage_is_kept(paths):
+def test_typed_usage_gives_way_to_the_measured_figure(paths):
     from lab.loop.commands import record_usage
     record_usage(paths, "PR-023-01", minutes=50, grams=None, usage_source="manual")
     link_entries(paths, [entry(15, status="completed", failure_reason=None)], no_plan)
     r = run(paths)
-    assert r["usage"]["actual_minutes"] == 50 and r["usage"]["usage_source"] == "manual"
+    assert r["usage"]["actual_minutes"] == 20.0 and r["usage"]["usage_source"] == "bambuddy"
+    assert r["usage_revisions"][-1]["actual_minutes"] == 50 and r["usage_revisions"][-1]["usage_source"] == "manual"
+    assert unlink(paths, "PR-023-01")["usage"]["usage_source"] == "manual"  # unlinking puts the typed figure back
+
+
+def test_printer_log_usage_is_kept(paths):
+    from lab.loop.commands import record_usage
+    record_usage(paths, "PR-023-01", minutes=50, grams=None, usage_source="printer_log")
+    link_entries(paths, [entry(15, status="completed", failure_reason=None)], no_plan)
+    r = run(paths)
+    assert r["usage"]["actual_minutes"] == 50 and r["usage"]["usage_source"] == "printer_log"
     assert r["bambuddy"]["minutes"] == 20.0
 
 
@@ -469,9 +479,13 @@ def test_unlink_does_not_restore_a_revision_for_another_print(paths):
 
 def test_prefer_measured_swaps_a_typed_figure_and_unlink_puts_it_back(paths):
     from lab.loop.commands import record_usage
-    record_usage(paths, "PR-023-01", minutes=50, grams=7.5, usage_source="manual")
+    from lab.loop.commands import save_experiment
     link_entries(paths, [entry(15, status="completed", failure_reason=None, filament_used_grams=None)], no_plan)
-    assert run(paths)["usage"]["usage_source"] == "manual"  # the snapshot itself keeps the owner's figure
+    # as a run snapshotted before typed figures gave way was left: the typed usage still in place
+    e = load_experiment(paths, "E-023")
+    e["print_runs"][0]["usage"] = {"actual_minutes": 50, "actual_g": 7.5, "usage_source": "manual",
+                                   "completion_fraction": None}
+    save_experiment(paths, e)
 
     listed = prefer_measured(paths)  # a dry run lists and changes nothing
     assert [(x["run"], x["print"], x["now"]) for x in listed] == [("PR-023-01", 15, None)]

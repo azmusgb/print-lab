@@ -12,7 +12,10 @@ from lab.records.store import next_local_id, now, record_lock
 ENDED = ("completed", "failed", "cancelled")
 STOPPED = ("failed", "cancelled")  # the print didn't finish: the next attempt is checked again
 NOT_YET_PRINTED = ("built", "ready", "needs_approval", "approved")
-REPLACEABLE = (None, "telemetry", "finished_unknown")  # a figure Bambuddy's own measurement is better than
+# A figure Bambuddy's own measurement is better than: Bambuddy is the record of what a print took, so a figure typed
+# on the Mac before the print ended gives way too (kept as a revision). The printer log's figure is a measurement of
+# its own and stays.
+REPLACEABLE = (None, "telemetry", "finished_unknown", "manual")
 
 
 def _iso(s: str | None) -> str | None:
@@ -74,7 +77,7 @@ def _attach(e: dict, build_id: str, entry: dict, how: str) -> tuple[dict, str, s
 
 def _snapshot(e: dict, run: dict, entry: dict, planned: float | None) -> bool:
     """Write the evidence once the print has ended; False when it hasn't, or already was. A usage figure or failure
-    the owner (or the printer log) gave is kept, with Bambuddy's beside it in `bambuddy`. planned: the archive's
+    the printer log gave is kept, with Bambuddy's beside it in `bambuddy`; one typed on the Mac gives way to it. planned: the archive's
     planned seconds, for a failed print's estimate."""
     b = run["bambuddy"]
     status = entry.get("status")
@@ -118,7 +121,8 @@ def _take_measured(run: dict, reason: str, at: str) -> None:
 
 def prefer_measured(paths: ProjectPaths, apply: bool = False) -> list[dict]:
     """`lab exp measured`: the runs whose usage was typed on the Mac (`manual`) although their linked Bambuddy print
-    has been snapshotted with a measured figure. With apply, each takes the measured figures as `_snapshot` does for
+    has been snapshotted with a measured figure: runs snapshotted before typed figures gave way (and any figure typed
+    after the snapshot, which the owner may mean as a correction, so look at the list before applying). With apply, each takes the measured figures as `_snapshot` does for
     telemetry: the typed usage stays as a revision (reason "bambuddy print #N: ..."), so unlink puts it back, and a
     figure Bambuddy hasn't got (grams, on the early prints) stays the typed one, marked `manual`. Each as
     {"experiment", "run", "print", "archive", "was": usage, "now": usage or None when not applied}."""
