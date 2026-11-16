@@ -6,7 +6,8 @@ reason, and refuse any Bambuddy version but SUPPORTED_VERSION.
 Each build is printed under a lab name like `hex-tile_E-023_BLD-023-01`; parse_lab_name picks that apart so a Bambuddy
 print can be linked back to its build. LAB_BAMBUDDY_URL changes the address ("off" disables every call). Bambuddy has
 sign-in on, so requests carry print-lab's own read-only API key, from ~/.config/bambuddy/print-lab-key
-(LAB_BAMBUDDY_KEY_FILE changes the file). Calls wait at most 5 s and return None on any failure.
+(LAB_BAMBUDDY_KEY_FILE changes the file). Reads wait at most 5 s and return None on any failure; last_error() says
+why (off, no key, refused, no answer, unreadable), in the same words the writes raise.
 """
 import json
 import os
@@ -60,27 +61,66 @@ def base_url() -> str:
     return os.environ.get("LAB_BAMBUDDY_URL", "http://10.0.0.80:8000")
 
 
+_last_error: str | None = None
+
+
+def last_error() -> str | None:
+    """Why the latest read returned None (as BambuddyError words it); None after a read that worked."""
+    return _last_error
+
+
 def _get(path: str, timeout: float):
-    """The JSON at `path`, or None when Bambuddy is off, doesn't answer, refuses or sends something unreadable."""
-    url = base_url()
-    if not url or url == "off":
-        return None
-    k = key()
-    req = urllib.request.Request(f"{url}{path}", headers={"X-API-Key": k} if k else {}, method="GET")
+    """The JSON at `path`, or None when Bambuddy is off, has no key, refuses, doesn't answer or sends something
+    unreadable; last_error() then says which."""
+    global _last_error
     try:
-        with urllib.request.urlopen(req, timeout=min(timeout, MAX_TIMEOUT)) as r:
-            return json.load(r)
-    except Exception:
+        data = _json("GET", path, timeout=min(timeout, MAX_TIMEOUT))
+    except BambuddyError as e:
+        _last_error = str(e)
         return None
+    _last_error = None
+    return data
 
 
-def print_log(limit: int = 100, timeout: float = 5.0) -> list[dict] | None:
-    """The newest `limit` prints, newest first (by id, since Bambuddy sorts by date); None on any failure or when off."""
-    data = _get(f"/api/v1/print-log/?limit={int(limit)}", timeout)
-    items = data.get("items") if isinstance(data, dict) else None
-    if not isinstance(items, list):
+PAGE = 100  # print-log entries per request
+MAX_ENTRIES = 5000  # a guard: never page further than this
+
+
+def print_log(at_least: int = PAGE, since_id: int | None = None, timeout: float = 5.0) -> list[dict] | None:
+    """The newest prints, newest first (by id, since Bambuddy sorts by date): at least `at_least` of them (all there
+    are, when fewer), and back to `since_id` when given, paging as far as either needs. None on any failure (a page
+    that fails fails the whole read) or when off."""
+    global _last_error
+    out: dict[int, dict] = {}
+    offset = 0
+    while offset < MAX_ENTRIES:
+        data = _get(f"/api/v1/print-log/?limit={PAGE}&offset={offset}", timeout)
+        items = data.get("items") if isinstance(data, dict) else None
+        if not isinstance(items, list):
+            if data is not None and _last_error is None:
+                _last_error = "Bambuddy's print log answer has no items list."
+            return None
+        page = [i for i in items if isinstance(i, dict)]
+        out.update((i["id"], i) for i in page if isinstance(i.get("id"), int))
+        offset += len(items)
+        total = data.get("total")
+        if len(items) < PAGE or (isinstance(total, int) and offset >= total):
+            break  # the end of the log
+        covered = since_id is None or any((i.get("id") or 0) <= since_id for i in page)  # reached it
+        if offset >= at_least and covered:
+            break
+    return sorted(out.values(), key=lambda i: i["id"], reverse=True)
+
+
+def find_print(print_id: int, timeout: float = 5.0) -> dict | None:
+    """One print-log entry by id, paging back as far as it takes (Bambuddy has no read by id); None when it isn't
+    there or on any failure (last_error() is None for "not there")."""
+    global _last_error
+    log = print_log(at_least=0, since_id=print_id - 1, timeout=timeout)
+    if log is None:
         return None
-    return sorted((i for i in items if isinstance(i, dict)), key=lambda i: i.get("id") or 0, reverse=True)
+    _last_error = None  # it answered: a missing print isn't a failure
+    return next((x for x in log if x.get("id") == print_id), None)
 
 
 def archive(archive_id: int, timeout: float = 5.0) -> dict | None:

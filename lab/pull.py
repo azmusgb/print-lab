@@ -467,23 +467,16 @@ def check_active_print(paths: ProjectPaths, base: str | None = None, timeout: fl
 
 def link_new_prints(paths: ProjectPaths, seen: dict | None = None) -> list[dict]:
     """Link Bambuddy prints newer than the last one seen (plus linked ones still awaiting their end), saving the
-    newest id only once linking is done. Bambuddy off or failing: nothing happens and the saved id stays.
-    Limits: the print log is read 100 entries deep, so more than 100 new prints between pulls leaves the oldest
-    unlinked; the first run (no state file) scans the newest 100; and a reset or deleted state file can re-link a
-    print the owner had unlinked (it is new again by id). Skipped prints are not reported.
+    newest id only once linking is done. Bambuddy off or failing: nothing happens and the saved id stays; a failure's
+    reason goes in seen["error"] for the caller to report. The print log is paged back to the last id seen (and to
+    any linked print still awaiting its end), and always at least 100 deep for the page's outside list; the first run
+    (no state file) reads the whole log. A reset or deleted state file can re-link a print the owner had unlinked (it
+    is new again by id). Skipped prints are not reported.
     TODO: the spec's "no longer in Bambuddy" state for a linked print deleted from Bambuddy isn't implemented yet."""
     from lab import bambuddy
     from lab.loop.commands import all_experiments
     from lab.loop.linking import link_entries
     from lab.records.store import atomic_write_json
-    try:
-        entries = bambuddy.print_log()
-    except Exception:
-        entries = None
-    if entries is None:
-        return []
-    if seen is not None:
-        seen["entries"] = entries  # the caller rebuilds the outside list from this, without a second request
     state = paths.root / "bambuddy-seen.json"
     try:
         last_id = int(json.loads(state.read_text())["last_id"])
@@ -491,6 +484,19 @@ def link_new_prints(paths: ProjectPaths, seen: dict | None = None) -> list[dict]
         last_id = 0
     waiting = {r["bambuddy"]["print"] for e in all_experiments(paths).values() for r in e.get("print_runs") or []
                if (r.get("bambuddy") or {}).get("print") is not None and not r["bambuddy"].get("snapshot_at")}
+    try:
+        entries = bambuddy.print_log(since_id=min([last_id, *waiting]))
+    except Exception as e:
+        entries = None
+        reason = str(e) or type(e).__name__
+    else:
+        reason = bambuddy.last_error()
+    if entries is None:
+        if seen is not None and bambuddy.base_url() not in ("", "off"):
+            seen["error"] = reason or "Bambuddy's print log couldn't be read."
+        return []
+    if seen is not None:
+        seen["entries"] = entries  # the caller rebuilds the outside list from this, without a second request
     due = sorted((x for x in entries if x.get("id") is not None and (x["id"] > last_id or x["id"] in waiting)),
                  key=lambda x: x["id"])
     plans: dict = {}
@@ -604,6 +610,22 @@ def track_outages(down: dict, now_state: dict, now: float, notify=None) -> dict:
     return out
 
 
+def _bambuddy_outcome(pdir: Path, error: str | None) -> dict | None:
+    """Remember Bambuddy's read failure (None: it answered) and print it when it is new, as pull does for each
+    target; the error entry for the results, or None when it answered."""
+    state = _load_state(pdir)
+    if state.get("bambuddy_error") != error:
+        if error:
+            print(f"lab pull: Bambuddy: {error}", file=sys.stderr)
+        _save_state(pdir, {**state, "bambuddy_error": error})
+        repeat = False
+    else:
+        repeat = True
+    if not error:
+        return None
+    return {"id": "bambuddy", "status": "error", "message": error} | ({"repeat": True} if repeat else {})
+
+
 def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]:
     pdir = Path(pdir)
     applied = []
@@ -640,6 +662,10 @@ def pull(pdir: Path, base: str | None = None, timeout: float = 10) -> list[dict]
     finally:
         _funlock(lock_fd)
         lock_fd.close()  # releases the lock
+    if seen.get("error") or _load_state(pdir).get("bambuddy_error"):  # say why, once per standing failure
+        entry = _bambuddy_outcome(pdir, seen.get("error"))
+        if entry:
+            applied.append(entry)
     if seen.get("entries") is not None:  # staging needs the print log this pull read: idle for 10 minutes
         from lab.loop.stage import stage_waiting
         failed = dict(_load_state(pdir).get("stage_failed") or {})

@@ -93,10 +93,11 @@ def cmd_exp_usage(args) -> int:
 def cmd_exp_link(args) -> int:
     from lab import bambuddy
     from lab.loop.linking import link_by_hand
-    log = bambuddy.print_log() or []
-    entry = next((x for x in log if x.get("id") == args.print), None)
+    entry = bambuddy.find_print(args.print)
     if entry is None:
-        print(f"Bambuddy print #{args.print} isn't among Bambuddy's newest 100 prints (or Bambuddy isn't reachable).", file=sys.stderr)
+        why = bambuddy.last_error()
+        print(f"Couldn't read Bambuddy's print log: {why}" if why else
+              f"Bambuddy has no print #{args.print} in its print log.", file=sys.stderr)
         return 1
     a = bambuddy.archive(entry["archive_id"]) if entry.get("archive_id") is not None else None
     try:

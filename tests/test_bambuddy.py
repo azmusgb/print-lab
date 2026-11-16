@@ -82,21 +82,83 @@ def test_print_log_off(monkeypatch):
 
 def test_print_log_newest_first_and_request(monkeypatch):
     seen = _stub(monkeypatch, json.dumps({"items": [{"id": 3}, {"id": 26}, {"id": 5}], "total": 3}).encode())
-    assert bambuddy.print_log(limit=7, timeout=60) == [{"id": 26}, {"id": 5}, {"id": 3}]
+    assert bambuddy.print_log(timeout=60) == [{"id": 26}, {"id": 5}, {"id": 3}]
     req = seen["req"]
-    assert req.full_url == "http://bambuddy.test/api/v1/print-log/?limit=7"
+    assert req.full_url == "http://bambuddy.test/api/v1/print-log/?limit=100&offset=0"
     assert req.get_header("X-api-key") == "k1"
     assert req.get_method() == "GET"
     assert seen["timeout"] <= 5
+    assert bambuddy.last_error() is None
 
 
-def test_print_log_failures(monkeypatch):
-    _stub(monkeypatch, exc=urllib.error.HTTPError("u", 500, "boom", {}, None))
+def test_print_log_failures_say_why(monkeypatch):
+    _stub(monkeypatch, exc=urllib.error.HTTPError("u", 401, "Unauthorized", {}, io.BytesIO(
+        b'{"detail": "Authentication required"}')))
     assert bambuddy.print_log() is None
+    assert "401 Authentication required" in bambuddy.last_error()
+    _stub(monkeypatch, exc=urllib.error.URLError(TimeoutError("timed out")))
+    assert bambuddy.print_log() is None
+    assert bambuddy.last_error().startswith("Bambuddy didn't answer GET /api/v1/print-log/")
     _stub(monkeypatch, b"not json")
     assert bambuddy.print_log() is None
+    assert "unreadable" in bambuddy.last_error()
     _stub(monkeypatch, b'{"total": 0}')
     assert bambuddy.print_log() is None
+    assert "no items" in bambuddy.last_error()
+
+
+def test_print_log_without_a_key_says_so(monkeypatch, tmp_path):
+    monkeypatch.setenv("LAB_BAMBUDDY_KEY_FILE", str(tmp_path / "missing"))
+    seen = _stub(monkeypatch, b"{}")
+    assert bambuddy.print_log() is None and "req" not in seen
+    assert "No Bambuddy API key" in bambuddy.last_error()
+
+
+def _paged(monkeypatch, ids: list[int]):
+    """A print log of `ids` (newest first, as Bambuddy's date order), served a page at a time; the offsets asked."""
+    asked = []
+
+    def fake(req, timeout=None):
+        q = dict(x.split("=") for x in req.full_url.split("?", 1)[1].split("&"))
+        limit, offset = int(q["limit"]), int(q["offset"])
+        asked.append(offset)
+        page = [{"id": i} for i in ids[offset:offset + limit]]
+        return _Resp(json.dumps({"items": page, "total": len(ids)}).encode())
+    monkeypatch.setattr("urllib.request.urlopen", fake)
+    return asked
+
+
+def test_print_log_pages_back_to_the_id_asked(monkeypatch):
+    ids = list(range(250, 0, -1))
+    asked = _paged(monkeypatch, ids)
+    assert [x["id"] for x in bambuddy.print_log()] == ids[:100] and asked == [0]  # one page by default
+    asked.clear()
+    log = bambuddy.print_log(since_id=120)
+    assert asked == [0, 100] and log[-1]["id"] == 51  # the page holding #121 is read whole
+    asked.clear()
+    assert len(bambuddy.print_log(since_id=0)) == 250 and asked == [0, 100, 200]
+
+
+def test_print_log_stops_at_the_end_and_a_failed_page_fails_it(monkeypatch):
+    asked = _paged(monkeypatch, list(range(100, 0, -1)))
+    assert len(bambuddy.print_log(since_id=0)) == 100 and asked == [0]  # total reached: no empty page asked
+    calls = []
+
+    def flaky(req, timeout=None):
+        calls.append(req.full_url)
+        if len(calls) > 1:
+            raise urllib.error.URLError("down")
+        return _Resp(json.dumps({"items": [{"id": i} for i in range(300, 200, -1)], "total": 300}).encode())
+    monkeypatch.setattr("urllib.request.urlopen", flaky)
+    assert bambuddy.print_log(since_id=0) is None and "didn't answer" in bambuddy.last_error()
+
+
+def test_find_print_pages_back(monkeypatch):
+    asked = _paged(monkeypatch, list(range(250, 0, -1)))
+    assert bambuddy.find_print(30) == {"id": 30} and asked == [0, 100, 200]
+    asked.clear()
+    assert bambuddy.find_print(240) == {"id": 240} and asked == [0]
+    assert bambuddy.find_print(999) is None and bambuddy.last_error() is None  # not there is not a failure
 
 
 def test_archive(monkeypatch):
