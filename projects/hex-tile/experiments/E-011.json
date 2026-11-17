@@ -898,9 +898,11 @@
       ],
       "usage": {
         "actual_minutes": 64.2,
-        "actual_g": null,
+        "actual_g": 16.83,
         "usage_source": "bambuddy",
-        "completion_fraction": null
+        "completion_fraction": null,
+        "g_source": "slicer_estimate",
+        "g_note": "slicer estimate for the whole print (BLD-011-01: 16.83 g); Bambuddy print #8 reported none; not weighed"
       },
       "failed": null,
       "photos": [
