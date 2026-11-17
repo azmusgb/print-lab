@@ -14,7 +14,7 @@ Never print a key into the chat or a file.
 
 ## Upload
 
-From the print-lab worktree: `lab.bambuddy.upload(path, staging_folder())`. The result is the library file id (the 10 in tile was library #14).
+From the print-lab repo root: `lab.bambuddy.upload(path, staging_folder())`. The result is the library file id (the 10 in tile was library #14).
 
 ## Queue
 

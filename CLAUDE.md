@@ -7,7 +7,7 @@
   blueprint report (`docs/blueprint/`). Print lab's pages in Pi Hub are Pi Hub's, and follow the same contract there.
 
 ## Print and CAD work
-- Run Python from the worktree with `uv run python` (needs `lab.design.families`).
+- Run Python from the repo root (checkout or worktree) with `uv run python` (needs `lab.design.families`).
 - Never queue or start a print job unless asked. Bambuddy queue items use `manual_start: true`; keys are never printed (see `.claude/skills/rift-tile-print/references/bambuddy-queue.md`).
 - Single RIFT tile (faceted_hex seed 3): use the `rift-tile-print` skill. Back-to-back pair: use `hex-tile`.
 - Check a model in its real standing orientation before slicing (see the skill's G-code checks).

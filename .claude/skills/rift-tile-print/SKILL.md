@@ -12,14 +12,14 @@ One tile printed standing on its flat edge. The 6 in tile is the locked referenc
 - **The tear roof goes at the top of the print.** `roof_tear` cuts the roof hollow at one end only. That end must be at the top. Flipping the tile puts the untorn hollow at the top and gives a flat 4.9 mm bridge (the ridge, and Bambu Studio's "floating cantilever" warning). Never recommend a flip without slicing it first; the flip was recommended once and was wrong.
 - **A 180 degree in-plane rotation or a flip does not help the face.** The tile is a dome: the lower half faces down and the upper half faces up in any orientation.
 - **Layer lines come from layer height x tan(facet lean).** Median lean is about 2.3 to 2.6 degrees, so the step is about 0.01 mm per layer at 0.16 mm. Filament finish (matte, marble) is the biggest lever; nozzle size and "lower fan" are not. Whether matte or marble hides the lines is untested. Say so, and offer a coupon pair instead of claiming it.
-- **Run builds from the worktree** `/Users/billrahe/dev/.worktrees/print-lab/feat-faceted-hex-tear-roof` (PR #82). `/Users/billrahe/dev/print-lab` has no `roof_tear` until it merges.
+- **Run builds from the repo root** of the checkout or worktree you are in (`uv run python`). `roof_tear` has been on `main` since PR #82.
 - **Never start a print, and queue only when asked.** A queue item uses `manual_start: true`; the owner clears the plate and presses Start.
 - **Tile frame vs bed.** Tile x is corner to corner (±127), y flat to flat (±109.985, vertical in the print), z depth (0 to 15.24, open back at z 0). Bed X = 109.270 − z, Y = 128.000 − x, Z = 109.985 + y, so the build direction is tile +y. Convert every slicer event back to tile coordinates before judging it.
 
 ## 1. Build the matched tile
 
 ```
-cd /Users/billrahe/dev/.worktrees/print-lab/feat-faceted-hex-tear-roof
+cd /Users/billrahe/dev/print-lab   # or your worktree
 uv run python .claude/skills/rift-tile-print/scripts/build_matched_tile.py <out>/RIFT_10IN_seed3_tear_matched6in_tileframe.stl
 ```
 
