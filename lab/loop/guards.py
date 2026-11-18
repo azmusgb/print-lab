@@ -65,6 +65,8 @@ def check_experiment(paths: ProjectPaths, exp_id: str) -> CheckResult:
     from lab.loop.diff import actual_differences, factor_applied, reference_problems, undeclared
     e = load_experiment(paths, exp_id)
     q = load_question(paths, e["question"])
+    if e["status"] in ("printing", "answered", "abandoned"):
+        raise ValueError(f"{exp_id} is {e['status']}; it can't be checked for a print.")
     exps = all_experiments(paths)
     settings = project_settings(paths)
     tol = settings["plate_time_tolerance_pct"]
@@ -230,6 +232,8 @@ def approve(paths: ProjectPaths, exp_id: str, reason: str) -> dict:
         raise ValueError(f"{exp_id} is {r.status}; there's nothing to approve.")
     with record_lock(paths.locks, exp_id, f"lab exp approve {exp_id}"):
         e = load_experiment(paths, exp_id)
+        if e["status"] not in ("built", "ready", "needs_approval", "approved"):  # it may have moved since the check
+            raise ValueError(f"{exp_id} is {e['status']}; it can't be approved.")
         e["approval"] = {"build_id": r.build["id"], "artifact_sha256": r.build.get("artifact_sha256"),
                          "approved_reasons": [x.code for x in r.failed("needs_approval")], "by": "owner",
                          "at": now(), "reason": reason}
