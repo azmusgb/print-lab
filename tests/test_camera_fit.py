@@ -463,3 +463,10 @@ def test_a_token_with_non_ascii_characters_is_refused_with_401(app, how):
         req = urllib.request.Request(f"{base}/api/state", headers={"X-Token": "caf\u00e9"})
         e = code(lambda: urllib.request.urlopen(req))
     assert e[0] == 401
+
+
+def test_the_servers_bridge_timeout_outlasts_the_add_ins_longest_wait(app, monkeypatch):
+    """A change the server calls failed must not still be applied: the add-in may wait 2 x ANSWER_WAIT_S for Fusion."""
+    m, _ = app
+    addin = _addin_module(monkeypatch)
+    assert m.BRIDGE_TIMEOUT_S > 2 * addin.ANSWER_WAIT_S

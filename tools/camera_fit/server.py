@@ -29,6 +29,7 @@ BRIDGE = "http://127.0.0.1:38117"
 MAX_BODY = 4096
 BRIDGE_TOKEN = ""  # shared with the add-in through data/bridge-token
 HARD_MAX_MM = 300.0
+BRIDGE_TIMEOUT_S = 45  # longer than the add-in's longest wait (2 x 20 s), so "failed" here always means it was not applied
 _lock = threading.Lock()  # one change at a time; Fusion recomputes after each
 _start: dict[str, str] = {}  # parameter -> its expression when this server first saw it, for "Back to start"
 PLAIN = re.compile(r"^\s*(\d+(?:\.\d+)?)\s*mm\s*$")
@@ -51,7 +52,7 @@ ONLY = re.compile(r"^[A-Za-z0-9_:. -]{1,60}$")
 READONLY = {"coupon_len", "stand_x", "stand_y"}  # figures taken from a README, not design choices
 
 
-def bridge(path: str, body: dict | None = None, timeout: int = 25) -> bytes:
+def bridge(path: str, body: dict | None = None, timeout: int = BRIDGE_TIMEOUT_S) -> bytes:
     req = urllib.request.Request(BRIDGE + path, data=json.dumps(body).encode() if body is not None else None,
                                  headers={"Content-Type": "application/json", "X-Bridge-Token": BRIDGE_TOKEN})
     with urllib.request.urlopen(req, timeout=timeout) as r:
@@ -274,7 +275,7 @@ class Handler(BaseHTTPRequestHandler):
                 if only is not None and not ONLY.match(only):
                     return self._json(422, {"error": "bad component name"})
                 extra = f"&only={urllib.parse.quote(only)}" if only else ""
-                return self._send(200, bridge(f"/shot?view={view}&w={w}&h={h}{extra}", timeout=30), "image/png")
+                return self._send(200, bridge(f"/shot?view={view}&w={w}&h={h}{extra}"), "image/png")
         except ValueError:
             return self._json(422, {"error": "bad size"})
         except (urllib.error.URLError, OSError) as e:
