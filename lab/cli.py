@@ -117,7 +117,8 @@ def cmd_slice(args) -> int:
         if exp := link_slice_job(pdir, path, job.id):
             print(f"Slice job {job.id} recorded on {exp}")
         linked = True
-    except RecordError as e:  # the slice itself worked; say plainly that its job was not recorded
+    except (RecordError, zipfile.BadZipFile, ValueError) as e:  # bad record, 3MF or print_lab.json (JSONDecodeError is a
+        # ValueError); the slice itself worked, so say plainly that its job was not recorded
         print(f"Slice job {job.id} was NOT recorded: {e}", file=sys.stderr)
         linked = False
     info = zipfile.ZipFile(out).read("Metadata/slice_info.config").decode()

@@ -67,3 +67,25 @@ def test_status_does_not_print_incomplete_spend_as_fact(tmp_path):
     text = format_status_text(build_status(paths.root, include_printer=False))
     assert "continue" not in text and "Time 40" not in text
     assert "unknown" in text.lower()
+
+
+@pytest.mark.parametrize("meta", [b"not json", None])
+def test_slice_still_reported_when_the_file_cant_be_read_for_linking(tmp_path, monkeypatch, capsys, meta):
+    from argparse import Namespace
+    from types import SimpleNamespace
+    from lab import cli
+    from lab.adapters import bambu
+    src = tmp_path / "src.3mf"
+    if meta is None:
+        src.write_bytes(b"this is not a zip")  # corrupt 3MF
+    else:
+        with zipfile.ZipFile(src, "w") as z:
+            z.writestr("Metadata/print_lab.json", meta)  # corrupt print_lab.json
+    out = tmp_path / "out.gcode.3mf"
+    with zipfile.ZipFile(out, "w") as z:
+        z.writestr("Metadata/slice_info.config", '<x key="prediction" value="600"/><x key="weight" value="3.5"/>')
+    monkeypatch.setenv("LAB_HOME", str(tmp_path))
+    monkeypatch.setattr(bambu, "slice_with_job", lambda *a, **k: (out, SimpleNamespace(id="job-1")))
+    rc = cli.cmd_slice(Namespace(file=str(src), project="p", out_dir=None, plate=1))
+    cap = capsys.readouterr()
+    assert rc == 1 and "NOT recorded" in cap.err and "Sliced" in cap.out
