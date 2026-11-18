@@ -236,14 +236,17 @@ function card(p, signal) {
   // One queue per parameter, shared by every card of it (so a rebuilt card joins it, never races it). p.value is the last
   // value Fusion confirmed; q.target is what the owner has asked for, so quick steps build on each other. Changes go to
   // Fusion one at a time, in order, and a failure drops the steps queued behind it.
-  const q = (p.q ??= { target: p.value ?? p.start, inflight: 0, gen: 0, tail: Promise.resolve() });
+  const q = (p.q ??= { target: p.value ?? p.start, inflight: 0, gen: 0, tail: Promise.resolve(), error: "" });
+  let dirty = false;  // text typed in the box and not yet committed
   const sync = (detail) => {
     if (detail.busy) c.setAttribute("aria-busy", "true"); else c.removeAttribute("aria-busy");
-    if (!detail.revert && document.activeElement === box && box.value !== num(detail.value)) return;  // keep a value being typed
+    if (detail.error) err.textContent = detail.error; else if (detail.cleared) err.textContent = "";
+    if (dirty && !detail.revert) return;  // keep a value being typed
+    dirty = false;
     show(detail.value);
   };
-  const emit = (revert) => document.dispatchEvent(new CustomEvent("pb-value", { detail: { name: p.name, value: q.target, busy: q.inflight > 0, revert } }));
-  sync({ value: q.target, busy: q.inflight > 0 });
+  const emit = (extra) => document.dispatchEvent(new CustomEvent("pb-value", { detail: { name: p.name, value: q.target, busy: q.inflight > 0, error: q.error, ...extra } }));
+  sync({ value: q.target, busy: q.inflight > 0, error: q.error });
   document.addEventListener("pb-value", (e) => { if (e.detail.name === p.name) sync(e.detail); }, { signal });
   const send = async (v, reset) => {
     try {
@@ -256,8 +259,8 @@ function card(p, signal) {
     } catch (e) {
       const dropped = q.inflight - 1;  // the steps queued behind this one
       q.gen++; q.target = p.value ?? p.start;  // back to what Fusion holds
-      err.textContent = e.message + (dropped > 0 ? ` ${dropped} later ${dropped === 1 ? "step" : "steps"} not sent.` : "");
-      emit(true);
+      q.error = e.message + (dropped > 0 ? ` ${dropped} later ${dropped === 1 ? "step" : "steps"} not sent.` : "");
+      emit({ revert: true });
     }
   };
   const apply = (v, reset) => {
@@ -267,11 +270,13 @@ function card(p, signal) {
       err.textContent = `Use a number from ${num(p.lo)} to ${num(p.hi)}.`;
       return;
     }
-    q.target = v; q.inflight++; emit();
+    q.error = ""; dirty = false;
+    q.target = v; q.inflight++; emit({ cleared: true });
     const g = q.gen;
     q.tail = q.tail.then(() => (g === q.gen ? send(v, reset) : undefined)).finally(() => { q.inflight--; emit(); });
   };
   const commit = (v) => apply(v);
+  box.addEventListener("input", () => { dirty = true; });
   range.addEventListener("input", () => { box.value = num(Number(range.value)); });
   range.addEventListener("change", () => commit(Number(range.value)));
   box.addEventListener("change", () => commit(Number(box.value.replace(",", "."))));
