@@ -127,3 +127,9 @@ def test_cli_setup_set_needs_equals(proj, monkeypatch, capsys):
     rc = cli.main(["setup", "log", "nozzle_changed", "--set", "foo"])
     assert rc != 0 and "KEY=VALUE" in capsys.readouterr().err
     assert not proj.setup_log.exists() or not proj.setup_log.read_text().strip()
+
+
+@pytest.mark.parametrize("v", ["²", "٣", "①", "2.5", "0"])
+def test_plate_count_check_never_throws_a_raw_error(proj, v):
+    with pytest.raises(ValueError, match="whole object counts"):
+        plan_experiment(proj, "Q-009", **{**PLAN, "factor": "objects_on_plate", "values": [v], "expect": "A=A"})

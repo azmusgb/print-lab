@@ -137,7 +137,7 @@ def _check_values(factor: str, f: dict, values: list[str]) -> None:
             if not ok:
                 raise ValueError(f"--values for {factor} are numbers in {f.get('unit') or 'its unit'}, 0 or more; "
                                  f"not {s!r}.")
-        elif kind == "plate" and not (s.isdigit() and int(s) >= 1):
+        elif kind == "plate" and not (s.isascii() and s.isdigit() and int(s) >= 1):
             raise ValueError(f"--values for {factor} are whole object counts, 1 or more; not {s!r}.")
 
 

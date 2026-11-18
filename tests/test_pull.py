@@ -766,3 +766,26 @@ def test_pull_applies_a_qualification_continue_decision(project):
     assert state["current_reference"] is None
     assert state["history"][-1]["decision"] == "continue"
     assert fake.results[req["id"]]["status"] == "applied"
+
+
+@pytest.mark.parametrize("bad", [-5.0, float("nan"), float("inf")])
+def test_check_active_print_treats_an_unusable_elapsed_time_as_unknown(project, bad, capsys):
+    """A negative, NaN or infinite elapsed time must not abort the pull, be stored, or be retried forever: the run is
+    marked finished_unknown (as for a finish with no known end) and the reason is logged."""
+    from unittest.mock import patch
+    from lab.loop import telemetry
+    from lab.loop.commands import load_experiment
+    real = telemetry.get_run_telemetry
+    ws = {"online": True, "printer": {"state": "finish", "progress": 100, "minutesLeft": 0,
+                                      "seenAt": "2026-10-25T09:40:00+00:00"}}
+
+    def bad_elapsed(*a, **k):
+        return {**real(*a, **k), "elapsed_minutes": bad, "elapsed_source": "seen_at"}
+    with patch("lab.sync.fetch_workshop_status", return_value=ws), \
+         patch("lab.loop.telemetry.get_run_telemetry", bad_elapsed):
+        res = pull.check_active_print(project)
+        assert res["action"] == "finished_time_unknown" and res["elapsed_minutes"] is None
+        u = load_experiment(project, "E-009")["print_runs"][-1]["usage"]
+        assert u["actual_minutes"] is None and u["usage_source"] == "finished_unknown"
+        assert pull.check_active_print(project) is None
+    assert "unusable elapsed time" in capsys.readouterr().err
