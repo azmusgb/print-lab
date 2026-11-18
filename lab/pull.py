@@ -443,7 +443,7 @@ def flush_notices(notices: list, timeout: float = 10, now_ts: float | None = Non
 def check_active_print(paths: ProjectPaths, base: str | None = None, timeout: float = 5.0) -> dict | None:
     """Check if an active in-flight print has finished, and auto-record telemetry usage."""
     from lab.loop.commands import all_experiments
-    from lab.loop.telemetry import apply_telemetry, get_run_telemetry, mark_finished_unknown
+    from lab.loop.telemetry import apply_telemetry, get_run_telemetry, mark_finished_unknown, usable_minutes
 
     exps = all_experiments(paths)
     printing = next((e for e in exps.values() if e.get("status") == "printing"), None)
@@ -463,7 +463,10 @@ def check_active_print(paths: ProjectPaths, base: str | None = None, timeout: fl
         t = get_run_telemetry(paths, printing["id"], run_id=last_run["id"], base=base)
     except ValueError:
         return None
-    if t["is_finished"] and t["elapsed_minutes"] is None:
+    if t["is_finished"] and usable_minutes(t["elapsed_minutes"]) is None:
+        if t["elapsed_minutes"] is not None:
+            print(f"lab pull: ignored an unusable elapsed time ({t['elapsed_minutes']!r}) for {t['run_id']}; its "
+                  "usage is unknown", file=sys.stderr)
         mark_finished_unknown(paths, printing["id"], last_run["id"])
         return {"action": "finished_time_unknown", "experiment": printing["id"], "run": t["run_id"],
                 "elapsed_minutes": None, "grams": None}

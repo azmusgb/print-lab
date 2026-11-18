@@ -155,9 +155,16 @@ def parse_budget(text: str) -> dict:
         if m := re.fullmatch(r"(?:(\d+(?:\.\d+)?)h)?(?:(\d+(?:\.\d+)?)m)?", part):
             if not (m.group(1) or m.group(2)):
                 raise ValueError(f"'{part}' has no units. Write time as 3h, 180m or 2h30m and material as 100g.")
-            out["minutes"] = float(m.group(1) or 0) * 60 + float(m.group(2) or 0)
+            key, val = "minutes", float(m.group(1) or 0) * 60 + float(m.group(2) or 0)
         elif m := re.fullmatch(r"(\d+(?:\.\d+)?)g", part):
-            out["g"] = float(m.group(1))
+            key, val = "g", float(m.group(1))
         else:
             raise ValueError(f"'{part}' has no units. Write time as 3h, 180m or 2h30m and material as 100g.")
+        if val <= 0:
+            raise ValueError(f"'{part}': a budget must be more than 0. Write time as 3h, 180m or 2h30m and material "
+                             "as 100g.")
+        if out[key] is not None:
+            raise ValueError(f"'{text}' gives the {'time' if key == 'minutes' else 'material'} budget twice; give "
+                             "each once, e.g. 3h,100g.")
+        out[key] = val
     return {k: (int(v) if isinstance(v, float) and v.is_integer() else v) for k, v in out.items()}

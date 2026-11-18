@@ -1,5 +1,6 @@
 """What the experiment-loop commands do, apart from argument parsing (spec: Commands). Every mutation takes the
 record's lock, re-reads it, validates and writes it atomically."""
+import math
 import re
 
 from lab.loop import ledger
@@ -237,6 +238,9 @@ def record_usage(paths: ProjectPaths, run_id: str, *, failed_at_pct=None, minute
     if failed_at_pct is not None and not 1 <= failed_at_pct <= 99:
         raise ValueError("--failed-at is how far a failed print got, 1–99 %. For a print that finished, give "
                          "--minutes and --grams.")
+    for flag, x in (("--minutes", minutes), ("--grams", grams)):
+        if x is not None and not (math.isfinite(x) and x >= 0):
+            raise ValueError(f"{flag} is what the print used: a number, 0 or more; not {x!r}.")
     e, _ = find_run(paths, run_id)
     with record_lock(paths.locks, e["id"], f"lab exp usage {run_id}"):
         e = load_experiment(paths, e["id"])
@@ -302,6 +306,8 @@ def question_status(paths: ProjectPaths, qid: str) -> str:
 
 def new_question(paths: ProjectPaths, text: str, budget: dict) -> str:
     from lab.records.store import create_record
+    if not text or not text.strip():
+        raise ValueError("A question needs its text, e.g. `lab question new \"Why does the wall band?\"`.")
     for p in paths.questions.glob("Q-*.json"):
         q = load(p, "question")
         if q["status"] == "active" and q["question"].strip().lower() == text.strip().lower():

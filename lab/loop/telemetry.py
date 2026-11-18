@@ -1,5 +1,6 @@
 """Telemetry auto-fill (`lab exp telemetry <eid>`) using Local AI's printer status endpoint."""
 import datetime
+import math
 
 from lab import sync
 from lab.loop.commands import load_experiment, record_usage
@@ -99,6 +100,11 @@ def get_run_telemetry(paths: ProjectPaths, eid: str, *, run_id: str | None = Non
     }
 
 
+def usable_minutes(x) -> float | None:
+    """A time that can be stored: a finite number, 0 or more. Anything else is unknown."""
+    return x if isinstance(x, (int, float)) and math.isfinite(x) and x >= 0 else None
+
+
 def format_telemetry_text(t: dict) -> str:
     lines = []
     lines.append(f"Experiment: {t['experiment_id']}")
@@ -135,11 +141,11 @@ def apply_telemetry(paths: ProjectPaths, eid: str, *, run_id: str | None = None,
         # Minutes only from a live reading (Local AI saw it still printing) or the printer log's end; never from a
         # later look at an idle or failed printer. Grams are never the estimate times progress.
         live = t["printer_state"] in ("printing", "running")
-        minutes = t["elapsed_minutes"] if (live or t["elapsed_source"] == "printer_log") else None
+        minutes = usable_minutes(t["elapsed_minutes"]) if (live or t["elapsed_source"] == "printer_log") else None
         e = record_usage(paths, t["run_id"], failed_at_pct=failed_at_pct, minutes=minutes, grams=None,
                          usage_source="telemetry")
     elif t["is_finished"]:
-        if t["elapsed_minutes"] is None:
+        if usable_minutes(t["elapsed_minutes"]) is None:
             raise ValueError(f"{t['run_id']} has finished, but its end time isn't known: Local AI's last-seen time "
                              "isn't when the print ended. Take the time from the printer's history (Bambuddy or "
                              f"Bambu Handy) and run `lab exp usage {t['run_id']} --minutes N`, or run "
@@ -149,7 +155,7 @@ def apply_telemetry(paths: ProjectPaths, eid: str, *, run_id: str | None = None,
                          usage_source=t["elapsed_source"])
     else:  # forced partial: elapsed so far, no grams
         e = record_usage(paths, t["run_id"], failed_at_pct=None,
-                         minutes=t["elapsed_minutes"], grams=None, usage_source="telemetry")
+                         minutes=usable_minutes(t["elapsed_minutes"]), grams=None, usage_source="telemetry")
 
     return e, t
 

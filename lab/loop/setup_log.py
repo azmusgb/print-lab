@@ -10,6 +10,9 @@ from lab.records.schema import validate
 from lab.records.store import RecordError, now, record_lock
 
 
+KINDS = ("filament_dried", "vibration_calibration", "nozzle_changed", "spool_loaded", "correction")
+
+
 def _lines(paths: ProjectPaths) -> list[bytes]:
     return paths.setup_log.read_bytes().splitlines() if paths.setup_log.exists() else []
 
@@ -49,6 +52,9 @@ def _raw_events(paths: ProjectPaths) -> list[dict]:
 
 def append_event(paths: ProjectPaths, kind: str, fields: dict, supersedes: str | None = None,
                  replacement: dict | None = None) -> dict:
+    if kind not in KINDS:
+        raise ValueError(f"{kind!r} isn't a setup event kind; log one of {', '.join(KINDS)}. (A typo here would "
+                         "leave the baseline looking unrecorded.)")
     with record_lock(paths.printer / ".locks", "id-allocation", f"lab setup log {kind}"):
         events = _raw_events(paths)
         n = max((int(m.group(1)) for e in events if (m := re.match(r"SET-(\d+)", e.get("id", "")))), default=0)

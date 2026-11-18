@@ -2,6 +2,7 @@
 Commands, Test builders and the plate)."""
 import hashlib
 import json
+import math
 import re
 from pathlib import Path
 
@@ -97,6 +98,58 @@ def _check_sweep(paths: ProjectPaths, factor: str, f: dict, values: list[str], b
                          "own experiment.")
 
 
+def parse_z(text: str) -> tuple[float, float]:
+    """'60:72' -> (60.0, 72.0), the strip's bottom and top in mm."""
+    lo, sep, hi = (text or "").partition(":")
+    try:
+        if not sep:
+            raise ValueError
+        return float(lo), float(hi)
+    except ValueError:
+        raise ValueError(f"--z is the strip's bottom and top in mm, FROM:TO (e.g. 60:72); not {text!r}.") from None
+
+
+def parse_adjust(pairs: list[str] | None) -> dict:
+    """['key=value', ...] -> {key: value}; each needs a name and an '='."""
+    out = {}
+    for p in pairs or []:
+        k, sep, v = p.partition("=")
+        if not sep or not k.strip():
+            raise ValueError(f"--adjust is KEY=VALUE, a declared dependent adjustment; not {p!r}.")
+        out[k.strip()] = v
+    return out
+
+
+def _check_values(factor: str, f: dict, values: list[str]) -> None:
+    """Every value is something this factor's kind can build: a number for a setting, a whole count for a plate,
+    a name for a source or profile."""
+    kind = f["kind"]
+    for v in values:
+        s = str(v).strip()
+        if not s:
+            raise ValueError(f"--values for {factor} must each have a value, comma-separated (e.g. 250,80); "
+                             f"got {', '.join(repr(str(x)) for x in values)}.")
+        if kind == "setting":
+            try:
+                ok = math.isfinite(float(s)) and float(s) >= 0
+            except ValueError:
+                ok = False
+            if not ok:
+                raise ValueError(f"--values for {factor} are numbers in {f.get('unit') or 'its unit'}, 0 or more; "
+                                 f"not {s!r}.")
+        elif kind == "plate" and not (s.isascii() and s.isdigit() and int(s) >= 1):
+            raise ValueError(f"--values for {factor} are whole object counts, 1 or more; not {s!r}.")
+
+
+def _check_z(z) -> None:
+    try:
+        z0, z1 = float(z[0]), float(z[1])
+    except (TypeError, ValueError, IndexError):
+        raise ValueError(f"The strip's Z range is FROM:TO in mm; not {z!r}.") from None
+    if not (math.isfinite(z0) and math.isfinite(z1) and 0 <= z0 < z1):
+        raise ValueError(f"The strip's Z range is FROM:TO in mm with 0 <= FROM < TO (e.g. 60:72); got {z0:g}:{z1:g}.")
+
+
 def _parse_expect(text: str, ids: dict[str, str], refs: list[str]) -> dict | None:
     """'B>A:clearly' -> better/than/min_strength; 'A=B' -> same. Letters name this experiment's variants."""
     def vid(t):
@@ -126,6 +179,8 @@ def plan_experiment(paths: ProjectPaths, q_id: str, *, factor: str, values: list
     if settings["autonomy_level"] == 0:
         raise ValueError(f"{paths.name} is at autonomy level 0 (observe only); the lab can't plan experiments.")
     f = factor_info(factor)
+    _check_values(factor, f, list(values))
+    _check_z(z)
     if test_kind == "speed_sweep":
         _check_sweep(paths, factor, f, list(values), base)
     if f["kind"] not in ("setting", "plate", "model_version", "filament_profile"):
