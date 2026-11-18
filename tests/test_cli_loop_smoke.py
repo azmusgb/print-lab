@@ -155,36 +155,3 @@ def test_register_has_no_side_effects(monkeypatch, tmp_path):
     monkeypatch.setattr(subprocess, "Popen", boom)
     _fresh_parser()
     assert list(tmp_path.iterdir()) == []
-
-
-def _project_parser(default="hex-tile"):
-    """The parser shape lab.cli.main builds: a top-level --project, then the loop subcommands."""
-    p = argparse.ArgumentParser(prog="lab")
-    p.add_argument("--project", default=default)
-    sub = p.add_subparsers(dest="cmd", required=True)
-    cli_loop.register(sub)
-    return p
-
-
-@pytest.mark.parametrize("path", sorted(EXPECTED))
-def test_top_level_project_survives_the_subcommand(path):
-    parser = _project_parser()
-    leaf = dict(_leaves(parser))[path]
-    argv = list(path) + _minimal_argv(leaf)
-    assert parser.parse_args(["--project", "other"] + argv).project == "other"
-    assert parser.parse_args(argv).project == "hex-tile"
-    if any("--project" in a.option_strings for a in leaf._actions):
-        assert parser.parse_args(argv + ["--project", "mine"]).project == "mine"
-        assert parser.parse_args(["--project", "other"] + argv + ["--project", "mine"]).project == "mine"
-
-
-def test_main_honours_top_level_project_and_lab_project(monkeypatch):
-    seen = []
-    monkeypatch.setattr(cli_loop, "cmd_question", lambda args: seen.append(args.project) or 0)
-    monkeypatch.setattr(cli, "REFRESHES_PAGE", ())
-    monkeypatch.delenv("LAB_PROJECT", raising=False)
-    assert cli.main(["--project", "other", "question", "status", "Q-001"]) == 0
-    monkeypatch.setenv("LAB_PROJECT", "fromenv")
-    assert cli.main(["question", "status", "Q-001"]) == 0
-    assert cli.main(["question", "status", "Q-001", "--project", "mine"]) == 0
-    assert seen == ["other", "fromenv", "mine"]

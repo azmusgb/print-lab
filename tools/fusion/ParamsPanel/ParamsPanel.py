@@ -338,14 +338,20 @@ def _lab_bases():
 
 def _refresh_lab_status(project):
     """Read `lab status --json --no-printer` (read-only) into the cache: what the lab is waiting for."""
+    if project not in _lab_projects():
+        return
     uv = _uv()
-    if not uv or project not in _lab_projects():
+    if not uv:
+        _lab_status[project] = {'error': 'uv not found; print-lab checks need it (~/.local/bin/uv).'}
         return
     try:
         done = _run([uv, 'run', 'lab', '--project', project, 'status', '--json', '--no-printer'], 60)
         st = json.loads(done.stdout)
     except (subprocess.TimeoutExpired, ValueError):
         _lab_status[project] = {'error': 'lab status did not answer.'}
+        return
+    except OSError as err:
+        _lab_status[project] = {'error': f'Could not run uv: {err}.'}
         return
     q = st.get('question') or {}
     needs = sorted(st.get('needs') or [], key=lambda n: n.get('urgency', 9))

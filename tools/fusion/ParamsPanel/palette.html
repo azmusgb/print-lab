@@ -153,6 +153,7 @@
 const $ = (id) => document.getElementById(id);
 let state = null;
 let pendingField = null;
+let draftsOf = null; // the design the rendered fields belong to; unsent drafts only carry over within it
 let exporting = false;
 const originals = {}; // design name -> {param: expression when first seen this session}
 
@@ -250,9 +251,12 @@ function stepSize(e) { return e.shiftKey ? 10 : e.altKey ? 0.1 : 1; }
 function renderParams() {
   const main = $("main");
   const active = document.activeElement;
-  const keepFocus = active && active.dataset && active.dataset.name ? [active.dataset.name, active.className] : null;
+  const keepFocus = active && active.dataset && active.dataset.name
+    ? [active.dataset.name, active.className, active.getAttribute("aria-label")] : null;
   const drafts = {};
-  main.querySelectorAll("input.expr.dirty").forEach((i) => { drafts[i.dataset.name] = i.value; });
+  // An unsent draft belongs to the design it was typed in: Fusion switching documents drops it.
+  if (draftsOf === state.design) main.querySelectorAll("input.expr.dirty").forEach((i) => { drafts[i.dataset.name] = i.value; });
+  draftsOf = state.design;
 
   if (!state.design) { main.replaceChildren(el("p", "empty", "Open a design to see its parameters.")); return; }
   const params = state.params || [];
@@ -354,8 +358,12 @@ function renderParams() {
   }
   main.replaceChildren(ul);
   if (keepFocus) {
-    const sel = keepFocus[1].includes("expr") ? "input.expr" : keepFocus[1].includes("reset") ? "button.reset" : null;
-    const again = sel && document.querySelector(`${sel}[data-name="${CSS.escape(keepFocus[0])}"]`);
+    const at = (sel) => document.querySelector(`${sel}[data-name="${CSS.escape(keepFocus[0])}"]`);
+    const cls = keepFocus[1];
+    const same = cls.includes("expr") ? at("input.expr") : cls.includes("reset") ? at("button.reset")
+      : cls.includes("step") ? at(`button.step[aria-label="${CSS.escape(keepFocus[2] || "")}"]`) : null;
+    // A step button that can no longer be used hands focus to its row's field rather than dropping it to the page.
+    const again = same && !same.disabled ? same : cls.includes("step") ? at("input.expr") : null;
     if (again && !again.disabled) again.focus();
   }
 }
