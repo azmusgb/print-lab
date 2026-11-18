@@ -120,14 +120,18 @@ def format_status_text(st: dict) -> str:
         lines.append(f"Question: {q['id']} — {q['question']}")
         stop = q.get("stop") or {}
         lines.append(f"Status:   {stop.get('text', q.get('status', '-'))}")
-        spent, budget = q.get("spent") or {}, q.get("budget") or {}
-        sm, bm = spent.get("minutes", 0), budget.get("minutes", 0)
-        sg, bg = spent.get("g", 0), budget.get("g", 0)
-        pct_m = f" ({int(round(sm / bm * 100))}%)" if bm else ""
-        pct_g = f" ({int(round(sg / bg * 100))}%)" if bg else ""
-        lines.append(f"Budget:   Time {sm:g} / {bm:g} min{pct_m} · Material {sg:g} / {bg:g} g{pct_g}")
-        ev = q.get("evidence") or {}
-        lines.append(f"Streak:   {q.get('streak', 0)} uninformative · Evidence: {ev.get('informative', 0)} informative, {ev.get('uninformative', 0)} uninformative")
+        spent, budget = q.get("spent"), q.get("budget") or {}
+        bm, bg = budget.get("minutes", 0), budget.get("g", 0)
+        if spent is None:  # an unreadable record: the totals are unknown, not zero
+            lines.append(f"Budget:   Time unknown / {bm:g} min · Material unknown / {bg:g} g (a record can't be read)")
+            lines.append("Streak:   unknown · Evidence: unknown")
+        else:
+            sm, sg = spent.get("minutes", 0), spent.get("g", 0)
+            pct_m = f" ({int(round(sm / bm * 100))}%)" if bm else ""
+            pct_g = f" ({int(round(sg / bg * 100))}%)" if bg else ""
+            lines.append(f"Budget:   Time {sm:g} / {bm:g} min{pct_m} · Material {sg:g} / {bg:g} g{pct_g}")
+            ev = q.get("evidence") or {}
+            lines.append(f"Streak:   {q.get('streak', 0)} uninformative · Evidence: {ev.get('informative', 0)} informative, {ev.get('uninformative', 0)} uninformative")
     else:
         lines.append("Question: none yet")
 

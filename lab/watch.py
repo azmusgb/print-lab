@@ -67,10 +67,12 @@ def render_dashboard(st: dict) -> tuple[str, bool, dict | None]:
         lines.append(f"Question:    {q['id']} — {q['question'][:55]}")
         stop = q.get("stop") or {}
         lines.append(f"Status:      {stop.get('text', q.get('status', '-'))}")
-        spent, budget = q.get("spent") or {}, q.get("budget") or {}
-        sm, bm = spent.get("minutes", 0), budget.get("minutes", 0)
-        sg, bg = spent.get("g", 0), budget.get("g", 0)
-        lines.append(f"Budget:      Time {sm:g} / {bm:g} min · Material {sg:g} / {bg:g} g")
+        spent, budget = q.get("spent"), q.get("budget") or {}
+        bm, bg = budget.get("minutes", 0), budget.get("g", 0)
+        if spent is None:  # an unreadable record: the totals are unknown, not zero
+            lines.append(f"Budget:      Time unknown / {bm:g} min · Material unknown / {bg:g} g")
+        else:
+            lines.append(f"Budget:      Time {spent.get('minutes', 0):g} / {bm:g} min · Material {spent.get('g', 0):g} / {bg:g} g")
     else:
         lines.append("Question:    none")
 

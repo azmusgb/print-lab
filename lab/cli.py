@@ -109,18 +109,24 @@ def cmd_coupon(args) -> int:
 def cmd_slice(args) -> int:
     from lab.adapters.bambu import slice_with_job
     from lab.experiments import link_slice_job
+    from lab.records.store import RecordError
     path = Path(args.file)
     pdir = project_dir(args.project)
     out, job = slice_with_job(path, Path(args.out_dir) if args.out_dir else path.parent, args.plate, pdir / "jobs")
-    if exp := link_slice_job(pdir, path, job.id):
-        print(f"Slice job {job.id} recorded on {exp}")
+    try:
+        if exp := link_slice_job(pdir, path, job.id):
+            print(f"Slice job {job.id} recorded on {exp}")
+        linked = True
+    except RecordError as e:  # the slice itself worked; say plainly that its job was not recorded
+        print(f"Slice job {job.id} was NOT recorded: {e}", file=sys.stderr)
+        linked = False
     info = zipfile.ZipFile(out).read("Metadata/slice_info.config").decode()
     import re
     pred = re.search(r'key="prediction" value="(\d+)"', info)
     weight = re.search(r'key="weight" value="([\d.]+)"', info)
     t = int(pred.group(1)) if pred else 0
     print(f"Sliced {out}\nTime {t // 3600} h {t % 3600 // 60} min, filament {weight.group(1) if weight else '?'} g")
-    return 0
+    return 0 if linked else 1
 
 
 def cmd_quick_slice(args) -> int:
