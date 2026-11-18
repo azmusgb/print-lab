@@ -4,6 +4,7 @@ import sys
 import time
 from pathlib import Path
 
+from lab.loop.telemetry import printer_finished
 from lab.pull import notify_desktop
 from lab.status import _rel_time, build_status
 
@@ -31,7 +32,7 @@ def render_dashboard(st: dict) -> tuple[str, bool, dict | None]:
         left = pr.get("minutes_left")
         left_s = f"{left:g} min" if left is not None else "calculating..."
         ago = f"seen {_rel_time(pr.get('seen_at'))}" if pr.get("seen_at") else ""
-        is_finished = (state in ("finish", "idle", "success") or prog >= 100)
+        is_finished = printer_finished(state, prog, ap.get("started_at"))
 
         lines.append(f"State:       {state.upper()}  ({ago})")
         lines.append(f"Progress:    {format_progress_bar(prog)}")

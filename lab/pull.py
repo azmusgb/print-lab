@@ -264,100 +264,115 @@ def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]
             eid = req.get("experiment")
             run_id = req.get("run")
             payload = req.get("payload") or {}
+            try:
 
-            bad = (kind in ("verdict", "start", "approve", "abandon", "qualification", "one_tap") and not (isinstance(eid, str) and EXP_ID.fullmatch(eid))) \
-                or (run_id is not None and not (isinstance(run_id, str) and RUN_ID.fullmatch(run_id)))
-            if bad:
-                status, message = "refused", f"Not an experiment id or run id: {str(eid)[:40]!r}, {str(run_id)[:40]!r}."
-            elif kind == "verdict":
-                try:
-                    record_verdict(
-                        paths,
-                        eid,
-                        rank=payload.get("rank"),
-                        strength=payload.get("strength"),
-                        inconclusive=payload.get("inconclusive"),
-                        accept=None,
-                        defects=[],
-                        marks=[],
-                        witness=None,
-                        witness_override=None,
-                        anchors=[],
-                        not_about_target=False,
-                        note=payload.get("note"),
-                        replace=bool(payload.get("replace", False)),
-                        runs=[run_id] if run_id else None,
-                        lighting=verdict_lighting(payload),
-                        grades=payload.get("grades"),
-                    )
-                    status = "applied"
-                    message = f"{eid} answered"
-                except ValueError as e:
+                bad = (kind in ("verdict", "start", "approve", "abandon", "qualification", "one_tap") and not (isinstance(eid, str) and EXP_ID.fullmatch(eid))) \
+                    or (run_id is not None and not (isinstance(run_id, str) and RUN_ID.fullmatch(run_id)))
+                if bad:
+                    status, message = "refused", f"Not an experiment id or run id: {str(eid)[:40]!r}, {str(run_id)[:40]!r}."
+                elif kind == "verdict":
+                    try:
+                        record_verdict(
+                            paths,
+                            eid,
+                            rank=payload.get("rank"),
+                            strength=payload.get("strength"),
+                            inconclusive=payload.get("inconclusive"),
+                            accept=None,
+                            defects=[],
+                            marks=[],
+                            witness=None,
+                            witness_override=None,
+                            anchors=[],
+                            not_about_target=False,
+                            note=payload.get("note"),
+                            replace=bool(payload.get("replace", False)),
+                            runs=[run_id] if run_id else None,
+                            lighting=verdict_lighting(payload),
+                            grades=payload.get("grades"),
+                        )
+                        status = "applied"
+                        message = f"{eid} answered"
+                    except ValueError as e:
+                        status = "refused"
+                        message = str(e)
+                elif kind == "photos":
+                    try:
+                        status, message = _apply_photos(paths, project, run_id, payload, target, timeout)
+                    except urllib.error.HTTPError as e:
+                        status, message = "error", f"HTTP {e.code}"
+                    except (OSError, http.client.HTTPException) as e:  # URLError, timeout, closed or short connection
+                        status, message = "error", str(getattr(e, "reason", None) or e)[:200] or type(e).__name__
+                    if status == "error":  # not recorded and no result posted: the request is retried on the next run
+                        what = message if message.startswith(LOCAL_FAIL) else f"not fetched ({message})"
+                        print(f"lab pull: {target.name}: photos for {req_id} {what}", file=sys.stderr)
+                        results.append({"id": req_id, "status": status, "message": message})
+                        continue
+                elif kind == "observation":
+                    from lab.observe_cli import _check_experiment
+                    from lab.records import observations as obs
+                    try:
+                        snapshots = payload.get("snapshots") or []
+                        _check_experiment(paths, snapshots, eid)
+                        r = obs.record_session(paths, snapshots,
+                                               submitted={"actor": "owner", "channel": "phone", "request_id": req_id})
+                        status, message = "applied", f"Recorded {', '.join(r['ids'])}"
+                    except ValueError as e:
+                        status, message = "refused", str(e)
+                elif kind == "observation_correction":
+                    from lab.observe_cli import _check_experiment
+                    from lab.records import observations as obs
+                    try:
+                        _check_experiment(paths, [payload.get("snapshot") or {}], eid)
+                        rec = obs.correct(paths, payload.get("observation"), expected_rev=payload.get("expected_rev"),
+                                          snapshot=payload.get("snapshot") or {}, reason=payload.get("reason") or "",
+                                          submitted={"actor": "owner", "channel": "phone", "request_id": req_id})
+                        status, message = "applied", f"{rec['id']} is now at revision {obs.latest(rec)['rev']}"
+                    except obs.Conflict as e:
+                        status, message = "refused", f"conflict: {e}"
+                    except ValueError as e:
+                        status, message = "refused", str(e)
+                elif kind == "qualification":
+                    from lab.qualification import apply_request as apply_qualification, message as qualification_message
+                    try:
+                        rec = apply_qualification(paths, eid, payload, request_id=req_id)
+                        status, message = "applied", qualification_message(rec)
+                    except ValueError as e:
+                        status, message = "refused", str(e)
+                elif kind == "one_tap":
+                    try:
+                        status, message = "applied", _one_tap(paths, eid, payload, req.get("by"))
+                    except ValueError as e:
+                        status, message = "refused", str(e)
+                elif kind in ("start", "approve", "abandon"):
+                    try:
+                        status, message = "applied", _act(paths, kind, eid, req.get("run_seen"), payload)
+                    except ValueError as e:
+                        status, message = "refused", str(e)
+                else:
                     status = "refused"
-                    message = str(e)
-            elif kind == "photos":
-                try:
-                    status, message = _apply_photos(paths, project, run_id, payload, target, timeout)
-                except urllib.error.HTTPError as e:
-                    status, message = "error", f"HTTP {e.code}"
-                except (OSError, http.client.HTTPException) as e:  # URLError, timeout, closed or short connection
-                    status, message = "error", str(getattr(e, "reason", None) or e)[:200] or type(e).__name__
-                if status == "error":  # not recorded and no result posted: the request is retried on the next run
-                    what = message if message.startswith(LOCAL_FAIL) else f"not fetched ({message})"
-                    print(f"lab pull: {target.name}: photos for {req_id} {what}", file=sys.stderr)
-                    results.append({"id": req_id, "status": status, "message": message})
-                    continue
-            elif kind == "observation":
-                from lab.observe_cli import _check_experiment
-                from lab.records import observations as obs
-                try:
-                    snapshots = payload.get("snapshots") or []
-                    _check_experiment(paths, snapshots, eid)
-                    r = obs.record_session(paths, snapshots,
-                                           submitted={"actor": "owner", "channel": "phone", "request_id": req_id})
-                    status, message = "applied", f"Recorded {', '.join(r['ids'])}"
-                except ValueError as e:
-                    status, message = "refused", str(e)
-            elif kind == "observation_correction":
-                from lab.observe_cli import _check_experiment
-                from lab.records import observations as obs
-                try:
-                    _check_experiment(paths, [payload.get("snapshot") or {}], eid)
-                    rec = obs.correct(paths, payload.get("observation"), expected_rev=payload.get("expected_rev"),
-                                      snapshot=payload.get("snapshot") or {}, reason=payload.get("reason") or "",
-                                      submitted={"actor": "owner", "channel": "phone", "request_id": req_id})
-                    status, message = "applied", f"{rec['id']} is now at revision {obs.latest(rec)['rev']}"
-                except obs.Conflict as e:
-                    status, message = "refused", f"conflict: {e}"
-                except ValueError as e:
-                    status, message = "refused", str(e)
-            elif kind == "qualification":
-                from lab.qualification import apply_request as apply_qualification, message as qualification_message
-                try:
-                    rec = apply_qualification(paths, eid, payload, request_id=req_id)
-                    status, message = "applied", qualification_message(rec)
-                except ValueError as e:
-                    status, message = "refused", str(e)
-            elif kind == "one_tap":
-                try:
-                    status, message = "applied", _one_tap(paths, eid, payload, req.get("by"))
-                except ValueError as e:
-                    status, message = "refused", str(e)
-            elif kind in ("start", "approve", "abandon"):
-                try:
-                    status, message = "applied", _act(paths, kind, eid, req.get("run_seen"), payload)
-                except ValueError as e:
-                    status, message = "refused", str(e)
-            else:
-                status = "refused"
-                message = f"unknown request kind {kind}"
+                    message = f"unknown request kind {kind}"
+            except ValueError as e:  # a refusal the handler didn't word itself
+                status, message = "refused", str(e)
+            except (FileNotFoundError, NotADirectoryError) as e:  # a missing input won't appear by retrying: recorded below
+                status, message = "error", f"couldn't be applied: {type(e).__name__}: {e}"[:300]
+                print(f"lab pull: {target.name}: request {req_id} failed: {message}", file=sys.stderr)
+            except OSError as e:  # disk full, I/O: not recorded and no result posted, so the next run retries it
+                message = f"{type(e).__name__}: {e}"[:300]
+                print(f"lab pull: {target.name}: request {req_id} will be retried ({message})", file=sys.stderr)
+                results.append({"id": req_id, "status": "error", "message": message})
+                continue
+            except Exception as e:  # unexpected: recorded as an error (not a refusal) so it neither repeats nor blocks the rest
+                status, message = "error", f"couldn't be applied: {type(e).__name__}: {e}"[:300]
+                print(f"lab pull: {target.name}: request {req_id} failed: {message}", file=sys.stderr)
 
             record_entry = {"id": req_id, "status": status, "message": message, "at": now()}
             with open(requests_file, "a") as f:
                 f.write(json.dumps(record_entry) + "\n")
             handled.add(req_id)
 
-            _post_result(target, project, req_id, status, message, timeout)
+            # Local AI takes only applied / refused / duplicate; an error is posted as a refusal whose text says so.
+            _post_result(target, project, req_id, "refused" if status == "error" else status, message, timeout)
 
             results.append({"id": req_id, "status": status, "message": message})
 

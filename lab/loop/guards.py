@@ -90,8 +90,11 @@ def check_experiment(paths: ProjectPaths, exp_id: str) -> CheckResult:
         f"{paths.name} is at autonomy level {lvl}" if lvl < 2 else f"autonomy level {lvl}")
     refuted = [d for d in e.get("derived_from_result") or [] if d in exps and
                prediction_outcome(exps[d], comparison_validity(exps[d], exps, tol)) == "refuted"]
-    add("refuted_dependency", not refuted, "needs_approval",
-        f"relies on a conclusion that {', '.join(refuted)} refuted" if refuted else "no contradicted reasoning")
+    missing = [d for d in e.get("derived_from_result") or [] if d not in exps]
+    add("refuted_dependency", not refuted and not missing, "needs_approval",
+        f"relies on a conclusion that {', '.join(refuted)} refuted" if refuted
+        else f"relies on {', '.join(missing)}, which isn't in the project, so it can't be checked" if missing
+        else "no contradicted reasoning")
     if not build or not build.get("ok"):
         add("no_estimate", False, "rebuild", f"{exp_id} has no successful build; run `lab exp build {exp_id}`")
         return _finish(e, g, None, q, exps, tol, est)
