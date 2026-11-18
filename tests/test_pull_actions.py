@@ -189,3 +189,27 @@ def test_an_unexpected_error_is_recorded_as_error_not_as_a_refusal(proj, monkeyp
     out, fake = apply(proj, req("r1", "start", eid))
     assert out[0]["status"] == "error" and "KeyError" in out[0]["message"], out
     assert '"status": "error"' in (proj.root / "requests.jsonl").read_text()
+
+
+def test_every_posted_result_status_is_one_local_ai_accepts(proj, monkeypatch):
+    """Local AI takes only applied / refused / duplicate for a request result: an error is posted as a refusal whose
+    text says it couldn't be applied, while requests.jsonl keeps `error`."""
+    eid = built(proj)
+    bad_kind = req("r3", "nonsense", eid)
+    refused = req("r4", "abandon", eid, {"reason": "  "})
+    ok = req("r5", "abandon", eid, {"reason": "superseded"})
+    dup = req("r6", "abandon", eid, {"reason": "again"})
+    for i, r in enumerate((bad_kind, refused, ok, dup)):
+        r["at"] = f"2026-10-26T10:00:0{i + 1}Z"
+    (proj.root / "requests.jsonl").write_text(json.dumps({"id": "r6", "status": "applied"}) + "\n")
+    boom = req("r1", "start", eid)
+    boom["at"] = "2026-10-26T10:00:00Z"
+    real_act = pull._act
+    monkeypatch.setattr(pull, "_act", lambda paths, kind, *a, **k: (_ for _ in ()).throw(KeyError("boom"))
+                        if kind == "start" else real_act(paths, kind, *a, **k))
+    out, fake = apply(proj, boom, bad_kind, refused, ok, dup)
+    assert {"error", "refused", "duplicate"} <= {o["status"] for o in out}, out
+    assert set(fake.results) == {"r1", "r3", "r4", "r5", "r6"}
+    assert {v["status"] for v in fake.results.values()} <= {"applied", "refused", "duplicate"}
+    assert fake.results["r1"]["status"] == "refused" and "couldn't be applied: KeyError" in fake.results["r1"]["message"]
+    assert '"id": "r1", "status": "error"' in (proj.root / "requests.jsonl").read_text()

@@ -355,7 +355,7 @@ def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]
             except ValueError as e:  # a refusal the handler didn't word itself
                 status, message = "refused", str(e)
             except (FileNotFoundError, NotADirectoryError) as e:  # a missing input won't appear by retrying: recorded below
-                status, message = "error", f"couldn't be applied ({type(e).__name__}: {e})"[:300]
+                status, message = "error", f"couldn't be applied: {type(e).__name__}: {e}"[:300]
                 print(f"lab pull: {target.name}: request {req_id} failed: {message}", file=sys.stderr)
             except OSError as e:  # disk full, I/O: not recorded and no result posted, so the next run retries it
                 message = f"{type(e).__name__}: {e}"[:300]
@@ -363,7 +363,7 @@ def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]
                 results.append({"id": req_id, "status": "error", "message": message})
                 continue
             except Exception as e:  # unexpected: recorded as an error (not a refusal) so it neither repeats nor blocks the rest
-                status, message = "error", f"couldn't be applied ({type(e).__name__}: {e})"[:300]
+                status, message = "error", f"couldn't be applied: {type(e).__name__}: {e}"[:300]
                 print(f"lab pull: {target.name}: request {req_id} failed: {message}", file=sys.stderr)
 
             record_entry = {"id": req_id, "status": status, "message": message, "at": now()}
@@ -371,7 +371,8 @@ def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]
                 f.write(json.dumps(record_entry) + "\n")
             handled.add(req_id)
 
-            _post_result(target, project, req_id, status, message, timeout)
+            # Local AI takes only applied / refused / duplicate; an error is posted as a refusal whose text says so.
+            _post_result(target, project, req_id, "refused" if status == "error" else status, message, timeout)
 
             results.append({"id": req_id, "status": status, "message": message})
 
