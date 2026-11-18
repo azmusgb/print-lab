@@ -136,3 +136,80 @@ def test_verdict_and_photo_ids_are_checked_too(proj, kind, eid, run):
     r["run"] = run
     out, _ = apply(proj, r)
     assert out[0]["status"] == "refused" and "id" in out[0]["message"]
+
+
+def test_one_unexpected_failure_is_recorded_and_the_rest_are_processed(proj):
+    """A request that raises something other than ValueError (here a source file deleted after the build, which
+    start's fingerprint check reads) must not escape: it is recorded as failed with its reason, so it isn't retried
+    forever, and the requests sorted after it are still applied."""
+    eid = built(proj)
+    for src in (proj.root / "sources").iterdir():  # every model file start's fingerprints read
+        src.unlink()
+    bad = req("r1", "start", eid)
+    bad["at"] = "2026-10-26T10:00:00Z"
+    later = req("r2", "abandon", eid, {"reason": "superseded"})
+    later["at"] = "2026-10-26T10:00:01Z"
+    out, fake = apply(proj, bad, later)
+    assert [o["id"] for o in out] == ["r1", "r2"], out
+    assert out[0]["status"] == "error" and "FileNotFoundError" in out[0]["message"]
+    assert "r1" in (proj.root / "requests.jsonl").read_text()
+    assert set(fake.results) == {"r1", "r2"}
+
+
+def test_a_wrongly_typed_payload_does_not_stop_the_pull(proj):
+    eid = built(proj)
+    wrong = req("r1", "start", eid, ["not", "a", "dict"])
+    wrong["at"] = "2026-10-26T10:00:00Z"
+    later = req("r2", "abandon", eid, {"reason": "superseded"})
+    later["at"] = "2026-10-26T10:00:01Z"
+    out, _ = apply(proj, wrong, later)
+    assert [o["status"] for o in out] == ["error", "applied"], out
+
+
+def _raise(exc):
+    def f(*a, **k):
+        raise exc
+    return f
+
+
+def test_a_transient_os_error_is_not_recorded_so_the_request_is_retried(proj, monkeypatch):
+    eid = built(proj)
+    monkeypatch.setattr(pull, "_act", _raise(OSError(28, "No space left on device")))
+    later = req("r2", "abandon", eid, {"reason": "superseded"})
+    later["at"] = "2026-10-26T10:00:01Z"
+    out, fake = apply(proj, req("r1", "start", eid), later)
+    assert out[0]["id"] == "r1" and out[0]["status"] == "error", out
+    assert not (proj.root / "requests.jsonl").exists() or "r1" not in (proj.root / "requests.jsonl").read_text()
+    assert "r1" not in fake.results
+
+
+def test_an_unexpected_error_is_recorded_as_error_not_as_a_refusal(proj, monkeypatch):
+    eid = built(proj)
+    monkeypatch.setattr(pull, "_act", _raise(KeyError("boom")))
+    out, fake = apply(proj, req("r1", "start", eid))
+    assert out[0]["status"] == "error" and "KeyError" in out[0]["message"], out
+    assert '"status": "error"' in (proj.root / "requests.jsonl").read_text()
+
+
+def test_every_posted_result_status_is_one_local_ai_accepts(proj, monkeypatch):
+    """Local AI takes only applied / refused / duplicate for a request result: an error is posted as a refusal whose
+    text says it couldn't be applied, while requests.jsonl keeps `error`."""
+    eid = built(proj)
+    bad_kind = req("r3", "nonsense", eid)
+    refused = req("r4", "abandon", eid, {"reason": "  "})
+    ok = req("r5", "abandon", eid, {"reason": "superseded"})
+    dup = req("r6", "abandon", eid, {"reason": "again"})
+    for i, r in enumerate((bad_kind, refused, ok, dup)):
+        r["at"] = f"2026-10-26T10:00:0{i + 1}Z"
+    (proj.root / "requests.jsonl").write_text(json.dumps({"id": "r6", "status": "applied"}) + "\n")
+    boom = req("r1", "start", eid)
+    boom["at"] = "2026-10-26T10:00:00Z"
+    real_act = pull._act
+    monkeypatch.setattr(pull, "_act", lambda paths, kind, *a, **k: (_ for _ in ()).throw(KeyError("boom"))
+                        if kind == "start" else real_act(paths, kind, *a, **k))
+    out, fake = apply(proj, boom, bad_kind, refused, ok, dup)
+    assert {"error", "refused", "duplicate"} <= {o["status"] for o in out}, out
+    assert set(fake.results) == {"r1", "r3", "r4", "r5", "r6"}
+    assert {v["status"] for v in fake.results.values()} <= {"applied", "refused", "duplicate"}
+    assert fake.results["r1"]["status"] == "refused" and "couldn't be applied: KeyError" in fake.results["r1"]["message"]
+    assert '"id": "r1", "status": "error"' in (proj.root / "requests.jsonl").read_text()

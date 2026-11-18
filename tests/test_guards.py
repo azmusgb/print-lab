@@ -192,3 +192,12 @@ def test_geometry_warnings_show_in_the_check_without_blocking(proj):
     warn = [g for g in r.guards if g.code == "geometry_warning" and "parts-too-close" in g.message]
     assert warn and warn[0].result == "info" and "0.1 mm" in warn[0].message
     assert r.status == "ready" and "geometry_warning" in r.text
+
+
+def test_missing_dependency_is_not_treated_as_fine(proj):
+    """A derived_from_result id with no experiment file can't be checked, so it needs the owner's approval rather than
+    passing as "no contradicted reasoning"."""
+    eid = built(proj, lambda e: e.update(derived_from_result=["E-999"]))
+    r = check_experiment(proj, eid)
+    assert "refuted_dependency" in codes(r, "needs_approval")
+    assert any("E-999" in x.message for x in r.failed("needs_approval") if x.code == "refuted_dependency")

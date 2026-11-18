@@ -113,10 +113,12 @@ def test_object_names_are_escaped_in_print_files(tmp_path, hex_dir):
 
 def test_slice_job_is_linked_to_its_print_run(tmp_path):
     from lab.experiments import link_slice_job
+    from loop_fixtures import minimal_experiment
     pdir = tmp_path / "proj"
     (pdir / "experiments").mkdir(parents=True)
-    (pdir / "experiments" / "E-009.json").write_text(json.dumps(
-        {"id": "E-009", "print_runs": [{"id": "PR-020"}, {"id": "PR-021"}]}))
+    e = minimal_experiment("E-009")
+    e["print_runs"] = [{"id": "PR-020"}, {"id": "PR-021"}]
+    (pdir / "experiments" / "E-009.json").write_text(json.dumps(e))
     p = tmp_path / "x.3mf"
     with zipfile.ZipFile(p, "w") as z:
         z.writestr("Metadata/print_lab.json", json.dumps({"experiment_id": "E-009", "print_run_id": "PR-021"}))

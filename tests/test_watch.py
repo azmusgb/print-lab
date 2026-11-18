@@ -76,3 +76,22 @@ def test_watch_cli_once(capsys):
         assert rc == 0
         out = capsys.readouterr().out
         assert "Print Lab — hex-tile" in out
+
+
+def _active(state, started_at):
+    return {"project": "demo", "question": None, "needs": [],
+            "active_print": {"experiment_id": "E-001", "run_id": "PR-001-01", "build_id": "BLD-001-01",
+                             "started_at": started_at, "estimate": {"minutes": 100.0, "g": 30.0},
+                             "printer": {"state": state, "progress": 0, "minutes_left": None, "seen_at": None}}}
+
+
+def test_watch_does_not_call_an_idle_printer_finished_just_after_start():
+    from datetime import datetime, timedelta, timezone
+    _, finished, _ = render_dashboard(_active("idle", (datetime.now(timezone.utc) - timedelta(minutes=2)).isoformat()))
+    assert finished is False
+
+
+def test_watch_calls_an_idle_printer_finished_long_after_start():
+    from datetime import datetime, timedelta, timezone
+    _, finished, _ = render_dashboard(_active("idle", (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()))
+    assert finished is True

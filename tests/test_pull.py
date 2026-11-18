@@ -768,24 +768,31 @@ def test_pull_applies_a_qualification_continue_decision(project):
     assert fake.results[req["id"]]["status"] == "applied"
 
 
-@pytest.mark.parametrize("bad", [-5.0, float("nan"), float("inf")])
-def test_check_active_print_treats_an_unusable_elapsed_time_as_unknown(project, bad, capsys):
-    """A negative, NaN or infinite elapsed time must not abort the pull, be stored, or be retried forever: the run is
-    marked finished_unknown (as for a finish with no known end) and the reason is logged."""
+def test_idle_right_after_start_is_not_a_finished_print(project):
+    """`lab exp start` is recorded when the owner taps Start; the printer can still be idle for minutes (heating,
+    leveling). Idle then must not mark the run finished or announce it."""
+    from datetime import datetime, timedelta, timezone
     from unittest.mock import patch
-    from lab.loop import telemetry
-    from lab.loop.commands import load_experiment
-    real = telemetry.get_run_telemetry
-    ws = {"online": True, "printer": {"state": "finish", "progress": 100, "minutesLeft": 0,
-                                      "seenAt": "2026-10-25T09:40:00+00:00"}}
-
-    def bad_elapsed(*a, **k):
-        return {**real(*a, **k), "elapsed_minutes": bad, "elapsed_source": "seen_at"}
-    with patch("lab.sync.fetch_workshop_status", return_value=ws), \
-         patch("lab.loop.telemetry.get_run_telemetry", bad_elapsed):
-        res = pull.check_active_print(project)
-        assert res["action"] == "finished_time_unknown" and res["elapsed_minutes"] is None
-        u = load_experiment(project, "E-009")["print_runs"][-1]["usage"]
-        assert u["actual_minutes"] is None and u["usage_source"] == "finished_unknown"
+    from lab.loop.commands import load_experiment, save_experiment
+    e = load_experiment(project, "E-009")
+    e["print_runs"][-1]["started_at"] = (datetime.now(timezone.utc) - timedelta(minutes=2)).isoformat()
+    save_experiment(project, e)
+    ws = {"online": True, "printer": {"state": "idle", "progress": 0, "minutesLeft": 0,
+                                      "seenAt": datetime.now(timezone.utc).isoformat()}}
+    with patch("lab.sync.fetch_workshop_status", return_value=ws):
         assert pull.check_active_print(project) is None
-    assert "unusable elapsed time" in capsys.readouterr().err
+    assert load_experiment(project, "E-009")["print_runs"][-1]["usage"] is None
+
+
+def test_idle_long_after_start_is_still_a_finished_print(project):
+    from datetime import datetime, timedelta, timezone
+    from unittest.mock import patch
+    from lab.loop.commands import load_experiment, save_experiment
+    e = load_experiment(project, "E-009")
+    e["print_runs"][-1]["started_at"] = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
+    save_experiment(project, e)
+    ws = {"online": True, "printer": {"state": "idle", "progress": 0, "minutesLeft": 0,
+                                      "seenAt": datetime.now(timezone.utc).isoformat()}}
+    with patch("lab.sync.fetch_workshop_status", return_value=ws):
+        res = pull.check_active_print(project)
+    assert res and res["action"] == "finished_time_unknown"

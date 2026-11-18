@@ -154,7 +154,7 @@ body[data-tab="assembly"] #banner, body[data-tab="assembly"] #doc { display: non
 "use strict";
 const TOKEN = new URLSearchParams(location.search).get("t") || "";
 const $ = (id) => document.getElementById(id);
-let view = "iso", shotSeq = 0, shotTimer = 0, busy = 0, step = 0, comps = [], byName = {};
+let view = "iso", shotSeq = 0, shotTimer = 0, step = 0, comps = [], byName = {};
 
 async function call(path, body) {
   const url = path + (path.includes("?") ? "&" : "?") + "t=" + encodeURIComponent(TOKEN);
@@ -225,36 +225,48 @@ function card(p) {
     c.dataset.changed = String(Math.abs(v - p.start) > 0.004);
     back.disabled = c.dataset.changed !== "true";
   };
-  show(p.value ?? p.start);
-  document.addEventListener("pb-value", (e) => { if (e.detail.name === p.name && c.isConnected) show(e.detail.value); });
-  const apply = async (v, reset) => {
+  // p.value is the last value Fusion confirmed (shared by every card of this parameter); target is what the owner has asked
+  // for, so quick steps build on each other; changes go to Fusion one at a time, in order.
+  let target = p.value ?? p.start, inflight = 0, gen = 0, tail = Promise.resolve();
+  show(target);
+  const onValue = (e) => {
+    if (!c.isConnected) return document.removeEventListener("pb-value", onValue);  // this card was rebuilt away
+    if (e.detail.name === p.name) { show(e.detail.value); if (!inflight) target = e.detail.value; }
+  };
+  document.addEventListener("pb-value", onValue);
+  const send = async (v, reset) => {
+    try {
+      const r = await (await call(reset ? "/api/reset" : "/api/set", { name: p.name, value: v })).json();
+      p.value = reset ? p.start : v;
+      if (inflight === 1) show(p.value);
+      document.dispatchEvent(new CustomEvent("pb-value", { detail: { name: p.name, value: p.value } }));
+      banner({ failed: r.failed });
+      refreshFacts();
+      shotSoon();
+    } catch (e) {
+      gen++; target = p.value ?? p.start;  // drop the steps queued behind the failed one, go back to what Fusion holds
+      err.textContent = e.message;
+      show(target);
+    }
+  };
+  const apply = (v, reset) => {
     err.textContent = "";
     if (!Number.isFinite(v) || v < p.lo || v > p.hi) {
       box.setAttribute("aria-invalid", "true");
       err.textContent = `Use a number from ${num(p.lo)} to ${num(p.hi)}.`;
       return;
     }
-    c.setAttribute("aria-busy", "true"); busy++;
-    try {
-      const r = await (await call(reset ? "/api/reset" : "/api/set", { name: p.name, value: v })).json();
-      show(reset ? p.start : v);
-      document.dispatchEvent(new CustomEvent("pb-value", { detail: { name: p.name, value: reset ? p.start : v } }));
-      banner({ failed: r.failed });
-      refreshFacts();
-      shotSoon();
-    } catch (e) {
-      err.textContent = e.message;
-      show(p.value ?? p.start);
-    } finally {
-      c.removeAttribute("aria-busy"); busy--;
-    }
+    target = v; show(v);
+    c.setAttribute("aria-busy", "true"); inflight++;
+    const g = gen;
+    tail = tail.then(() => (g === gen ? send(v, reset) : undefined)).finally(() => { if (!--inflight) c.removeAttribute("aria-busy"); });
   };
   const commit = (v) => apply(v);
   range.addEventListener("input", () => { box.value = num(Number(range.value)); });
   range.addEventListener("change", () => commit(Number(range.value)));
   box.addEventListener("change", () => commit(Number(box.value.replace(",", "."))));
-  c.querySelector(".dec").addEventListener("click", () => commit(Math.max(p.lo, Math.round((Number(box.value) - 0.1) * 100) / 100)));
-  c.querySelector(".inc").addEventListener("click", () => commit(Math.min(p.hi, Math.round((Number(box.value) + 0.1) * 100) / 100)));
+  c.querySelector(".dec").addEventListener("click", () => commit(Math.max(p.lo, Math.round((target - 0.1) * 100) / 100)));
+  c.querySelector(".inc").addEventListener("click", () => commit(Math.min(p.hi, Math.round((target + 0.1) * 100) / 100)));
   back.addEventListener("click", () => apply(p.start, true));
   return c;
 }

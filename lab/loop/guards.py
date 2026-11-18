@@ -65,6 +65,8 @@ def check_experiment(paths: ProjectPaths, exp_id: str) -> CheckResult:
     from lab.loop.diff import actual_differences, factor_applied, reference_problems, undeclared
     e = load_experiment(paths, exp_id)
     q = load_question(paths, e["question"])
+    if e["status"] in ("printing", "answered", "abandoned"):
+        raise ValueError(f"{exp_id} is {e['status']}; it can't be checked for a print.")
     exps = all_experiments(paths)
     settings = project_settings(paths)
     tol = settings["plate_time_tolerance_pct"]
@@ -88,8 +90,11 @@ def check_experiment(paths: ProjectPaths, exp_id: str) -> CheckResult:
         f"{paths.name} is at autonomy level {lvl}" if lvl < 2 else f"autonomy level {lvl}")
     refuted = [d for d in e.get("derived_from_result") or [] if d in exps and
                prediction_outcome(exps[d], comparison_validity(exps[d], exps, tol)) == "refuted"]
-    add("refuted_dependency", not refuted, "needs_approval",
-        f"relies on a conclusion that {', '.join(refuted)} refuted" if refuted else "no contradicted reasoning")
+    missing = [d for d in e.get("derived_from_result") or [] if d not in exps]
+    add("refuted_dependency", not refuted and not missing, "needs_approval",
+        f"relies on a conclusion that {', '.join(refuted)} refuted" if refuted
+        else f"relies on {', '.join(missing)}, which isn't in the project, so it can't be checked" if missing
+        else "no contradicted reasoning")
     if not build or not build.get("ok"):
         add("no_estimate", False, "rebuild", f"{exp_id} has no successful build; run `lab exp build {exp_id}`")
         return _finish(e, g, None, q, exps, tol, est)
@@ -230,6 +235,8 @@ def approve(paths: ProjectPaths, exp_id: str, reason: str) -> dict:
         raise ValueError(f"{exp_id} is {r.status}; there's nothing to approve.")
     with record_lock(paths.locks, exp_id, f"lab exp approve {exp_id}"):
         e = load_experiment(paths, exp_id)
+        if e["status"] not in ("built", "ready", "needs_approval", "approved"):  # it may have moved since the check
+            raise ValueError(f"{exp_id} is {e['status']}; it can't be approved.")
         e["approval"] = {"build_id": r.build["id"], "artifact_sha256": r.build.get("artifact_sha256"),
                          "approved_reasons": [x.code for x in r.failed("needs_approval")], "by": "owner",
                          "at": now(), "reason": reason}

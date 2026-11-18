@@ -264,7 +264,15 @@ def _finding(e: dict, root: Path) -> dict:
 
 def _question(q: dict, exps: dict, tol: float) -> dict:
     mine = {i: exps[i] for i in q["experiments"] if i in exps}
-    s, b = ledger.spent(q, exps), ledger.budget(q)
+    b = ledger.budget(q)
+    missing = sorted({i for i in q["experiments"] if i not in exps})
+    if missing:  # a record the question counts can't be read: its totals and stop state would be partial, so unknown
+        return {"id": q["id"], "question": q["question"], "status": q["status"], "budget": b, "spent": None,
+                "reserved": None, "next": None,
+                "stop": {"kind": "unknown", "text": f"unknown: {', '.join(missing)} can't be read (see problems)"},
+                "streak": None, "evidence": None, "experiments": q["experiments"], "plans": q.get("plans") or [],
+                "answered": None}
+    s = ledger.spent(q, exps)
     nxt = next((e for e in mine.values() if e["status"] in ("built", "ready", "needs_approval", "approved")), None)
     est = (_last_build(nxt) or {}).get("estimate") if nxt else None
     if st := ledger.owner_stopped(q):

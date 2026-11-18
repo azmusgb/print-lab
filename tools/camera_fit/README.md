@@ -32,7 +32,7 @@ body that isn't JSON, and an expression that isn't a plain `N mm`.
 
 The server listens on every interface so the phone can reach it, and anything with the link can change the placeholder sizes
 while it runs. Stop it (Ctrl+C) when you're done. Standard library only; tests: `tests/test_camera_fit.py` (a fake bridge,
-no Fusion).
+no Fusion) and `tests/test_camera_fit_page.py` (the page in Playwright; needs `PLAYWRIGHT_NODE_MODULES`, else skipped).
 
 ## Checked
 
