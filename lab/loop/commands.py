@@ -430,6 +430,10 @@ def set_criteria(paths: ProjectPaths, eid: str, specs: list[str]) -> dict:
 def abandon(paths: ProjectPaths, eid: str, reason: str) -> dict:
     with record_lock(paths.locks, eid, f"lab exp abandon {eid}"):
         e = load_experiment(paths, eid)
+        if e["status"] in ("answered", "abandoned"):
+            raise ValueError(f"{eid} is {e['status']}; "
+                             + ("it has a verdict, so it can't be abandoned." if e["status"] == "answered"
+                                else "it was already abandoned."))
         e.update(status="abandoned", abandoned_reason=reason)
         return save_experiment(paths, e)
 
