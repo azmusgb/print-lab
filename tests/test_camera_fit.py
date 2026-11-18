@@ -335,8 +335,8 @@ def test_an_oversized_or_malformed_body_is_refused(app):
 
 # --- the add-in's own gate (adsk stubbed: the HTTP handler never touches Fusion before it has checked the request) ---
 
-@pytest.fixture
-def addin(tmp_path, monkeypatch):
+def _addin_module(monkeypatch):
+    """PhoneBridge.py loaded with adsk stubbed."""
     import sys
     import types
     stub = types.ModuleType("adsk")
@@ -351,6 +351,12 @@ def addin(tmp_path, monkeypatch):
     spec = importlib.util.spec_from_file_location("phonebridge_under_test", path)
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
+    return m
+
+
+@pytest.fixture
+def addin(tmp_path, monkeypatch):
+    m = _addin_module(monkeypatch)
     (tmp_path / "bridge-token").write_text("secret-bridge")
     m.TOKEN_FILE = str(tmp_path / "bridge-token")
     asked = []
@@ -411,3 +417,49 @@ def test_the_add_in_checks_a_component_name_and_needs_the_token_for_the_walkthro
     assert raw(port, "GET", "/shot?view=iso&only=a%3Bb") == 422
     assert raw(port, "GET", "/shot?view=iso&only=carrier%3A1") == 200
     assert asked[-1]["only"] == "carrier:1"
+
+
+def test_a_call_that_timed_out_is_cancelled_and_never_runs_on_a_later_event(monkeypatch):
+    import types
+    m = _addin_module(monkeypatch)
+    ran = []
+    m._app = types.SimpleNamespace(fireCustomEvent=lambda *a: None)
+    m._set = lambda name, expression: ran.append((name, expression)) or {"ok": True}
+    m.ANSWER_WAIT_S = 0.05  # Fusion is busy: nothing handles the event within the wait
+    with pytest.raises(TimeoutError):
+        m._ask(op="set", name="knob_d", expression="31 mm")
+    m._Main().notify(None)  # Fusion's next custom event, later
+    assert ran == []
+
+
+def test_a_call_still_in_the_queue_is_skipped_but_the_next_one_runs(monkeypatch):
+    import types
+    m = _addin_module(monkeypatch)
+    ran = []
+    m._app = types.SimpleNamespace(fireCustomEvent=lambda *a: None)
+    m._set = lambda name, expression: ran.append(expression) or {"ok": True}
+    m.ANSWER_WAIT_S = 0.05
+    with pytest.raises(TimeoutError):
+        m._ask(op="set", name="knob_d", expression="31 mm")
+    t = threading.Thread(target=lambda: ran.append(m._ask(op="set", name="knob_d", expression="22 mm")))
+    t.start()
+    m.ANSWER_WAIT_S = 5
+    for _ in range(100):  # wait for the second call to be queued, then let Fusion handle both events
+        if m._calls.qsize() == 2:
+            break
+        threading.Event().wait(0.02)
+    m._Main().notify(None)
+    m._Main().notify(None)
+    t.join(5)
+    assert ran[0] == "22 mm"
+
+
+@pytest.mark.parametrize("how", ["query", "header"])
+def test_a_token_with_non_ascii_characters_is_refused_with_401(app, how):
+    _, base = app
+    if how == "query":
+        e = code(lambda: urllib.request.urlopen(f"{base}/api/state?t=%C3%A9"))
+    else:
+        req = urllib.request.Request(f"{base}/api/state", headers={"X-Token": "caf\u00e9"})
+        e = code(lambda: urllib.request.urlopen(req))
+    assert e[0] == 401

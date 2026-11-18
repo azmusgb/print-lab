@@ -38,6 +38,8 @@ _server = None
 _event = None
 _handler = None
 _calls: "queue.Queue[dict]" = queue.Queue()
+_gate = threading.Lock()  # a call is either cancelled by its caller or started by Fusion, never both
+ANSWER_WAIT_S = 20
 
 
 def _design():
@@ -145,6 +147,10 @@ class _Main(adsk.core.CustomEventHandler):
             call = _calls.get_nowait()
         except queue.Empty:
             return
+        with _gate:
+            if call.get("cancelled"):  # its caller gave up (timed out); a change reported as failed must not run later
+                return
+            call["started"] = True
         try:
             if call["op"] == "params":
                 call["result"] = _params()
@@ -166,8 +172,13 @@ def _ask(**call):
     call["done"] = threading.Event()
     _calls.put(call)
     _app.fireCustomEvent(EVENT_ID, "")
-    if not call["done"].wait(20):
-        raise TimeoutError("Fusion didn't answer in 20 s (is a command open?).")
+    if not call["done"].wait(ANSWER_WAIT_S):
+        with _gate:
+            if not call.get("started"):
+                call["cancelled"] = True  # still queued: drop it so it never runs after we reported failure
+                raise TimeoutError(f"Fusion didn't answer in {ANSWER_WAIT_S} s (is a command open?).")
+        if not call["done"].wait(ANSWER_WAIT_S):  # already running: give it one more wait rather than abandon it
+            raise TimeoutError(f"Fusion didn't finish in {2 * ANSWER_WAIT_S} s (is a command open?).")
     if "error" in call:
         raise RuntimeError(call["error"])
     return call["result"]
