@@ -60,7 +60,10 @@ try {
     await page.addInitScript(() => {  // count live "pb-value" listeners on the document
       window.__pb = 0;
       const add = document.addEventListener.bind(document), rm = document.removeEventListener.bind(document);
-      document.addEventListener = (t, ...a) => { if (t === "pb-value") window.__pb++; return add(t, ...a); };
+      document.addEventListener = (t, fn, o) => {
+        if (t === "pb-value") { window.__pb++; o?.signal?.addEventListener("abort", () => { window.__pb--; }); }
+        return add(t, fn, o);
+      };
       document.removeEventListener = (t, ...a) => { if (t === "pb-value") window.__pb--; return rm(t, ...a); };
     });
     await page.goto(url);
@@ -91,6 +94,38 @@ try {
   check("F2 two quick + clicks make two steps", fake.value === 20.2 && (await shown(page)) === "20.2", `fusion=${fake.value} box=${await shown(page)} sets=${fake.sets}`);
   await page.context().close();
 
+  // F2b: while steps are queued the card shows its pending target, not the step that just finished
+  fake.value = 20; fake.sets = []; fake.delay = 300;
+  page = await open();
+  await card(page).locator(".inc").click(); await card(page).locator(".inc").click();
+  await page.waitForTimeout(450);  // first step done (~300 ms), second still in flight
+  const mid = await shown(page);
+  await page.waitForTimeout(800);
+  check("F2b the card keeps showing the pending target between queued steps", mid === "20.2", `box=${mid}`);
+  await page.context().close();
+
+  // F2c: a card rebuilt while steps are queued joins the same queue instead of racing it
+  fake.value = 20; fake.sets = []; fake.delay = 400;
+  page = await open();
+  await card(page).locator(".inc").click(); await card(page).locator(".inc").click();
+  await page.locator("#next").click(); await page.locator("#next").click();
+  const sc = page.locator("#stepparams .card[data-name=knob_d]");
+  const startVal = await sc.locator(".val input").inputValue();
+  await sc.locator(".inc").click();
+  await page.waitForTimeout(2000); await idle(page);
+  check("F2c a rebuilt card starts from the pending target and queues behind it",
+    startVal === "20.2" && fake.sets.join() === "20.1 mm,20.2 mm,20.3 mm", `start=${startVal} sets=${fake.sets}`);
+  await page.context().close();
+
+  // F4: queued steps dropped by a failure are said to be dropped
+  fake.value = 20; fake.sets = []; fake.delay = 200; fake.failNext = true;
+  page = await open();
+  await card(page).locator(".inc").click(); await card(page).locator(".inc").click();
+  await page.waitForTimeout(900); await idle(page);
+  const msg = await card(page).locator(".err").textContent();
+  check("F4 a failure says later steps were not sent and reverts", /not sent/.test(msg) && (await shown(page)) === "20" && fake.sets.length === 0, `msg=${msg} box=${await shown(page)} sets=${fake.sets}`);
+  await page.context().close();
+
   // F6: rebuilding the walkthrough's cards does not leave their listeners on the document
   fake.value = 20; fake.sets = []; fake.delay = 0;
   page = await open();
@@ -99,7 +134,6 @@ try {
     await page.locator("#prev").click(); await page.locator("#prev").click();
   }
   await page.locator("#next").click(); await page.locator("#next").click();
-  await page.evaluate(() => document.dispatchEvent(new CustomEvent("pb-value", { detail: { name: "knob_d", value: 20 } })));
   const live = await page.evaluate(() => window.__pb), cards = await page.locator(".card").count();
   check("F6 no listener outlives its card", live <= cards, `listeners=${live} cards=${cards}`);
   await page.context().close();

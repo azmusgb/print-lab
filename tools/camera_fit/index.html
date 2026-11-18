@@ -201,9 +201,17 @@ function only() {
 }
 function shotSoon() { clearTimeout(shotTimer); shotTimer = setTimeout(shot, 400); }
 
+// The cards of one host are rebuilt together: their pb-value listeners go with the previous render's AbortController.
+const renders = {};
+function cards(host, ps) {
+  renders[host]?.abort();
+  const ac = renders[host] = new AbortController();
+  return ps.map((p) => card(p, ac.signal));
+}
+
 function num(v) { return Number.isFinite(v) ? String(Math.round(v * 100) / 100) : ""; }
 
-function card(p) {
+function card(p, signal) {
   const c = document.createElement("div");
   c.className = "card";
   c.dataset.name = p.name;
@@ -225,28 +233,31 @@ function card(p) {
     c.dataset.changed = String(Math.abs(v - p.start) > 0.004);
     back.disabled = c.dataset.changed !== "true";
   };
-  // p.value is the last value Fusion confirmed (shared by every card of this parameter); target is what the owner has asked
-  // for, so quick steps build on each other; changes go to Fusion one at a time, in order.
-  let target = p.value ?? p.start, inflight = 0, gen = 0, tail = Promise.resolve();
-  show(target);
-  const onValue = (e) => {
-    if (!c.isConnected) return document.removeEventListener("pb-value", onValue);  // this card was rebuilt away
-    if (e.detail.name === p.name) { show(e.detail.value); if (!inflight) target = e.detail.value; }
+  // One queue per parameter, shared by every card of it (so a rebuilt card joins it, never races it). p.value is the last
+  // value Fusion confirmed; q.target is what the owner has asked for, so quick steps build on each other. Changes go to
+  // Fusion one at a time, in order, and a failure drops the steps queued behind it.
+  const q = (p.q ??= { target: p.value ?? p.start, inflight: 0, gen: 0, tail: Promise.resolve() });
+  const sync = (detail) => {
+    if (detail.busy) c.setAttribute("aria-busy", "true"); else c.removeAttribute("aria-busy");
+    if (!detail.revert && document.activeElement === box && box.value !== num(detail.value)) return;  // keep a value being typed
+    show(detail.value);
   };
-  document.addEventListener("pb-value", onValue);
+  const emit = (revert) => document.dispatchEvent(new CustomEvent("pb-value", { detail: { name: p.name, value: q.target, busy: q.inflight > 0, revert } }));
+  sync({ value: q.target, busy: q.inflight > 0 });
+  document.addEventListener("pb-value", (e) => { if (e.detail.name === p.name) sync(e.detail); }, { signal });
   const send = async (v, reset) => {
     try {
       const r = await (await call(reset ? "/api/reset" : "/api/set", { name: p.name, value: v })).json();
       p.value = reset ? p.start : v;
-      if (inflight === 1) show(p.value);
-      document.dispatchEvent(new CustomEvent("pb-value", { detail: { name: p.name, value: p.value } }));
+      emit();
       banner({ failed: r.failed });
       refreshFacts();
       shotSoon();
     } catch (e) {
-      gen++; target = p.value ?? p.start;  // drop the steps queued behind the failed one, go back to what Fusion holds
-      err.textContent = e.message;
-      show(target);
+      const dropped = q.inflight - 1;  // the steps queued behind this one
+      q.gen++; q.target = p.value ?? p.start;  // back to what Fusion holds
+      err.textContent = e.message + (dropped > 0 ? ` ${dropped} later ${dropped === 1 ? "step" : "steps"} not sent.` : "");
+      emit(true);
     }
   };
   const apply = (v, reset) => {
@@ -256,17 +267,16 @@ function card(p) {
       err.textContent = `Use a number from ${num(p.lo)} to ${num(p.hi)}.`;
       return;
     }
-    target = v; show(v);
-    c.setAttribute("aria-busy", "true"); inflight++;
-    const g = gen;
-    tail = tail.then(() => (g === gen ? send(v, reset) : undefined)).finally(() => { if (!--inflight) c.removeAttribute("aria-busy"); });
+    q.target = v; q.inflight++; emit();
+    const g = q.gen;
+    q.tail = q.tail.then(() => (g === q.gen ? send(v, reset) : undefined)).finally(() => { q.inflight--; emit(); });
   };
   const commit = (v) => apply(v);
   range.addEventListener("input", () => { box.value = num(Number(range.value)); });
   range.addEventListener("change", () => commit(Number(range.value)));
   box.addEventListener("change", () => commit(Number(box.value.replace(",", "."))));
-  c.querySelector(".dec").addEventListener("click", () => commit(Math.max(p.lo, Math.round((target - 0.1) * 100) / 100)));
-  c.querySelector(".inc").addEventListener("click", () => commit(Math.min(p.hi, Math.round((target + 0.1) * 100) / 100)));
+  c.querySelector(".dec").addEventListener("click", () => commit(Math.max(p.lo, Math.round((q.target - 0.1) * 100) / 100)));
+  c.querySelector(".inc").addEventListener("click", () => commit(Math.min(p.hi, Math.round((q.target + 0.1) * 100) / 100)));
   back.addEventListener("click", () => apply(p.start, true));
   return c;
 }
@@ -293,7 +303,7 @@ function renderFacts(rebuild = true) {
   $("alone-wrap").hidden = !c;
   if (!c) {
     f.textContent = comps.length ? `${comps.length} parts: ${comps.map((x) => x.label).join(", ")}. Step through them with Next.` : "No parts found in this design.";
-    $("stepparams").replaceChildren();
+    $("stepparams").replaceChildren(...cards("stepparams", []));
     return;
   }
   const rows = [["Part", c.name], ["Size (x × y × z)", c.size_mm.map(fmt).join(" × ") + " mm"], ["Volume", fmt(c.volume_mm3) + " mm³"],
@@ -303,7 +313,7 @@ function renderFacts(rebuild = true) {
   f.replaceChildren(dl);
   if (!rebuild) return;
   const host = $("stepparams");
-  host.replaceChildren(...c.editable.filter((n) => byName[n]).map((n) => card(byName[n])));
+  host.replaceChildren(...cards("stepparams", c.editable.filter((n) => byName[n]).map((n) => byName[n])));
   if (c.fixed.length) {
     const h = document.createElement("h2"); h.textContent = "Fixed sizes for this part";
     const t = document.createElement("table");
@@ -332,7 +342,7 @@ function load() {
     banner(s.status);
     const host = $("params");
     byName = Object.fromEntries(s.params.map((p) => [p.name, p]));
-    host.replaceChildren(...s.params.map(card));
+    host.replaceChildren(...cards("params", s.params));
     if (!s.params.length) host.textContent = "No placeholder parameters left to change.";
     const t = $("derived");
     t.replaceChildren(...s.derived.map((d) => {
