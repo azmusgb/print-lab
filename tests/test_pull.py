@@ -766,3 +766,33 @@ def test_pull_applies_a_qualification_continue_decision(project):
     assert state["current_reference"] is None
     assert state["history"][-1]["decision"] == "continue"
     assert fake.results[req["id"]]["status"] == "applied"
+
+
+def test_idle_right_after_start_is_not_a_finished_print(project):
+    """`lab exp start` is recorded when the owner taps Start; the printer can still be idle for minutes (heating,
+    leveling). Idle then must not mark the run finished or announce it."""
+    from datetime import datetime, timedelta, timezone
+    from unittest.mock import patch
+    from lab.loop.commands import load_experiment, save_experiment
+    e = load_experiment(project, "E-009")
+    e["print_runs"][-1]["started_at"] = (datetime.now(timezone.utc) - timedelta(minutes=2)).isoformat()
+    save_experiment(project, e)
+    ws = {"online": True, "printer": {"state": "idle", "progress": 0, "minutesLeft": 0,
+                                      "seenAt": datetime.now(timezone.utc).isoformat()}}
+    with patch("lab.sync.fetch_workshop_status", return_value=ws):
+        assert pull.check_active_print(project) is None
+    assert load_experiment(project, "E-009")["print_runs"][-1]["usage"] is None
+
+
+def test_idle_long_after_start_is_still_a_finished_print(project):
+    from datetime import datetime, timedelta, timezone
+    from unittest.mock import patch
+    from lab.loop.commands import load_experiment, save_experiment
+    e = load_experiment(project, "E-009")
+    e["print_runs"][-1]["started_at"] = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
+    save_experiment(project, e)
+    ws = {"online": True, "printer": {"state": "idle", "progress": 0, "minutesLeft": 0,
+                                      "seenAt": datetime.now(timezone.utc).isoformat()}}
+    with patch("lab.sync.fetch_workshop_status", return_value=ws):
+        res = pull.check_active_print(project)
+    assert res and res["action"] == "finished_time_unknown"

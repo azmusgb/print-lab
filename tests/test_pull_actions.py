@@ -136,3 +136,31 @@ def test_verdict_and_photo_ids_are_checked_too(proj, kind, eid, run):
     r["run"] = run
     out, _ = apply(proj, r)
     assert out[0]["status"] == "refused" and "id" in out[0]["message"]
+
+
+def test_one_unexpected_failure_is_recorded_and_the_rest_are_processed(proj):
+    """A request that raises something other than ValueError (here a source file deleted after the build, which
+    start's fingerprint check reads) must not escape: it is recorded as failed with its reason, so it isn't retried
+    forever, and the requests sorted after it are still applied."""
+    eid = built(proj)
+    for src in (proj.root / "sources").iterdir():  # every model file start's fingerprints read
+        src.unlink()
+    bad = req("r1", "start", eid)
+    bad["at"] = "2026-10-26T10:00:00Z"
+    later = req("r2", "abandon", eid, {"reason": "superseded"})
+    later["at"] = "2026-10-26T10:00:01Z"
+    out, fake = apply(proj, bad, later)
+    assert [o["id"] for o in out] == ["r1", "r2"], out
+    assert out[0]["status"] == "refused" and "FileNotFoundError" in out[0]["message"]
+    assert "r1" in (proj.root / "requests.jsonl").read_text()
+    assert set(fake.results) == {"r1", "r2"}
+
+
+def test_a_wrongly_typed_payload_does_not_stop_the_pull(proj):
+    eid = built(proj)
+    wrong = req("r1", "start", eid, ["not", "a", "dict"])
+    wrong["at"] = "2026-10-26T10:00:00Z"
+    later = req("r2", "abandon", eid, {"reason": "superseded"})
+    later["at"] = "2026-10-26T10:00:01Z"
+    out, _ = apply(proj, wrong, later)
+    assert [o["status"] for o in out] == ["refused", "applied"], out

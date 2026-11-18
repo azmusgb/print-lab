@@ -6,6 +6,9 @@ from lab.loop.commands import load_experiment, record_usage
 from lab.records.project import ProjectPaths
 
 
+START_GRACE = datetime.timedelta(minutes=15)  # how long after a recorded start an idle printer is not yet "finished"
+
+
 def _parse_iso(s: str) -> datetime.datetime | None:
     if not s:
         return None
@@ -47,7 +50,12 @@ def get_run_telemetry(paths: ProjectPaths, eid: str, *, run_id: str | None = Non
     seen_at = p.get("seenAt")
     started_at = run.get("started_at")
 
-    is_finished = (state in ("finish", "idle", "success") or progress >= 100)
+    # Idle right after `lab exp start` is the printer still heating or leveling, not a finished print.
+    dt_began = _parse_iso(started_at)
+    if dt_began and dt_began.tzinfo is None:
+        dt_began = dt_began.replace(tzinfo=datetime.timezone.utc)
+    just_started = bool(dt_began) and datetime.datetime.now(datetime.timezone.utc) - dt_began < START_GRACE
+    is_finished = (state in ("finish", "success") or (state == "idle" and not just_started) or progress >= 100)
     plog = run.get("printer_log") or {}
     # Only a finish heard without a gap is an end time; a cancel, a stop or a gap before the end report isn't.
     log_end = plog.get("ended_at") if plog.get("final_state") == "FINISH" and not plog.get("end_uncertain") else None
