@@ -1,6 +1,9 @@
 """One tap to print, the lab's half (A12 plan P2): `lab pull` stages a ready or approved build once the printer has been
 idle 10 minutes, and records Pi Hub's Start (`one_tap` requests) on the run (spec S6)."""
+import sys
 from datetime import datetime, timedelta, timezone
+
+import pytest
 
 from lab.loop.commands import load_experiment
 from lab.loop.guards import start
@@ -12,6 +15,12 @@ from test_pull_actions import apply, iso, req
 from test_stage import FakeBambuddy
 
 NOW = datetime.now(timezone.utc)
+
+
+@pytest.fixture(autouse=True)
+def _fresh_now(monkeypatch):
+    """NOW is taken per test: a module-level value goes stale in a long suite and drifts past the 10-minute idle bar."""
+    monkeypatch.setattr(sys.modules[__name__], "NOW", datetime.now(timezone.utc))
 
 
 def one_tap(eid, build, minutes_ago=3, by="Bill's iPhone", **kw):
