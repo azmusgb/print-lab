@@ -82,9 +82,16 @@ def cmd_exp_criteria(args) -> int:
     return 0
 
 
+def _pct(text) -> float | None:
+    try:
+        return float(text.rstrip("%")) if text else None
+    except ValueError:
+        raise ValueError(f"--failed-at is how far a failed print got, 1–99 %; not {text!r}.") from None
+
+
 def cmd_exp_usage(args) -> int:
     from lab.loop.commands import record_usage
-    pct = float(args.failed_at.rstrip("%")) if args.failed_at else None
+    pct = _pct(args.failed_at)
     e = record_usage(_paths(args), args.run_id, failed_at_pct=pct, minutes=args.minutes, grams=args.grams)
     print(f"Recorded usage for {args.run_id} ({e['id']}, now {e['status']})")
     return 0
@@ -150,7 +157,7 @@ def cmd_exp_verify(args) -> int:
 def cmd_exp_telemetry(args) -> int:
     from lab.loop.telemetry import apply_telemetry, format_telemetry_text, get_run_telemetry
     paths = _paths(args)
-    pct = float(args.failed_at.rstrip("%")) if args.failed_at else None
+    pct = _pct(args.failed_at)
     if args.apply:
         e, t = apply_telemetry(paths, args.id, run_id=args.run, failed_at_pct=pct, force=args.force)
         if args.json:
@@ -266,7 +273,7 @@ def cmd_case(args) -> int:
 
 
 def cmd_exp_plan(args) -> int:
-    from lab.loop.builders import plan_experiment
+    from lab.loop.builders import parse_adjust, parse_z, plan_experiment
     judged = None
     if args.around is not None:
         from lab.loop.builders import JUDGED_HALF_MM, size_strip
@@ -277,10 +284,10 @@ def cmd_exp_plan(args) -> int:
         judged = (args.around - JUDGED_HALF_MM, args.around + JUDGED_HALF_MM)
         print(f"Strip Z {z0:g}–{z1:g} mm fits {args.target_minutes:g} min around {args.around:g} mm")
     elif args.z:
-        z0, z1 = (float(x) for x in args.z.split(":"))
+        z0, z1 = parse_z(args.z)
     else:
         raise ValueError("Give --z FROM:TO, or --around Z (with --target-minutes) to size the strip.")
-    adjust = dict(a.split("=", 1) for a in args.adjust or [])
+    adjust = parse_adjust(args.adjust)
     eid = plan_experiment(_paths(args), args.question, factor=args.factor, values=args.values.split(","),
                           expect=args.expect, judge_on=args.judge_on, test_kind=args.test_kind, source=args.source,
                           object=args.object, z=(z0, z1), base=args.base, question_text=args.text,
@@ -304,7 +311,9 @@ def cmd_exp_build(args) -> int:
 def _kv(pairs) -> dict:
     out = {}
     for p in pairs or []:
-        k, _, v = p.partition("=")
+        k, sep, v = p.partition("=")
+        if not sep or not k.strip():
+            raise ValueError(f"--set is KEY=VALUE (e.g. --set diameter_mm=0.4); not {p!r}.")
         try:
             out[k] = json.loads(v)
         except ValueError:
