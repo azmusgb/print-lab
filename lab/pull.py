@@ -352,9 +352,19 @@ def apply_pending(pdir: Path, target: Target, timeout: float = 10) -> list[dict]
                 else:
                     status = "refused"
                     message = f"unknown request kind {kind}"
-            except Exception as e:  # one bad request is recorded as failed; it never stops the rest or repeats
-                status, message = "refused", f"couldn't be applied ({type(e).__name__}: {e})"[:300]
-                print(f"lab pull: {target.name}: request {req_id} failed: {type(e).__name__}: {e}", file=sys.stderr)
+            except ValueError as e:  # a refusal the handler didn't word itself
+                status, message = "refused", str(e)
+            except (FileNotFoundError, NotADirectoryError) as e:  # a missing input won't appear by retrying: recorded below
+                status, message = "error", f"couldn't be applied ({type(e).__name__}: {e})"[:300]
+                print(f"lab pull: {target.name}: request {req_id} failed: {message}", file=sys.stderr)
+            except OSError as e:  # disk full, I/O: not recorded and no result posted, so the next run retries it
+                message = f"{type(e).__name__}: {e}"[:300]
+                print(f"lab pull: {target.name}: request {req_id} will be retried ({message})", file=sys.stderr)
+                results.append({"id": req_id, "status": "error", "message": message})
+                continue
+            except Exception as e:  # unexpected: recorded as an error (not a refusal) so it neither repeats nor blocks the rest
+                status, message = "error", f"couldn't be applied ({type(e).__name__}: {e})"[:300]
+                print(f"lab pull: {target.name}: request {req_id} failed: {message}", file=sys.stderr)
 
             record_entry = {"id": req_id, "status": status, "message": message, "at": now()}
             with open(requests_file, "a") as f:

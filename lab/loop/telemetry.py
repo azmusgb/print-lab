@@ -20,6 +20,16 @@ def _parse_iso(s: str) -> datetime.datetime | None:
         return None
 
 
+def printer_finished(state: str, progress: float, started_at: str | None) -> bool:
+    """Whether the printer's state says the run is over. Idle right after `lab exp start` is the printer still heating
+    or leveling, not a finished print, so idle counts only once START_GRACE has passed since the recorded start."""
+    began = _parse_iso(started_at)
+    if began and began.tzinfo is None:
+        began = began.replace(tzinfo=datetime.timezone.utc)
+    just_started = bool(began) and datetime.datetime.now(datetime.timezone.utc) - began < START_GRACE
+    return state in ("finish", "success") or (state == "idle" and not just_started) or progress >= 100
+
+
 def get_run_telemetry(paths: ProjectPaths, eid: str, *, run_id: str | None = None,
                       base: str | None = None, timeout: float = 2.0) -> dict:
     e = load_experiment(paths, eid)
@@ -50,12 +60,7 @@ def get_run_telemetry(paths: ProjectPaths, eid: str, *, run_id: str | None = Non
     seen_at = p.get("seenAt")
     started_at = run.get("started_at")
 
-    # Idle right after `lab exp start` is the printer still heating or leveling, not a finished print.
-    dt_began = _parse_iso(started_at)
-    if dt_began and dt_began.tzinfo is None:
-        dt_began = dt_began.replace(tzinfo=datetime.timezone.utc)
-    just_started = bool(dt_began) and datetime.datetime.now(datetime.timezone.utc) - dt_began < START_GRACE
-    is_finished = (state in ("finish", "success") or (state == "idle" and not just_started) or progress >= 100)
+    is_finished = printer_finished(state, progress, started_at)
     plog = run.get("printer_log") or {}
     # Only a finish heard without a gap is an end time; a cancel, a stop or a gap before the end report isn't.
     log_end = plog.get("ended_at") if plog.get("final_state") == "FINISH" and not plog.get("end_uncertain") else None
