@@ -229,7 +229,7 @@ class Handler(BaseHTTPRequestHandler):
     def _authed(self) -> bool:
         q = parse_qs(urlparse(self.path).query)
         supplied = (q.get("t") or [""])[0] or self.headers.get("X-Token", "")
-        return secrets.compare_digest(supplied, self.token)
+        return secrets.compare_digest(supplied.encode(), self.token.encode())  # bytes: str compare raises on non-ASCII
 
     def _bridge_error(self, e: Exception):
         if isinstance(e, urllib.error.HTTPError):
