@@ -1,11 +1,36 @@
-"""The platform's own pages in print-lab load the appliance-ui kit copy in tools/ui (Pi Hub amendment A22, step 13 P1)."""
+"""The platform's own pages in print-lab load the appliance-ui kit copy in tools/ui (Pi Hub amendment A22, step 13 P1),
+and that copy is the one appliance-ui synced: nobody edited a kit file by hand."""
 import json
 import re
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 KIT = ROOT / "tools" / "ui"
 PANEL = ROOT / "tools" / "fusion" / "ParamsPanel"
+
+
+def verify(folder):
+    # The kit's own check, run isolated as appliance-ui's consumers.json has it: python3 -I tools/ui/verify.py tools/ui
+    cmd = [sys.executable, "-I", str(folder / "verify.py"), str(folder)]
+    return subprocess.run(cmd, capture_output=True, text=True)
+
+
+def test_the_kit_copy_is_untouched():
+    r = verify(KIT)
+    assert r.returncode == 0, r.stdout + r.stderr
+
+
+def test_an_edited_kit_copy_fails(tmp_path):
+    copy = tmp_path / "ui"
+    shutil.copytree(KIT, copy)
+    assert verify(copy).returncode == 0  # the copy itself is sound, so the failure below is the edit's
+    with open(copy / "tokens.css", "a") as f:
+        f.write("/* edited */")
+    r = verify(copy)
+    assert r.returncode == 1 and "tokens.css" in r.stderr, r.stdout + r.stderr
 
 
 def test_the_fusion_panel_links_the_kit_by_a_relative_path_that_resolves():
