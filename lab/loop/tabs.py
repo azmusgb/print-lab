@@ -21,7 +21,6 @@ def id_tab(text: str, jobs_dir: Path) -> trimesh.Trimesh:
 def attach_tab(strip: trimesh.Trimesh, text: str, jobs_dir: Path) -> trimesh.Trimesh:
     """The strip with its tab joined at the -Y end: the bridge reaches 1.5 mm into the strip's first layers."""
     from lab.geometry.coupons import _to_manifold
-    import manifold3d as mf
     tab = id_tab(text, jobs_dir)
     lo, hi = strip.bounds
     (tx0, ty0, tz0), (tx1, ty1, _) = tab.bounds

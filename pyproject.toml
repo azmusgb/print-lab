@@ -33,6 +33,14 @@ module-root = ""
 testpaths = ["tests"]
 markers = ["slow: needs OpenSCAD or Bambu Studio"]
 
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+# Pyflakes only: undefined names, unused imports and variables. The check runs on lab and tools
+# (`uvx ruff@0.8.4 check lab tools`); tests import pytest fixtures from other test modules, which reads as F811.
+select = ["F"]
+
 [dependency-groups]
 dev = [
     "pytest>=9.1.1",
