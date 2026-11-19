@@ -9,6 +9,9 @@
 ## Checks
 - `uv sync && uv run pytest` before every PR; paste the counts. It needs nothing running: tests refuse the network and
   writes into the checkout (`tests/conftest.py`), and the tests marked `slow` need OpenSCAD or Bambu Studio.
+- `uvx ruff@0.8.4 check lab tools` must stay clean (undefined names, unused imports and variables; settings in
+  `pyproject.toml`). GitHub Actions runs it and `uv run pytest -m "not slow"` on every PR
+  (`.github/workflows/checks.yml`).
 - If a change makes an existing test wrong, change that test in its own commit and say why. Never loosen or delete an
   assertion to get a pass.
 - Branch off `main` and open a PR. Never push to `main`.

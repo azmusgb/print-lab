@@ -195,7 +195,7 @@ def _needs(e: dict, at: str, root: Path | None = None) -> dict | None:
                 "command": _verdict_command(e)}
     if s == "approved":
         return {"id": eid, "urgency": 1, "action": "Send it to the printer",
-                "why": f"Approved; then record that it started.", "command": f"uv run lab exp start {eid}"}
+                "why": "Approved; then record that it started.", "command": f"uv run lab exp start {eid}"}
     if s == "needs_approval":
         return {"id": eid, "urgency": 2, "action": "Approve or drop", "why": why or "over a budget or a full part",
                 "command": f'uv run lab exp approve {eid} --reason "..."'}
