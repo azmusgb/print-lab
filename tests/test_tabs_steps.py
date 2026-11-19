@@ -74,6 +74,7 @@ def test_tabs_do_not_count_as_a_geometry_difference(proj):
 
 
 
+@pytest.mark.slow
 def test_tab_text_is_not_a_geometry_finding(tmp_path):
     """The '7' of a '7A' tab is thinner than a line (E-007): a label at bed level, not part of the judged strip."""
     import trimesh
@@ -87,6 +88,7 @@ def test_tab_text_is_not_a_geometry_finding(tmp_path):
     assert blocking_geometry(findings, tabbed=False)
 
 
+@pytest.mark.slow
 def test_the_tab_joins_a_strip_whose_end_leans_in_at_the_bed(tmp_path):
     """E-009: a strip cut from the tile's upper face is shorter at bed level than at its top; the tab must reach it."""
     import numpy as np
