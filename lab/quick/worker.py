@@ -330,7 +330,7 @@ def _work(hub, job, worker, hb, work, base, slicer, log) -> PassResult:
         return _fail(hub, job, "failed", "slice_failed", "the model changed in transit (sha256 differs)", hb)
     base = base or next(iter(sorted(PRESET_DIR.glob("*.3mf"))), None)
     if base is None or not Path(base).is_file():
-        return _fail(hub, job, "failed", "slice_failed", "this Mac has no Quick Print base preset (presets/quick/*.3mf)", hb)
+        return _fail(hub, job, "failed", "slice_failed", "this Mac has no Quick Print base preset (presets/quick/*.3mf); make it with: python -m lab.quick.make_base presets/quick/standard.json", hb)
     if (r := stopped()):
         return r
     hb.phase = "slicing"

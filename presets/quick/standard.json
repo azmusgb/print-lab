@@ -1,0 +1,6 @@
+{
+  "name": "standard",
+  "label": "Standard 0.20 mm PLA, X2D 0.4 mm nozzle",
+  "from": "projects/hex-tile/prints/hex-tile_E-022_BLD-022-01.3mf",
+  "filament": "presets/filament/Standard PLA - Grey @BBL X2D 0.4 nozzle.json"
+}
