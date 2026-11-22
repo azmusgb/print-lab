@@ -1,6 +1,6 @@
 """The gallery: one page per `lab design make` run, so the owner can compare the kept candidates and pick one.
 
-Drawn with the appliance-ui kit (assets/ui, copied from the kit unchanged), as the Home Platform design contract asks.
+Drawn with the appliance-ui kit (tools/ui, the copy the kit's sync keeps current), as the Home Platform design contract asks.
 Each kept candidate shows its face, print time and filament from the slice, the heights where the slice prints sparse
 infill (the risk bands), warnings, and the command that registers it as a source. Dropped ones are listed with why."""
 import json
@@ -10,7 +10,7 @@ from pathlib import Path
 from lab.adapters.bambu import EXPECTED_VERSION
 from lab.records.project import ProjectPaths
 
-_UI = Path(__file__).resolve().parent / "assets" / "ui"
+_UI = Path(__file__).resolve().parents[2] / "tools" / "ui"  # the repo's one kit copy (appliance-ui consumers.json)
 _FONTS = "https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..700&display=swap"
 
 _STYLE = """
