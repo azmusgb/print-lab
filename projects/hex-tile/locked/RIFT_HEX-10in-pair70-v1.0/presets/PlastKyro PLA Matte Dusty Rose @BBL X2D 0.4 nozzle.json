@@ -1,0 +1,50 @@
+{
+    "filament_extruder_variant": [
+        "Direct Drive Standard",
+        "Direct Drive High Flow",
+        "Direct Drive E3D High Flow",
+        "Bowden Standard",
+        "Bowden High Flow",
+        "Bowden E3D High Flow"
+    ],
+    "filament_settings_id": [
+        "PlastKyro PLA Matte Dusty Rose @BBL X2D 0.4 nozzle"
+    ],
+    "filament_vendor": [
+        "PlastKyro"
+    ],
+    "from": "User",
+    "inherits": "Bambu PLA Matte @BBL X2D 0.4 nozzle",
+    "name": "PlastKyro PLA Matte Dusty Rose @BBL X2D 0.4 nozzle",
+    "nozzle_temperature": [
+        "225",
+        "225",
+        "225",
+        "225",
+        "225",
+        "225"
+    ],
+    "nozzle_temperature_initial_layer": [
+        "225",
+        "225",
+        "225",
+        "225",
+        "225",
+        "225"
+    ],
+    "filament_max_volumetric_speed": [
+        "15",
+        "15",
+        "15",
+        "15",
+        "15",
+        "15"
+    ],
+    "textured_plate_temp": [
+        "55"
+    ],
+    "textured_plate_temp_initial_layer": [
+        "55"
+    ],
+    "version": "2.8.2.61"
+}

@@ -1,0 +1,76 @@
+{
+    "brim_object_gap": "0",
+    "brim_type": "outer_only",
+    "compatible_printers": [],
+    "default_acceleration": [
+        "6000",
+        "6000",
+        "6000",
+        "nil",
+        "nil",
+        "nil"
+    ],
+    "elefant_foot_compensation": "0.2",
+    "enable_prime_tower": "0",
+    "from": "User",
+    "inherits": "0.20mm Standard @BBL X2D",
+    "initial_layer_infill_line_width": "0",
+    "inner_wall_speed": [
+        "250",
+        "250",
+        "250",
+        "250",
+        "250",
+        "250"
+    ],
+    "layer_height": "0.16",
+    "name": "RIFT pair70 hbs 0.16mm @BBL X2D 0.4 nozzle",
+    "outer_wall_acceleration": [
+        "1500",
+        "1500",
+        "1500",
+        "1500",
+        "1500",
+        "1500"
+    ],
+    "outer_wall_line_width": "0.45",
+    "outer_wall_speed": [
+        "60",
+        "60",
+        "60",
+        "60",
+        "60",
+        "60"
+    ],
+    "print_extruder_id": [
+        "1",
+        "1",
+        "1",
+        "2",
+        "2",
+        "2"
+    ],
+    "print_extruder_variant": [
+        "Direct Drive Standard",
+        "Direct Drive High Flow",
+        "Direct Drive E3D High Flow",
+        "Bowden Standard",
+        "Bowden High Flow",
+        "Bowden E3D High Flow"
+    ],
+    "print_settings_id": "RIFT pair70 hbs 0.16mm @BBL X2D 0.4 nozzle",
+    "reduce_crossing_wall": "1",
+    "seam_position": "back",
+    "sparse_infill_density": "100%",
+    "sparse_infill_pattern": "zig-zag",
+    "travel_acceleration": [
+        "6000",
+        "6000",
+        "6000",
+        "6000",
+        "6000",
+        "6000"
+    ],
+    "version": "2.8.2.61",
+    "wall_loops": "3"
+}
