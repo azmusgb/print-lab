@@ -1,0 +1,185 @@
+[
+ {
+  "id": 106,
+  "archive_id": 104,
+  "print_name": "RIFT10_PAIR70_CLEAN_X2D_WITH_HBS",
+  "status": "failed",
+  "started_at": "2026-11-23T14:28:59.022508",
+  "completed_at": "2026-11-23T15:13:08.265035",
+  "duration_seconds": 2649,
+  "failure_reason": null,
+  "photos": [
+   "finish_20261123_101308_820afbce.jpg",
+   "finish_20261123_102540_4e4777f1.jpg"
+  ],
+  "user_verdict": null
+ },
+ {
+  "id": 105,
+  "archive_id": 103,
+  "print_name": "RIFT10_PAIR70_C_1p32_project_FAST_20h",
+  "status": "failed",
+  "started_at": "2026-11-23T02:53:30.265969",
+  "completed_at": "2026-11-23T13:10:30.819524",
+  "duration_seconds": 37020,
+  "failure_reason": null,
+  "photos": [
+   "finish_20261123_081031_225ddc73.jpg"
+  ],
+  "user_verdict": null
+ },
+ {
+  "id": 104,
+  "archive_id": 102,
+  "print_name": "RIFT10_PAIR70_C_1p32_project_FAST_20h",
+  "status": "failed",
+  "started_at": "2026-11-23T02:44:10.971490",
+  "completed_at": "2026-11-23T02:53:10.856285",
+  "duration_seconds": 539,
+  "failure_reason": null,
+  "photos": [
+   "finish_20261122_215311_be615c05.jpg"
+  ],
+  "user_verdict": null
+ },
+ {
+  "id": 103,
+  "archive_id": 101,
+  "print_name": "RIFT10_PAIR70_C_1p32_project_FAST_20h",
+  "status": "failed",
+  "started_at": "2026-11-23T02:12:37.782647",
+  "completed_at": "2026-11-23T02:42:28.474144",
+  "duration_seconds": 1790,
+  "failure_reason": null,
+  "photos": [
+   "finish_20261122_214228_9d507470.jpg"
+  ],
+  "user_verdict": null
+ },
+ {
+  "id": 102,
+  "archive_id": 100,
+  "print_name": "RIFT10_PAIR70_C_1p32_project_FAST_20h",
+  "status": "failed",
+  "started_at": "2026-11-23T02:12:05.618287",
+  "completed_at": "2026-11-23T02:12:15.358141",
+  "duration_seconds": 9,
+  "failure_reason": null,
+  "photos": [
+   "finish_20261122_211215_71f6d9db.jpg"
+  ],
+  "user_verdict": null
+ },
+ {
+  "id": 101,
+  "archive_id": 99,
+  "print_name": "RIFT10_PAIR70_C_1p32_project_FAST_20h",
+  "status": "failed",
+  "started_at": "2026-11-23T01:56:55.502836",
+  "completed_at": "2026-11-23T02:11:41.150479",
+  "duration_seconds": 885,
+  "failure_reason": null,
+  "photos": [
+   "finish_20261122_211141_69e9c255.jpg"
+  ],
+  "user_verdict": null
+ },
+ {
+  "id": 100,
+  "archive_id": 98,
+  "print_name": "RIFT10_PAIR70_C_1p32_project_FAST_20h",
+  "status": "completed",
+  "started_at": "2026-11-22T05:14:30.275207",
+  "completed_at": "2026-11-23T01:32:51.788949",
+  "duration_seconds": 73101,
+  "failure_reason": null,
+  "photos": [
+   "finish_20261122_203252_3d116112.jpg"
+  ],
+  "user_verdict": null
+ },
+ {
+  "id": 99,
+  "archive_id": 97,
+  "print_name": "RIFT10_PAIR70_C_1p32_project_FAST_20h",
+  "status": "failed",
+  "started_at": "2026-11-22T04:27:52.890650",
+  "completed_at": "2026-11-22T05:12:39.779718",
+  "duration_seconds": 2686,
+  "failure_reason": null,
+  "photos": [
+   "finish_20261122_001240_5f4ff207.jpg"
+  ],
+  "user_verdict": null
+ },
+ {
+  "id": 96,
+  "archive_id": 94,
+  "print_name": "RIFT10_PAIR70_CLEAN_X2D_WITH_HBS",
+  "status": "failed",
+  "started_at": "2026-11-20T22:31:26.612804",
+  "completed_at": "2026-11-21T22:44:46.841789",
+  "duration_seconds": 87200,
+  "failure_reason": null,
+  "photos": [
+   "finish_20261121_174447_b37e07fc.jpg"
+  ],
+  "user_verdict": null
+ },
+ {
+  "id": 95,
+  "archive_id": 93,
+  "print_name": "RIFT10_PAIR70_CLEAN_X2D_WITH_HBS",
+  "status": "completed",
+  "started_at": "2026-11-19T20:38:16.107318",
+  "completed_at": "2026-11-20T22:07:30.732082",
+  "duration_seconds": 91754,
+  "failure_reason": null,
+  "photos": [
+   "finish_20261120_170731_0ae35807.jpg"
+  ],
+  "user_verdict": null
+ },
+ {
+  "id": 94,
+  "archive_id": 92,
+  "print_name": "RIFT10_PAIR70_CLEAN_X2D_WITH_HBS",
+  "status": "failed",
+  "started_at": "2026-11-19T20:27:56.620257",
+  "completed_at": "2026-11-19T20:37:00.740464",
+  "duration_seconds": 544,
+  "failure_reason": null,
+  "photos": [
+   "finish_20261119_153701_9f22bfb1.jpg"
+  ],
+  "user_verdict": null
+ },
+ {
+  "id": 93,
+  "archive_id": 91,
+  "print_name": "RIFT10_PAIR70_CLEAN_X2D_WITH_HBS",
+  "status": "completed",
+  "started_at": "2026-11-18T22:45:59.535756",
+  "completed_at": "2026-11-19T20:01:21.721355",
+  "duration_seconds": 76522,
+  "failure_reason": null,
+  "photos": [
+   "finish_20261119_150122_a44c17bf.jpg"
+  ],
+  "user_verdict": null
+ },
+ {
+  "id": 92,
+  "archive_id": 90,
+  "print_name": "RIFT10_PAIR70_CLEAN_X2D_WITH_HBS",
+  "status": "completed",
+  "started_at": "2026-11-18T00:32:15.331109",
+  "completed_at": "2026-11-18T22:35:22.031521",
+  "duration_seconds": 79386,
+  "failure_reason": null,
+  "photos": [
+   "finish_20261118_173522_121af591.jpg"
+  ],
+  "user_verdict": null
+ }
+]
