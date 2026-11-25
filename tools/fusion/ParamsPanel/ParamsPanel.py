@@ -56,7 +56,11 @@ def run(context):
 
         _on(_app.documentActivated, _DocRefresh())
         _on(_ui.commandTerminated, _CmdRefresh())
-        _show_palette()
+        if _app.isStartupComplete:
+            _show_palette()
+        else:
+            # Run on startup: Fusion's window has no dock area yet, and docking a palette then raises.
+            _on(_app.startupCompleted, _StartupCompleted())
     except Exception:
         if _ui:
             _ui.messageBox('Parameters Panel failed to start:\n{}'.format(traceback.format_exc()))
@@ -578,6 +582,16 @@ class _ToggleExecute(adsk.core.CommandEventHandler):
             return
         _show_palette()
         _push()
+
+
+class _StartupCompleted(adsk.core.ApplicationEventHandler):
+    """Opens the panel once Fusion has finished starting, when the add-in ran before that."""
+
+    def notify(self, args):
+        try:
+            _show_palette()
+        except Exception:
+            _ui.messageBox('Parameters Panel failed to start:\n{}'.format(traceback.format_exc()))
 
 
 class _DocRefresh(adsk.core.DocumentEventHandler):
