@@ -11,7 +11,6 @@ is --key-w mm wide. Without --key-y0 the ribs stop 1.6 mm short of the roof wall
 """
 import argparse
 import math
-import sys
 
 import trimesh
 from build123d import Align, Box, Face, Pos, Solid, Vector, Wire, export_step, export_stl
