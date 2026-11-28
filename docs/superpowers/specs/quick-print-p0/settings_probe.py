@@ -6,11 +6,9 @@ settings. Run: uv run python docs/superpowers/specs/quick-print-p0/settings_prob
 import json
 import re
 import sys
-import tempfile
 import zipfile
 from pathlib import Path
 
-import numpy as np
 import trimesh
 
 from lab.adapters import bambu, threemf
